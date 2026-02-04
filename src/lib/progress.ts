@@ -12,7 +12,7 @@ export type StationId =
   | 'S7_DEGREES'
   | 'T4_DEGREES';
 
-export type Progress = {
+type ProgressV1 = {
   version: 1;
   xp: number;
   streakDays: number;
@@ -20,26 +20,61 @@ export type Progress = {
   stationDone: Record<StationId, boolean>;
 };
 
-const KEY = 'ets_progress_v1';
+export type Progress = {
+  version: 2;
+  xp: number;
+  streakDays: number;
+  lastStudyYmd: string | null;
+  /** Daily goal tracking (Duolingo-ish stickiness). */
+  dailyGoalXp: number;
+  dailyXpToday: number;
+  dailyYmd: string | null;
+  stationDone: Record<StationId, boolean>;
+};
+
+const KEY_V2 = 'ets_progress_v2';
+const KEY_V1 = 'ets_progress_v1';
 
 export function loadProgress(): Progress {
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return defaultProgress();
-    const parsed = JSON.parse(raw) as Progress;
-    if (parsed?.version !== 1) return defaultProgress();
-    return {
-      ...defaultProgress(),
-      ...parsed,
-      stationDone: { ...defaultProgress().stationDone, ...(parsed.stationDone ?? {}) },
-    };
+    const rawV2 = localStorage.getItem(KEY_V2);
+    if (rawV2) {
+      const parsed = JSON.parse(rawV2) as Progress;
+      if (parsed?.version === 2) {
+        return {
+          ...defaultProgress(),
+          ...parsed,
+          stationDone: { ...defaultProgress().stationDone, ...(parsed.stationDone ?? {}) },
+        };
+      }
+    }
+
+    // migrate v1 → v2 (keep streak/xp/stations)
+    const rawV1 = localStorage.getItem(KEY_V1);
+    if (rawV1) {
+      const parsed1 = JSON.parse(rawV1) as ProgressV1;
+      if (parsed1?.version === 1) {
+        const migrated: Progress = {
+          ...defaultProgress(),
+          xp: parsed1.xp ?? 0,
+          streakDays: parsed1.streakDays ?? 0,
+          lastStudyYmd: parsed1.lastStudyYmd ?? null,
+          stationDone: { ...defaultProgress().stationDone, ...(parsed1.stationDone ?? {}) },
+        };
+        // Save immediately so next load is v2.
+        localStorage.setItem(KEY_V2, JSON.stringify(migrated));
+        return migrated;
+      }
+    }
+
+    return defaultProgress();
   } catch {
     return defaultProgress();
   }
 }
 
 export function saveProgress(p: Progress) {
-  localStorage.setItem(KEY, JSON.stringify(p));
+  localStorage.setItem(KEY_V2, JSON.stringify(p));
 }
 
 export function todayYmd() {
@@ -67,6 +102,7 @@ export function applyStudyReward(p: Progress, xpGain: number): Progress {
   const ymd = todayYmd();
   const wasToday = p.lastStudyYmd === ymd;
 
+  // Streak
   let streakDays = p.streakDays;
   if (!wasToday) {
     const todayIdx = dayIndexUtc(ymd);
@@ -81,11 +117,17 @@ export function applyStudyReward(p: Progress, xpGain: number): Progress {
     }
   }
 
+  // Daily goal progress (reset on day boundary).
+  const dailyReset = p.dailyYmd !== ymd;
+  const dailyXpToday = (dailyReset ? 0 : p.dailyXpToday) + xpGain;
+
   return {
     ...p,
     xp: p.xp + xpGain,
     streakDays,
     lastStudyYmd: ymd,
+    dailyYmd: ymd,
+    dailyXpToday,
   };
 }
 
@@ -98,10 +140,13 @@ export function markStationDone(p: Progress, stationId: StationId): Progress {
 
 export function defaultProgress(): Progress {
   return {
-    version: 1,
+    version: 2,
     xp: 0,
     streakDays: 0,
     lastStudyYmd: null,
+    dailyGoalXp: 20,
+    dailyXpToday: 0,
+    dailyYmd: null,
     stationDone: {
       S1_NOTES: false,
       T1_NOTES: false,

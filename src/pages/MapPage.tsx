@@ -13,6 +13,9 @@ export function MapPage({ progress }: { progress: Progress }) {
         </div>
         <div style={{ textAlign: 'right', fontSize: 12, opacity: 0.85 }}>
           <div>XP: {progress.xp}</div>
+          <div>
+            Today: {Math.min(progress.dailyXpToday, progress.dailyGoalXp)}/{progress.dailyGoalXp}
+          </div>
           <div>Streak: {progress.streakDays} day(s)</div>
         </div>
       </div>
@@ -27,7 +30,12 @@ export function MapPage({ progress }: { progress: Progress }) {
           flexWrap: 'wrap',
         }}
       >
-        <div style={{ fontSize: 12, opacity: 0.85 }}>Review queue: {mistakeCount()}</div>
+        <div style={{ fontSize: 12, opacity: 0.85 }}>
+          Review queue: {mistakeCount()}
+          {progress.dailyXpToday >= progress.dailyGoalXp ? (
+            <span style={{ marginLeft: 10, opacity: 0.95 }}>• Daily goal reached</span>
+          ) : null}
+        </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {(() => {
             const nextId = nextUnlockedIncomplete(progress);

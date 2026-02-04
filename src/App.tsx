@@ -23,6 +23,9 @@ function App() {
         </Link>
         <div className="topStats">
           <div className="pill">XP {progress.xp}</div>
+          <div className="pill">
+            Today {Math.min(progress.dailyXpToday, progress.dailyGoalXp)}/{progress.dailyGoalXp}
+          </div>
           <div className="pill">Streak {progress.streakDays}</div>
         </div>
       </header>
