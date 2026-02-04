@@ -66,6 +66,11 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
     primer: [
       'Scale degrees have names (roles):',
       '1 tonic · 2 supertonic · 3 mediant · 4 subdominant · 5 dominant · 6 submediant · 7 leading tone.',
+      'These names are also “jobs” — a tiny hint helps your ear stick faster.',
+    ],
+    tips: [
+      'tonic = home/rest · dominant = tension→tonic · leading tone = half-step magnet into tonic',
+      'subdominant = move away · supertonic = sets up dominant · mediant/submediant = color/tonic-substitute',
     ],
   },
   T4_DEGREES: {

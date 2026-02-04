@@ -27,7 +27,7 @@ import {
 import { makeTriadQualityQuestion, triadQualityIntervals, triadQualityLabel } from '../exercises/triad';
 import { makeDiatonicTriadQualityQuestion } from '../exercises/diatonicTriad';
 import { makeFunctionFamilyQuestion, type FunctionFamily } from '../exercises/functionFamily';
-import { makeScaleDegreeNameQuestion, type ScaleDegreeName } from '../exercises/scaleDegree';
+import { degreeMeaning, makeScaleDegreeNameQuestion, type ScaleDegreeName } from '../exercises/scaleDegree';
 
 export function StationPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
   const { stationId } = useParams();
@@ -1402,6 +1402,12 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
             Cheat sheet: 1 tonic · 2 supertonic · 3 mediant · 4 subdominant · 5 dominant · 6 submediant · 7 leading tone
           </div>
+
+          {result !== 'idle' ? (
+            <div style={{ fontSize: 12, opacity: 0.82, marginTop: 8 }}>
+              Meaning: <span style={{ opacity: 0.95 }}>{degreeMeaning(degreeQ.correct)}</span>
+            </div>
+          ) : null}
         </>
       ) : id === 'T4_DEGREES' ? (
         <>

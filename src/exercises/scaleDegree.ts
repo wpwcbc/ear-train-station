@@ -20,6 +20,24 @@ export const DEGREE_NAMES: ScaleDegreeName[] = [
   'leading tone',
 ];
 
+/**
+ * Short “job” hints for each scale degree role name.
+ * Keep these lightweight; we’re training recall, not writing a theory textbook.
+ */
+export const DEGREE_MEANINGS: Record<ScaleDegreeName, string> = {
+  tonic: 'home / rest (the key center)',
+  supertonic: 'pulls toward dominant (sets up motion)',
+  mediant: 'colors tonic (stable-ish)',
+  subdominant: 'moves away from home (pre-dominant feel)',
+  dominant: 'tension / wants to resolve to tonic',
+  submediant: 'tonic substitute (relative minor color)',
+  'leading tone': 'strong pull up to tonic (half-step magnet)',
+};
+
+export function degreeMeaning(name: ScaleDegreeName): string {
+  return DEGREE_MEANINGS[name] ?? '';
+}
+
 export function degreeNameFor(degree: 1 | 2 | 3 | 4 | 5 | 6 | 7): ScaleDegreeName {
   return DEGREE_NAMES[degree - 1] ?? 'tonic';
 }
