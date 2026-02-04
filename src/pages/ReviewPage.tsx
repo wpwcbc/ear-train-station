@@ -9,6 +9,7 @@ import { makeNoteNameReviewQuestion } from '../exercises/noteName';
 import { makeIntervalLabelReviewQuestion, intervalLongName, type IntervalLabel } from '../exercises/interval';
 import { makeTriadQualityReviewQuestion, triadQualityLabel, type TriadQuality } from '../exercises/triad';
 import { makeScaleDegreeNameReviewQuestion, type ScaleDegreeName } from '../exercises/scaleDegree';
+import { makeMajorScaleDegreeReviewQuestion } from '../exercises/majorScale';
 import { makeFunctionFamilyQuestion, type FunctionFamily } from '../exercises/functionFamily';
 import { MAJOR_KEYS } from '../lib/theory/major';
 
@@ -75,6 +76,16 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     });
   }, [active, seed]);
 
+  const msQ = useMemo(() => {
+    if (!active || active.kind !== 'majorScaleDegree') return null;
+    return makeMajorScaleDegreeReviewQuestion({
+      seed: seed * 1000 + 9041,
+      key: active.key as any,
+      degree: active.degree,
+      choiceCount: 6,
+    });
+  }, [active, seed]);
+
   const ffQ = useMemo(() => {
     if (!active || active.kind !== 'functionFamily') return null;
     const key = active.key as (typeof MAJOR_KEYS)[number]['key'];
@@ -106,6 +117,13 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       await piano.playMidi(degQ.tonicMidi, { durationSec: 0.7, velocity: 0.9 });
       await new Promise((r) => setTimeout(r, 260));
       await piano.playMidi(degQ.targetMidi, { durationSec: 0.9, velocity: 0.92 });
+      return;
+    }
+
+    if (active.kind === 'majorScaleDegree' && msQ) {
+      await piano.playMidi(msQ.tonicMidi, { durationSec: 0.7, velocity: 0.9 });
+      await new Promise((r) => setTimeout(r, 260));
+      await piano.playMidi(msQ.targetMidi, { durationSec: 0.9, velocity: 0.92 });
       return;
     }
 
@@ -176,6 +194,12 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   async function chooseDegree(choice: ScaleDegreeName) {
     if (!degQ || !active || active.kind !== 'scaleDegreeName') return;
     const ok = choice === degQ.correct;
+    applyOutcome(ok ? 'correct' : 'wrong');
+  }
+
+  async function chooseMajorScale(choice: string) {
+    if (!msQ || !active || active.kind !== 'majorScaleDegree') return;
+    const ok = choice === msQ.correct;
     applyOutcome(ok ? 'correct' : 'wrong');
   }
 
@@ -312,6 +336,26 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
             {degQ.choices.map((c) => (
               <button key={c} className="secondary" onClick={() => chooseDegree(c)}>
+                {c}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
+            From: {active.sourceStationId} • Streak: {active.correctStreak}/2
+          </div>
+        </>
+      ) : active.kind === 'majorScaleDegree' && msQ ? (
+        <>
+          <div className={`result r_${result}`}>
+            {result === 'idle' && msQ.prompt}
+            {result === 'correct' && 'Cleared — +4 XP.'}
+            {result === 'wrong' && `Not quite — it was ${msQ.correct}.`}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            {msQ.choices.map((c) => (
+              <button key={c} className="secondary" onClick={() => chooseMajorScale(c)}>
                 {c}
               </button>
             ))}

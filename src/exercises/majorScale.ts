@@ -149,3 +149,53 @@ export function makeMajorScaleTestQuestion(opts: {
     targetMidi,
   };
 }
+
+
+export type MajorScaleDegreeReviewQuestion = {
+  key: string;
+  degree: number; // 2..7
+  prompt: string;
+  choices: string[];
+  correct: string;
+  tonicMidi: number;
+  targetMidi: number;
+};
+
+export function makeMajorScaleDegreeReviewQuestion(opts: {
+  seed: number;
+  key: (typeof MAJOR_KEYS)[number]['key'];
+  degree: 2 | 3 | 4 | 5 | 6 | 7;
+  choiceCount?: number;
+}): MajorScaleDegreeReviewQuestion {
+  const rng = mulberry32(opts.seed);
+  const choiceCount = opts.choiceCount ?? 6;
+
+  const k = MAJOR_KEYS.find((x) => x.key === opts.key) ?? MAJOR_KEYS[0];
+  const tonicPc = PC[k.key];
+  const tonicMidi = 60 + tonicPc; // stable: C4..B4
+
+  const degree = Math.min(7, Math.max(2, opts.degree));
+  const stepIndex = degree - 1;
+  const correct = k.scale[stepIndex];
+
+  const pool: string[] = [correct];
+  const distractorPool = uniq([...k.scale, 'C#', 'F#', 'G#', 'D#', 'A#', 'Bb', 'Eb', 'Ab']).filter((x) => x !== correct);
+
+  for (const d of shuffle(distractorPool, rng)) {
+    pool.push(d);
+    if (uniq(pool).length >= choiceCount) break;
+  }
+
+  const choices = shuffle(uniq(pool).slice(0, choiceCount), rng);
+  const targetMidi = tonicMidi + MAJOR_OFFSETS[stepIndex];
+
+  return {
+    key: k.key,
+    degree,
+    prompt: `Review: ${k.key} major — which note is degree ${degree} (of 7)?`,
+    choices,
+    correct,
+    tonicMidi,
+    targetMidi,
+  };
+}

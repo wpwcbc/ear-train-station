@@ -378,7 +378,15 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     const ok = choice === s2Q.correct;
     setResult(ok ? 'correct' : 'wrong');
 
-    if (!ok) return;
+    if (!ok) {
+      addMistake({
+        kind: 'majorScaleDegree',
+        sourceStationId: id,
+        key: s2Q.key,
+        degree: (s2Q.stepIndex + 1) as 2 | 3 | 4 | 5 | 6 | 7,
+      });
+      return;
+    }
 
     // +2 XP per correct step.
     rewardAndMaybeComplete(2);
@@ -939,7 +947,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     if (!ok) {
       // Feed the review queue: “degree → correct spelling” is a perfect spaced-review item.
       addMistake({
-        kind: 'scaleDegreeName',
+        kind: 'majorScaleDegree',
         sourceStationId: id,
         key: t2Q.key,
         degree: t2Q.degree as 2 | 3 | 4 | 5 | 6 | 7,
