@@ -5,7 +5,7 @@ import { applyStudyReward, markStationDone } from '../lib/progress';
 import { STATIONS } from '../lib/stations';
 import { PianoKeyboard } from '../components/PianoKeyboard';
 import { piano } from '../audio/piano';
-import { makeIntervalQuestion } from '../exercises/interval';
+import { makeIntervalQuestion, makeIntervalLabelQuestion, intervalLongName, type IntervalLabel } from '../exercises/interval';
 import { makeNoteNameQuestion } from '../exercises/noteName';
 import { makeMajorScaleSession, makeMajorScaleStepQuestion, makeMajorScaleTestQuestion } from '../exercises/majorScale';
 import { makeTriadQualityQuestion, triadQualityIntervals, triadQualityLabel } from '../exercises/triad';
@@ -34,6 +34,24 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   const [result, setResult] = useState<'idle' | 'correct' | 'wrong'>('idle');
   const [highlighted, setHighlighted] = useState<Record<number, 'correct' | 'wrong' | 'active'>>({});
+
+  // Test 3: interval recognition across a wider register (G2 and above).
+  const [t3Index, setT3Index] = useState(0);
+  const [t3Correct, setT3Correct] = useState(0);
+  const T3_TOTAL = 10;
+  const T3_PASS = 8;
+  const t3Q = useMemo(
+    () =>
+      makeIntervalLabelQuestion({
+        seed: seed * 1000 + 1300 + t3Index,
+        rootMinMidi: 43, // G2
+        rootMaxMidi: 72, // C5 (keeps target <= C6 when +12)
+        minSemitones: 0,
+        maxSemitones: 12,
+        choiceCount: 6,
+      }),
+    [seed, t3Index],
+  );
 
   // Station 4: triad-quality question (stable register)
   const triadQ = useMemo(() => makeTriadQualityQuestion({ seed: seed * 1000 + 4 }), [seed]);
@@ -326,6 +344,52 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({});
   }
 
+  async function playPromptT3() {
+    setResult('idle');
+    setHighlighted({ [t3Q.rootMidi]: 'active' });
+    await piano.playMidi(t3Q.rootMidi, { durationSec: 0.7, velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, 320));
+    setHighlighted({ [t3Q.targetMidi]: 'active' });
+    await piano.playMidi(t3Q.targetMidi, { durationSec: 0.95, velocity: 0.9 });
+    setHighlighted({});
+  }
+
+  async function chooseT3(choice: IntervalLabel) {
+    const ok = choice === t3Q.correct;
+    setResult(ok ? 'correct' : 'wrong');
+
+    if (!ok) return;
+
+    setT3Correct((n) => n + 1);
+
+    // +3 XP per correct test item.
+    let p2 = applyStudyReward(progress, 3);
+
+    const nextIndex = t3Index + 1;
+    if (nextIndex >= T3_TOTAL) {
+      const correct = t3Correct + 1;
+      const pass = correct >= T3_PASS;
+      if (pass) {
+        p2 = applyStudyReward(p2, 12);
+        p2 = markStationDone(p2, 'T3_INTERVALS');
+      }
+      setProgress(p2);
+      setResult(pass ? 'correct' : 'wrong');
+      return;
+    }
+
+    setProgress(p2);
+    setT3Index(nextIndex);
+  }
+
+  function resetT3() {
+    setT3Index(0);
+    setT3Correct(0);
+    setResult('idle');
+    setHighlighted({});
+    setSeed((x) => x + 1);
+  }
+
   async function chooseT2(choice: string) {
     const ok = choice === t2Q.correct;
     setResult(ok ? 'correct' : 'wrong');
@@ -545,6 +609,38 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
             Tip: listen for the degree, but answer with correct spelling.
+          </div>
+        </>
+      ) : id === 'T3_INTERVALS' ? (
+        <>
+          <div className="row">
+            <button className="primary" onClick={playPromptT3}>Hear interval</button>
+            <button className="ghost" onClick={resetT3}>Restart</button>
+            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+              Q: {Math.min(t3Index + 1, T3_TOTAL)}/{T3_TOTAL} · Correct: {t3Correct}/{T3_TOTAL} (need {T3_PASS})
+            </div>
+          </div>
+
+          <div className={`result r_${result}`}>
+            {result === 'idle' && t3Q.prompt}
+            {result === 'correct' &&
+              (progress.stationDone['T3_INTERVALS'] ? 'Passed — nice. (+12 bonus XP)' : `Correct — +3 XP. (${intervalLongName(t3Q.correct)})`)}
+            {result === 'wrong' &&
+              (t3Index + 1 >= T3_TOTAL
+                ? `Finished: ${t3Correct}/${T3_TOTAL}. Need ${T3_PASS}. Hit restart to try again.`
+                : `Not quite — it was ${t3Q.correct} (${intervalLongName(t3Q.correct)}).`)}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            {t3Q.choices.map((c) => (
+              <button key={c} className="secondary" onClick={() => chooseT3(c)}>
+                {c}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+            Tip: tests roam; lessons stay in a stable register.
           </div>
         </>
       ) : id === 'S2_MAJOR_SCALE' ? (

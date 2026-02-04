@@ -39,6 +39,12 @@ export const STATIONS: Station[] = [
     kind: 'lesson',
   },
   {
+    id: 'T3_INTERVALS',
+    title: 'Test 3 — Interval recognition',
+    blurb: 'Name the interval by ear (m3, P5, etc.) across a wider range.',
+    kind: 'test',
+  },
+  {
     id: 'S4_TRIADS',
     title: 'Station 4 — Triad qualities',
     blurb: 'Build triads; major/minor/dim; recognize by ear.',

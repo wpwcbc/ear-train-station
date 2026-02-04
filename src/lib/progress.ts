@@ -4,6 +4,7 @@ export type StationId =
   | 'S2_MAJOR_SCALE'
   | 'T2_MAJOR_SCALE'
   | 'S3_INTERVALS'
+  | 'T3_INTERVALS'
   | 'S4_TRIADS'
   | 'S5_DIATONIC_TRIADS'
   | 'S6_FUNCTIONS';
@@ -46,14 +47,35 @@ export function todayYmd() {
   return `${y}-${m}-${day}`;
 }
 
+function parseYmd(ymd: string): { y: number; m: number; d: number } | null {
+  const m = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(ymd);
+  if (!m) return null;
+  return { y: Number(m[1]), m: Number(m[2]), d: Number(m[3]) };
+}
+
+function dayIndexUtc(ymd: string): number | null {
+  const p = parseYmd(ymd);
+  if (!p) return null;
+  // Use UTC to avoid DST/timezone drift when computing streak gaps.
+  return Math.floor(Date.UTC(p.y, p.m - 1, p.d) / 86_400_000);
+}
+
 export function applyStudyReward(p: Progress, xpGain: number): Progress {
   const ymd = todayYmd();
   const wasToday = p.lastStudyYmd === ymd;
 
   let streakDays = p.streakDays;
   if (!wasToday) {
-    // simple streak: if you didn't study today yet, +1
-    streakDays = Math.max(1, streakDays + 1);
+    const todayIdx = dayIndexUtc(ymd);
+    const lastIdx = p.lastStudyYmd ? dayIndexUtc(p.lastStudyYmd) : null;
+
+    if (todayIdx != null && lastIdx != null) {
+      const gap = todayIdx - lastIdx;
+      if (gap === 1) streakDays = Math.max(1, streakDays + 1);
+      else streakDays = 1; // missed a day (or time travel) → reset streak
+    } else {
+      streakDays = Math.max(1, streakDays + 1);
+    }
   }
 
   return {
@@ -83,6 +105,7 @@ export function defaultProgress(): Progress {
       S2_MAJOR_SCALE: false,
       T2_MAJOR_SCALE: false,
       S3_INTERVALS: false,
+      T3_INTERVALS: false,
       S4_TRIADS: false,
       S5_DIATONIC_TRIADS: false,
       S6_FUNCTIONS: false,
