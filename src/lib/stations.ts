@@ -1,4 +1,4 @@
-import type { StationId } from './progress';
+import type { Progress, StationId } from './progress';
 
 export type Station = {
   id: StationId;
@@ -81,3 +81,27 @@ export const STATIONS: Station[] = [
     kind: 'test',
   },
 ];
+
+export function stationIndex(id: StationId): number {
+  return STATIONS.findIndex((s) => s.id === id);
+}
+
+export function nextStationId(id: StationId): StationId | null {
+  const idx = stationIndex(id);
+  if (idx < 0) return null;
+  const next = STATIONS[idx + 1];
+  return next ? next.id : null;
+}
+
+export function isStationUnlocked(progress: Progress, id: StationId): boolean {
+  const idx = stationIndex(id);
+  if (idx <= 0) return idx === 0;
+  return STATIONS.slice(0, idx).every((p) => progress.stationDone[p.id]);
+}
+
+export function nextUnlockedIncomplete(progress: Progress): StationId | null {
+  for (const s of STATIONS) {
+    if (!progress.stationDone[s.id] && isStationUnlocked(progress, s.id)) return s.id;
+  }
+  return null;
+}

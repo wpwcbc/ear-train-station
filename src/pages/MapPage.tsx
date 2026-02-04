@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { STATIONS } from '../lib/stations';
+import { STATIONS, nextUnlockedIncomplete } from '../lib/stations';
 import type { Progress } from '../lib/progress';
 import { mistakeCount } from '../lib/mistakes';
 
@@ -17,9 +17,26 @@ export function MapPage({ progress }: { progress: Progress }) {
         </div>
       </div>
 
-      <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+      <div
+        style={{
+          marginTop: 12,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}
+      >
         <div style={{ fontSize: 12, opacity: 0.85 }}>Review queue: {mistakeCount()}</div>
-        <Link className="linkBtn" to="/review">Review</Link>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {(() => {
+            const nextId = nextUnlockedIncomplete(progress);
+            return nextId ? (
+              <Link className="linkBtn" to={`/station/${nextId}`}>Continue</Link>
+            ) : null;
+          })()}
+          <Link className="linkBtn" to="/review">Review</Link>
+        </div>
       </div>
 
       <div className="line">

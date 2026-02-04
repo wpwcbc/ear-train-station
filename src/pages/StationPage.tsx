@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import type { StationId, Progress } from '../lib/progress';
 import { applyStudyReward, markStationDone } from '../lib/progress';
 import { addMistake } from '../lib/mistakes';
-import { STATIONS } from '../lib/stations';
+import { STATIONS, nextStationId, isStationUnlocked } from '../lib/stations';
 import { PianoKeyboard } from '../components/PianoKeyboard';
 import { StaffNote } from '../components/StaffNote';
 import { piano } from '../audio/piano';
@@ -20,6 +20,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const id = (stationId ?? 'S3_INTERVALS') as StationId;
 
   const station = STATIONS.find((s) => s.id === id);
+  const done = progress.stationDone[id];
+  const nextId = nextStationId(id);
+  const nextUnlocked = nextId ? isStationUnlocked(progress, nextId) : false;
 
   const [seed, setSeed] = useState(1);
 
@@ -685,6 +688,19 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           <div>Streak: {progress.streakDays} day(s)</div>
         </div>
       </div>
+
+      {done ? (
+        <div className="result r_correct" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontWeight: 700 }}>Completed.</div>
+            <div style={{ fontSize: 12, opacity: 0.9 }}>Nice — keep the chain going.</div>
+          </div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <Link className="linkBtn" to="/">Map</Link>
+            {nextId && nextUnlocked ? <Link className="linkBtn" to={`/station/${nextId}`}>Next</Link> : null}
+          </div>
+        </div>
+      ) : null}
 
       {id === 'S1_NOTES' ? (
         <>
