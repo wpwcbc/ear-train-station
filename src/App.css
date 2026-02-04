@@ -16,13 +16,34 @@
 }
 
 .brand {
-  font-weight: 700;
+  font-weight: 750;
   letter-spacing: 0.3px;
 }
 
-.badge {
+.brandLink {
+  color: inherit;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tag {
   font-size: 12px;
-  opacity: 0.8;
+  opacity: 0.75;
+}
+
+.topStats {
+  display: flex;
+  gap: 8px;
+}
+
+.pill {
+  font-size: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 6px 10px;
+  border-radius: 999px;
 }
 
 .main {
@@ -93,11 +114,62 @@ button.ghost {
   border-color: rgba(255, 120, 120, 0.5);
 }
 
-.meta {
+.line {
+  margin-top: 12px;
   display: flex;
+  flex-direction: column;
   gap: 12px;
-  flex-wrap: wrap;
-  font-size: 12px;
-  opacity: 0.75;
-  margin-top: 8px;
+}
+
+.stationRow {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.stationDot {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  border: 2px solid rgba(255, 255, 255, 0.20);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.stationDot.done {
+  border-color: rgba(90, 255, 160, 0.5);
+  background: rgba(90, 255, 160, 0.12);
+}
+
+.stationTitle {
+  font-weight: 650;
+}
+
+.stationBlurb {
+  font-size: 13px;
+  opacity: 0.82;
+  margin-top: 4px;
+}
+
+.tinyDone {
+  margin-left: 8px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(90, 255, 160, 0.35);
+  background: rgba(90, 255, 160, 0.10);
+  opacity: 0.9;
+}
+
+.linkBtn {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
 }
