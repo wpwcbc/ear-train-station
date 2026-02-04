@@ -937,6 +937,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult(ok ? 'correct' : 'wrong');
 
     if (!ok) {
+      // Feed the review queue: “degree → correct spelling” is a perfect spaced-review item.
+      addMistake({
+        kind: 'scaleDegreeName',
+        sourceStationId: id,
+        key: t2Q.key,
+        degree: t2Q.degree as 2 | 3 | 4 | 5 | 6 | 7,
+      });
+
       const nextWrong = t2Wrong + 1;
       setT2Wrong(nextWrong);
 

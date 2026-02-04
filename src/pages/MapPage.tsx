@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { STATIONS, nextUnlockedIncomplete } from '../lib/stations';
 import type { Progress } from '../lib/progress';
-import { dueMistakeCount, mistakeCount } from '../lib/mistakes';
+import { useMistakeStats } from '../lib/hooks/useMistakeStats';
 
 export function MapPage({
   progress,
@@ -10,6 +10,7 @@ export function MapPage({
   progress: Progress;
   setProgress: (p: Progress) => void;
 }) {
+  const stats = useMistakeStats();
   return (
     <div className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
@@ -38,7 +39,7 @@ export function MapPage({
       >
         <div style={{ fontSize: 12, opacity: 0.85, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <span>
-            Review due: {dueMistakeCount()} (total {mistakeCount()})
+            Review due: {stats.due} (total {stats.total})
           </span>
           <span style={{ opacity: 0.65 }}>•</span>
           <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
@@ -69,7 +70,9 @@ export function MapPage({
               <Link className="linkBtn" to={`/station/${nextId}`}>Continue</Link>
             ) : null;
           })()}
-          <Link className="linkBtn" to="/review">Review</Link>
+          <Link className={stats.due > 0 ? 'linkBtn primaryLink' : 'linkBtn'} to="/review">
+            Review{stats.due > 0 ? ` (${stats.due})` : ''}
+          </Link>
         </div>
       </div>
 
