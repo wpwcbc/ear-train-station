@@ -235,3 +235,8 @@ export function mistakeCount(): number {
 export function dueMistakeCount(now = Date.now()): number {
   return dueMistakes(now).length;
 }
+
+export function mistakeCountForStation(sourceStationId: StationId, opts?: { dueOnly?: boolean; now?: number }): number {
+  const now = opts?.now ?? Date.now();
+  return loadMistakes().filter((m) => m.sourceStationId === sourceStationId && (!opts?.dueOnly || (m.dueAt ?? 0) <= now)).length;
+}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useHotkeys } from '../lib/hooks/useHotkeys';
 import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
@@ -30,6 +30,8 @@ function msToHuman(ms: number): string {
 
 export function ReviewPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
   const [seed, setSeed] = useState(1);
+  const [searchParams] = useSearchParams();
+  const stationFilter = (searchParams.get('station') || '').trim();
   const [settings, setSettings] = useState(() => loadSettings());
   const chordMode = settings.chordPlayback;
   const speed = settings.promptSpeed;
@@ -41,11 +43,16 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const [now, setNow] = useState(() => Date.now());
   const [mistakes, setMistakes] = useState<Mistake[]>(() => loadMistakes());
 
+  const filtered = useMemo(() => {
+    if (!stationFilter) return mistakes;
+    return mistakes.filter((m) => m.sourceStationId === stationFilter);
+  }, [mistakes, stationFilter]);
+
   const due = useMemo(() => {
-    return mistakes
+    return filtered
       .filter((m) => (m.dueAt ?? 0) <= now)
       .sort((a, b) => (a.dueAt ?? a.addedAt) - (b.dueAt ?? b.addedAt) || b.addedAt - a.addedAt);
-  }, [mistakes, now]);
+  }, [filtered, now]);
   const active = due[0] as Mistake | undefined;
 
   const noteQ = useMemo(() => {
@@ -222,13 +229,13 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   }
 
   const dueCount = due.length;
-  const totalCount = mistakes.length;
+  const totalCount = filtered.length;
   const nextDue = useMemo(() => {
-    if (mistakes.length === 0) return null;
+    if (filtered.length === 0) return null;
     let min = Number.POSITIVE_INFINITY;
-    for (const m of mistakes) min = Math.min(min, m.dueAt ?? m.addedAt);
+    for (const m of filtered) min = Math.min(min, m.dueAt ?? m.addedAt);
     return Number.isFinite(min) ? min : null;
-  }, [mistakes]);
+  }, [filtered]);
 
   // Hotkeys: Space/Enter = Play, Backspace = Skip, 1..9 = choose.
   useHotkeys({
@@ -281,6 +288,11 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
         <div>
           <h1 className="title">Review</h1>
           <p className="sub">Spaced review of missed items. Clear an item with 2 correct reviews in a row.</p>
+          {stationFilter ? (
+            <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
+              Filter: <b>{stationFilter}</b> · <Link to="/review">Show all</Link>
+            </div>
+          ) : null}
         </div>
         <div style={{ textAlign: 'right', fontSize: 12, opacity: 0.85 }}>
           <div>

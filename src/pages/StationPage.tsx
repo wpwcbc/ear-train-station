@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { StationId, Progress } from '../lib/progress';
 import { applyStudyReward, markStationDone } from '../lib/progress';
-import { addMistake } from '../lib/mistakes';
+import { addMistake, mistakeCountForStation } from '../lib/mistakes';
 import { STATIONS, nextStationId, isStationUnlocked } from '../lib/stations';
 import { stationCopy } from '../lib/stationCopy';
 import { loadSettings, saveSettings } from '../lib/settings';
@@ -43,6 +43,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const nextUnlocked = nextId ? isStationUnlocked(progress, nextId) : false;
 
   const copy = stationCopy(id);
+
+  const stationMistakeCount = mistakeCountForStation(id);
 
   const [seed, setSeed] = useState(1);
   // If a station is already completed, default to a “summary” view with an optional practice toggle.
@@ -1412,6 +1414,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           <div className="row">
             <button className="primary" onClick={playPromptT1}>Play note</button>
             <button className="ghost" onClick={resetT1}>Restart</button>
+            {(t1Index >= T1_TOTAL || t1Wrong >= HEARTS) && stationMistakeCount > 0 ? (
+              <Link className="linkBtn" to={`/review?station=${id}`}>Review mistakes ({stationMistakeCount})</Link>
+            ) : null}
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Q: {Math.min(t1Index + 1, T1_TOTAL)}/{T1_TOTAL} · Correct: {t1Correct}/{T1_TOTAL} (need {T1_PASS}) · Lives: {Math.max(0, HEARTS - t1Wrong)}/{HEARTS}
             </div>
@@ -1424,9 +1429,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                 ? 'Passed — nice. (+12 bonus XP)'
                 : `Correct — +3 XP. (${t1Q.promptLabel})`)}
             {result === 'wrong' &&
-              (t1Index + 1 >= T1_TOTAL
-                ? `Finished: ${t1Correct}/${T1_TOTAL}. Need ${T1_PASS}. Hit restart to try again.`
-                : `Not quite — it was ${t1Q.promptLabel}.`)}
+              (t1Wrong >= HEARTS
+                ? `Out of lives. Score so far: ${t1Correct}/${T1_TOTAL}. Hit restart to try again${stationMistakeCount > 0 ? ' — or review your misses.' : '.'}`
+                : t1Index + 1 >= T1_TOTAL
+                  ? `Finished: ${t1Correct}/${T1_TOTAL}. Need ${T1_PASS}. Hit restart to try again.`
+                  : `Not quite — it was ${t1Q.promptLabel}.`)}
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
@@ -1450,6 +1457,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           <div className="row">
             <button className="primary" onClick={playPromptT2}>Hear prompt</button>
             <button className="ghost" onClick={resetT2}>Restart</button>
+            {(t2Index >= T2_TOTAL || t2Wrong >= HEARTS) && stationMistakeCount > 0 ? (
+              <Link className="linkBtn" to={`/review?station=${id}`}>Review mistakes ({stationMistakeCount})</Link>
+            ) : null}
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Q: {Math.min(t2Index + 1, T2_TOTAL)}/{T2_TOTAL} · Correct: {t2Correct}/{T2_TOTAL} (need {T2_PASS}) · Lives: {Math.max(0, HEARTS - t2Wrong)}/{HEARTS}
             </div>
@@ -1460,9 +1470,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             {result === 'correct' &&
               (progress.stationDone['T2_MAJOR_SCALE'] ? 'Passed — nice. (+12 bonus XP)' : 'Correct — +3 XP.')}
             {result === 'wrong' &&
-              (t2Index + 1 >= T2_TOTAL
-                ? `Finished: ${t2Correct}/${T2_TOTAL}. Need ${T2_PASS}. Hit restart to try again.`
-                : `Not quite — it was ${t2Q.correct}.`)}
+              (t2Wrong >= HEARTS
+                ? `Out of lives. Score so far: ${t2Correct}/${T2_TOTAL}. Hit restart to try again${stationMistakeCount > 0 ? ' — or review your misses.' : '.'}`
+                : t2Index + 1 >= T2_TOTAL
+                  ? `Finished: ${t2Correct}/${T2_TOTAL}. Need ${T2_PASS}. Hit restart to try again.`
+                  : `Not quite — it was ${t2Q.correct}.`)}
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
@@ -1482,6 +1494,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           <div className="row">
             <button className="primary" onClick={playPromptT3}>Hear interval</button>
             <button className="ghost" onClick={resetT3}>Restart</button>
+            {(t3Index >= T3_TOTAL || t3Wrong >= HEARTS) && stationMistakeCount > 0 ? (
+              <Link className="linkBtn" to={`/review?station=${id}`}>Review mistakes ({stationMistakeCount})</Link>
+            ) : null}
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Q: {Math.min(t3Index + 1, T3_TOTAL)}/{T3_TOTAL} · Correct: {t3Correct}/{T3_TOTAL} (need {T3_PASS}) · Lives: {Math.max(0, HEARTS - t3Wrong)}/{HEARTS}
             </div>
@@ -1492,9 +1507,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             {result === 'correct' &&
               (progress.stationDone['T3_INTERVALS'] ? 'Passed — nice. (+12 bonus XP)' : `Correct — +3 XP. (${intervalLongName(t3Q.correct)})`)}
             {result === 'wrong' &&
-              (t3Index + 1 >= T3_TOTAL
-                ? `Finished: ${t3Correct}/${T3_TOTAL}. Need ${T3_PASS}. Hit restart to try again.`
-                : `Not quite — it was ${t3Q.correct} (${intervalLongName(t3Q.correct)}).`)}
+              (t3Wrong >= HEARTS
+                ? `Out of lives. Score so far: ${t3Correct}/${T3_TOTAL}. Hit restart to try again${stationMistakeCount > 0 ? ' — or review your misses.' : '.'}`
+                : t3Index + 1 >= T3_TOTAL
+                  ? `Finished: ${t3Correct}/${T3_TOTAL}. Need ${T3_PASS}. Hit restart to try again.`
+                  : `Not quite — it was ${t3Q.correct} (${intervalLongName(t3Q.correct)}).`)}
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
@@ -1698,6 +1715,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
               </select>
             </label>
             <button className="ghost" onClick={resetT5}>Restart</button>
+            {(t5Index >= T5_TOTAL || t5Wrong >= HEARTS) && stationMistakeCount > 0 ? (
+              <Link className="linkBtn" to={`/review?station=${id}`}>Review mistakes ({stationMistakeCount})</Link>
+            ) : null}
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Q: {Math.min(t5Index + 1, T5_TOTAL)}/{T5_TOTAL} · Correct: {t5Correct}/{T5_TOTAL} (need {T5_PASS}) · Lives: {Math.max(0, HEARTS - t5Wrong)}/{HEARTS}
             </div>
@@ -1708,9 +1728,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             {result === 'correct' &&
               (progress.stationDone['T5_TRIADS'] ? 'Passed — nice. (+12 bonus XP)' : `Correct — +3 XP. (${triadQualityLabel(t5Q.quality)})`)}
             {result === 'wrong' &&
-              (t5Index + 1 >= T5_TOTAL
-                ? `Finished: ${t5Correct}/${T5_TOTAL}. Need ${T5_PASS}. Hit restart to try again.`
-                : `Not quite — it was ${triadQualityLabel(t5Q.quality)}.`)}
+              (t5Wrong >= HEARTS
+                ? `Out of lives. Score so far: ${t5Correct}/${T5_TOTAL}. Hit restart to try again${stationMistakeCount > 0 ? ' — or review your misses.' : '.'}`
+                : t5Index + 1 >= T5_TOTAL
+                  ? `Finished: ${t5Correct}/${T5_TOTAL}. Need ${T5_PASS}. Hit restart to try again.`
+                  : `Not quite — it was ${triadQualityLabel(t5Q.quality)}.`)}
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
@@ -1795,6 +1817,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
               </select>
             </label>
             <button className="ghost" onClick={resetT6}>Restart</button>
+            {(t6Index >= T6_TOTAL || t6Wrong >= HEARTS) && stationMistakeCount > 0 ? (
+              <Link className="linkBtn" to={`/review?station=${id}`}>Review mistakes ({stationMistakeCount})</Link>
+            ) : null}
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Q: {Math.min(t6Index + 1, T6_TOTAL)}/{T6_TOTAL} · Correct: {t6Correct}/{T6_TOTAL} (need {T6_PASS}) · Lives:{' '}
               {Math.max(0, HEARTS - t6Wrong)}/{HEARTS}
@@ -1808,9 +1833,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                 ? 'Passed — nice. (+12 bonus XP)'
                 : `Correct — +3 XP. (${triadQualityLabel(t6Q.quality)})`)}
             {result === 'wrong' &&
-              (t6Index + 1 >= T6_TOTAL
-                ? `Finished: ${t6Correct}/${T6_TOTAL}. Need ${T6_PASS}. Hit restart to try again.`
-                : `Not quite — it was ${triadQualityLabel(t6Q.quality)}.`)}
+              (t6Wrong >= HEARTS
+                ? `Out of lives. Score so far: ${t6Correct}/${T6_TOTAL}. Hit restart to try again${stationMistakeCount > 0 ? ' — or review your misses.' : '.'}`
+                : t6Index + 1 >= T6_TOTAL
+                  ? `Finished: ${t6Correct}/${T6_TOTAL}. Need ${T6_PASS}. Hit restart to try again.`
+                  : `Not quite — it was ${triadQualityLabel(t6Q.quality)}.`)}
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>Prompt: {t6Q.prompt}</div>
@@ -1897,6 +1924,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
               </select>
             </label>
             <button className="ghost" onClick={resetT7}>Restart</button>
+            {(t7Index >= T7_TOTAL || t7Wrong >= HEARTS) && stationMistakeCount > 0 ? (
+              <Link className="linkBtn" to={`/review?station=${id}`}>Review mistakes ({stationMistakeCount})</Link>
+            ) : null}
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Q: {Math.min(t7Index + 1, T7_TOTAL)}/{T7_TOTAL} · Correct: {t7Correct}/{T7_TOTAL} (need {T7_PASS}) · Lives:{' '}
               {Math.max(0, HEARTS - t7Wrong)}/{HEARTS}
@@ -1908,9 +1938,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             {result === 'correct' &&
               (progress.stationDone['T7_FUNCTIONS'] ? 'Passed — nice. (+12 bonus XP)' : `Correct — +3 XP. (${t7Q.family})`)}
             {result === 'wrong' &&
-              (t7Index + 1 >= T7_TOTAL
-                ? `Finished: ${t7Correct}/${T7_TOTAL}. Need ${T7_PASS}. Hit restart to try again.`
-                : `Not quite — it was ${t7Q.family}.`)}
+              (t7Wrong >= HEARTS
+                ? `Out of lives. Score so far: ${t7Correct}/${T7_TOTAL}. Hit restart to try again${stationMistakeCount > 0 ? ' — or review your misses.' : '.'}`
+                : t7Index + 1 >= T7_TOTAL
+                  ? `Finished: ${t7Correct}/${T7_TOTAL}. Need ${T7_PASS}. Hit restart to try again.`
+                  : `Not quite — it was ${t7Q.family}.`)}
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>Prompt: {t7Q.prompt}</div>
@@ -1966,6 +1998,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           <div className="row">
             <button className="primary" onClick={playPromptT4}>Hear degree</button>
             <button className="ghost" onClick={resetT4}>Restart</button>
+            {(t4Index >= T4_TOTAL || t4Wrong >= HEARTS) && stationMistakeCount > 0 ? (
+              <Link className="linkBtn" to={`/review?station=${id}`}>Review mistakes ({stationMistakeCount})</Link>
+            ) : null}
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Q: {Math.min(t4Index + 1, T4_TOTAL)}/{T4_TOTAL} · Correct: {t4Correct}/{T4_TOTAL} (need {T4_PASS}) · Lives: {Math.max(0, HEARTS - t4Wrong)}/{HEARTS}
             </div>
@@ -1975,9 +2010,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             {result === 'idle' && t4Q.prompt}
             {result === 'correct' && (progress.stationDone['T4_DEGREES'] ? 'Passed — nice. (+12 bonus XP)' : 'Correct — +3 XP.')}
             {result === 'wrong' &&
-              (t4Index + 1 >= T4_TOTAL
-                ? `Finished: ${t4Correct}/${T4_TOTAL}. Need ${T4_PASS}. Hit restart to try again.`
-                : `Not quite — it was ${t4Q.correct}.`)}
+              (t4Wrong >= HEARTS
+                ? `Out of lives. Score so far: ${t4Correct}/${T4_TOTAL}. Hit restart to try again${stationMistakeCount > 0 ? ' — or review your misses.' : '.'}`
+                : t4Index + 1 >= T4_TOTAL
+                  ? `Finished: ${t4Correct}/${T4_TOTAL}. Need ${T4_PASS}. Hit restart to try again.`
+                  : `Not quite — it was ${t4Q.correct}.`)}
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
