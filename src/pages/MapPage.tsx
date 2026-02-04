@@ -11,6 +11,19 @@ export function MapPage({
   setProgress: (p: Progress) => void;
 }) {
   const stats = useMistakeStats();
+
+  function formatIn(ms: number): string {
+    const s = Math.ceil(ms / 1000);
+    if (s <= 59) return `${s}s`;
+    const m = Math.ceil(s / 60);
+    if (m <= 59) return `${m}m`;
+    const h = Math.ceil(m / 60);
+    return `${h}h`;
+  }
+
+  const nextDueIn =
+    stats.nextDueAt != null && stats.nextDueAt > stats.now ? formatIn(stats.nextDueAt - stats.now) : null;
+
   return (
     <div className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
@@ -40,6 +53,7 @@ export function MapPage({
         <div style={{ fontSize: 12, opacity: 0.85, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <span>
             Review due: {stats.due} (total {stats.total})
+            {stats.due === 0 && nextDueIn ? <span style={{ opacity: 0.75 }}> · next in {nextDueIn}</span> : null}
           </span>
           <span style={{ opacity: 0.65 }}>•</span>
           <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
