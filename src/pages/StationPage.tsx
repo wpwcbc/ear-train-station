@@ -1187,6 +1187,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     if (!ok) {
       setCombo(0);
       setLastComboBonus(0);
+      addMistake({ kind: 'triadQuality', sourceStationId: id, rootMidi: triadQ.rootMidi, quality: triadQ.quality });
       setHighlighted({
         ...correctHi,
         ...(triadQ.chordMidis.includes(triadQ.rootMidi) ? {} : { [triadQ.rootMidi]: 'correct' }),
@@ -1211,6 +1212,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     if (!ok) {
       setCombo(0);
       setLastComboBonus(0);
+      // Feed spaced review: diatonic triad quality is reviewable as a triad-quality item.
+      addMistake({ kind: 'triadQuality', sourceStationId: id, rootMidi: diatonicQ.chordMidis[0], quality: diatonicQ.quality });
       setHighlighted(correctHi);
       return;
     }
@@ -1238,6 +1241,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     if (!ok) {
       setCombo(0);
       setLastComboBonus(0);
+      addMistake({ kind: 'functionFamily', sourceStationId: id, key: funcQ.key, degree: funcQ.degree, tonicMidi: funcQ.tonicMidi });
       setHighlighted(correctHi);
       return;
     }
