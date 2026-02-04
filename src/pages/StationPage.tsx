@@ -73,6 +73,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   );
 
   const [result, setResult] = useState<'idle' | 'correct' | 'wrong'>('idle');
+  // Duolingo-ish “combo” streak for lessons: keep a run of correct answers.
+  const [combo, setCombo] = useState(0);
+  const [lastComboBonus, setLastComboBonus] = useState(0);
   const [highlighted, setHighlighted] = useState<Record<number, 'correct' | 'wrong' | 'active'>>({});
 
   const HEARTS = 3;
@@ -249,8 +252,24 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     [seed, s2Session, s2Step, s2ShownSoFar],
   );
 
-  function rewardAndMaybeComplete(xpGain: number, extra?: { stationDone?: StationId }) {
-    let p2 = applyStudyReward(progress, xpGain);
+  function rewardAndMaybeComplete(
+    xpGain: number,
+    extra?: { stationDone?: StationId },
+    opts?: { combo?: boolean },
+  ) {
+    const comboEnabled = opts?.combo ?? station?.kind === 'lesson';
+
+    // “Combo” is intentionally tiny: it exists to encourage flow, not to inflate XP.
+    // After 3 consecutive correct answers, every further correct gets +1 XP.
+    let bonus = 0;
+    if (comboEnabled) {
+      const nextCombo = combo + 1;
+      bonus = nextCombo >= 3 ? 1 : 0;
+      setCombo(nextCombo);
+    }
+    setLastComboBonus(bonus);
+
+    let p2 = applyStudyReward(progress, xpGain + bonus);
 
     if (id === 'S1_NOTES' && s1Correct + 1 >= S1_GOAL) {
       p2 = markStationDone(p2, id);
@@ -306,16 +325,24 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult(ok ? 'correct' : 'wrong');
     setHighlighted({ [intervalQ.targetMidi]: 'correct', ...(ok ? {} : { [midi]: 'wrong' }) });
 
-    if (ok) {
-      rewardAndMaybeComplete(10);
+    if (!ok) {
+      setCombo(0);
+      setLastComboBonus(0);
+      return;
     }
+
+    rewardAndMaybeComplete(10);
   }
 
   function chooseS3Derive(choice: IntervalLabel) {
     const ok = choice === s3DeriveQ.correct;
     setS3DeriveResult(ok ? 'correct' : 'wrong');
 
-    if (!ok) return;
+    if (!ok) {
+      setCombo(0);
+      setLastComboBonus(0);
+      return;
+    }
 
     setS3DeriveCorrect((n) => n + 1);
     setProgress(applyStudyReward(progress, 1));
@@ -338,6 +365,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({ [noteQ.midi]: ok ? 'correct' : 'wrong' });
 
     if (!ok) {
+      setCombo(0);
+      setLastComboBonus(0);
       addMistake({ kind: 'noteName', sourceStationId: id, midi: noteQ.midi });
       return;
     }
@@ -362,14 +391,18 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     const ok = choice === s2PatternQ.correct;
     setResult(ok ? 'correct' : 'wrong');
 
-    if (!ok) return;
+    if (!ok) {
+      setCombo(0);
+      setLastComboBonus(0);
+      return;
+    }
 
     // Small reward per step; completion bonus for locking the formula in.
     rewardAndMaybeComplete(1);
 
     if (s2PatternIndex >= 6) {
       setS2PatternDone(true);
-      rewardAndMaybeComplete(6);
+      rewardAndMaybeComplete(6, undefined, { combo: false });
       setResult('idle');
       return;
     }
@@ -383,6 +416,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult(ok ? 'correct' : 'wrong');
 
     if (!ok) {
+      setCombo(0);
+      setLastComboBonus(0);
       addMistake({
         kind: 'majorScaleDegree',
         sourceStationId: id,
@@ -403,7 +438,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       const willHitGoal = s2CompletedScales + 1 >= S2_GOAL_SCALES;
       if (willHitGoal) completionBonus += 10;
 
-      rewardAndMaybeComplete(completionBonus, willHitGoal ? { stationDone: 'S2_MAJOR_SCALE' } : undefined);
+      rewardAndMaybeComplete(completionBonus, willHitGoal ? { stationDone: 'S2_MAJOR_SCALE' } : undefined, { combo: false });
 
       setS2Step(1);
       setSeed((x) => x + 1);
@@ -483,6 +518,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult(ok ? 'correct' : 'wrong');
 
     if (!ok) {
+      setCombo(0);
+      setLastComboBonus(0);
       addMistake({ kind: 'scaleDegreeName', sourceStationId: id, key: degreeQ.key, degree: degreeQ.degree });
       return;
     }
@@ -977,6 +1014,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     >;
 
     if (!ok) {
+      setCombo(0);
+      setLastComboBonus(0);
       setHighlighted({
         ...correctHi,
         ...(triadQ.chordMidis.includes(triadQ.rootMidi) ? {} : { [triadQ.rootMidi]: 'correct' }),
@@ -999,6 +1038,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     >;
 
     if (!ok) {
+      setCombo(0);
+      setLastComboBonus(0);
       setHighlighted(correctHi);
       return;
     }
@@ -1024,6 +1065,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     >;
 
     if (!ok) {
+      setCombo(0);
+      setLastComboBonus(0);
       setHighlighted(correctHi);
       return;
     }
@@ -1220,8 +1263,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         </details>
       ) : null}
 
-      <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-        Hotkeys: Space/Enter = Play/Hear • 1–9 = Answer • Backspace = Next/Restart
+      <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <span>Hotkeys: Space/Enter = Play/Hear • 1–9 = Answer • Backspace = Next/Restart</span>
+        {station?.kind === 'lesson' && combo >= 2 ? (
+          <span style={{ opacity: 0.9 }}>
+            Combo: x{combo}
+            {lastComboBonus > 0 ? <span style={{ opacity: 0.95 }}> (+{lastComboBonus} XP)</span> : null}
+          </span>
+        ) : null}
       </div>
 
       {!done || practice ? (
