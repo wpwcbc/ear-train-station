@@ -9,6 +9,7 @@ import { loadSettings, saveSettings } from '../lib/settings';
 import { promptSpeedFactors, promptSpeedLabel } from '../lib/promptTiming';
 import { PianoKeyboard } from '../components/PianoKeyboard';
 import { StaffNote } from '../components/StaffNote';
+import { TestHeader } from '../components/TestHeader';
 import { useHotkeys } from '../lib/hooks/useHotkeys';
 import { piano } from '../audio/piano';
 import { playIntervalPrompt, playRootThenChordPrompt, playTonicTargetPrompt } from '../audio/prompts';
@@ -1505,16 +1506,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         </>
       ) : id === 'T1_NOTES' ? (
         <>
-          <div className="row">
-            <button className="primary" onClick={playPromptT1}>Play note</button>
-            <button className="ghost" onClick={resetT1}>Restart</button>
-            {(t1Index >= T1_TOTAL || t1Wrong >= HEARTS) && stationMistakeCount > 0 ? (
-              <Link className="linkBtn" to={`/review?station=${id}`}>Review mistakes ({stationMistakeCount})</Link>
-            ) : null}
-            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
-              Q: {Math.min(t1Index + 1, T1_TOTAL)}/{T1_TOTAL} · Correct: {t1Correct}/{T1_TOTAL} (need {T1_PASS}) · Lives: {Math.max(0, HEARTS - t1Wrong)}/{HEARTS}
-            </div>
-          </div>
+          <TestHeader
+            playLabel="Play note"
+            onPlay={playPromptT1}
+            onRestart={resetT1}
+            reviewHref={(t1Index >= T1_TOTAL || t1Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
+            reviewLabel={`Review mistakes (${stationMistakeCount})`}
+            rightStatus={`Q: ${Math.min(t1Index + 1, T1_TOTAL)}/${T1_TOTAL} · Correct: ${t1Correct}/${T1_TOTAL} (need ${T1_PASS}) · Lives: ${Math.max(0, HEARTS - t1Wrong)}/${HEARTS}`}
+          />
 
           <div className={`result r_${result}`}>
             {result === 'idle' && 'Test: name 10 notes (wider range). Need 8/10 to pass.'}
@@ -1548,16 +1547,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         </>
       ) : id === 'T2_MAJOR_SCALE' ? (
         <>
-          <div className="row">
-            <button className="primary" onClick={playPromptT2}>Hear prompt</button>
-            <button className="ghost" onClick={resetT2}>Restart</button>
-            {(t2Index >= T2_TOTAL || t2Wrong >= HEARTS) && stationMistakeCount > 0 ? (
-              <Link className="linkBtn" to={`/review?station=${id}`}>Review mistakes ({stationMistakeCount})</Link>
-            ) : null}
-            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
-              Q: {Math.min(t2Index + 1, T2_TOTAL)}/{T2_TOTAL} · Correct: {t2Correct}/{T2_TOTAL} (need {T2_PASS}) · Lives: {Math.max(0, HEARTS - t2Wrong)}/{HEARTS}
-            </div>
-          </div>
+          <TestHeader
+            playLabel="Hear prompt"
+            onPlay={playPromptT2}
+            onRestart={resetT2}
+            reviewHref={(t2Index >= T2_TOTAL || t2Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
+            reviewLabel={`Review mistakes (${stationMistakeCount})`}
+            rightStatus={`Q: ${Math.min(t2Index + 1, T2_TOTAL)}/${T2_TOTAL} · Correct: ${t2Correct}/${T2_TOTAL} (need ${T2_PASS}) · Lives: ${Math.max(0, HEARTS - t2Wrong)}/${HEARTS}`}
+          />
 
           <div className={`result r_${result}`}>
             {result === 'idle' && t2Q.prompt}
@@ -1585,16 +1582,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         </>
       ) : id === 'T3_INTERVALS' ? (
         <>
-          <div className="row">
-            <button className="primary" onClick={playPromptT3}>Hear interval</button>
-            <button className="ghost" onClick={resetT3}>Restart</button>
-            {(t3Index >= T3_TOTAL || t3Wrong >= HEARTS) && stationMistakeCount > 0 ? (
-              <Link className="linkBtn" to={`/review?station=${id}`}>Review mistakes ({stationMistakeCount})</Link>
-            ) : null}
-            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
-              Q: {Math.min(t3Index + 1, T3_TOTAL)}/{T3_TOTAL} · Correct: {t3Correct}/{T3_TOTAL} (need {T3_PASS}) · Lives: {Math.max(0, HEARTS - t3Wrong)}/{HEARTS}
-            </div>
-          </div>
+          <TestHeader
+            playLabel="Hear interval"
+            onPlay={playPromptT3}
+            onRestart={resetT3}
+            reviewHref={(t3Index >= T3_TOTAL || t3Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
+            reviewLabel={`Review mistakes (${stationMistakeCount})`}
+            rightStatus={`Q: ${Math.min(t3Index + 1, T3_TOTAL)}/${T3_TOTAL} · Correct: ${t3Correct}/${T3_TOTAL} (need ${T3_PASS}) · Lives: ${Math.max(0, HEARTS - t3Wrong)}/${HEARTS}`}
+          />
 
           <div className={`result r_${result}`}>
             {result === 'idle' && t3Q.prompt}
@@ -1791,31 +1786,31 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         </>
       ) : id === 'T5_TRIADS' ? (
         <>
-          <div className="row">
-            <button className="primary" onClick={playPromptT5}>Hear chord</button>
-            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
-              <span>Playback</span>
-              <select
-                value={chordMode}
-                onChange={(e) => {
-                  const v = e.target.value === 'block' ? 'block' : 'arp';
-                  const next = { ...settings, chordPlayback: v } as typeof settings;
-                  setSettings(next);
-                  saveSettings(next);
-                }}
-              >
-                <option value="arp">Arp</option>
-                <option value="block">Block</option>
-              </select>
-            </label>
-            <button className="ghost" onClick={resetT5}>Restart</button>
-            {(t5Index >= T5_TOTAL || t5Wrong >= HEARTS) && stationMistakeCount > 0 ? (
-              <Link className="linkBtn" to={`/review?station=${id}`}>Review mistakes ({stationMistakeCount})</Link>
-            ) : null}
-            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
-              Q: {Math.min(t5Index + 1, T5_TOTAL)}/{T5_TOTAL} · Correct: {t5Correct}/{T5_TOTAL} (need {T5_PASS}) · Lives: {Math.max(0, HEARTS - t5Wrong)}/{HEARTS}
-            </div>
-          </div>
+          <TestHeader
+            playLabel="Hear chord"
+            onPlay={playPromptT5}
+            onRestart={resetT5}
+            leftExtras={
+              <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
+                <span>Playback</span>
+                <select
+                  value={chordMode}
+                  onChange={(e) => {
+                    const v = e.target.value === 'block' ? 'block' : 'arp';
+                    const next = { ...settings, chordPlayback: v } as typeof settings;
+                    setSettings(next);
+                    saveSettings(next);
+                  }}
+                >
+                  <option value="arp">Arp</option>
+                  <option value="block">Block</option>
+                </select>
+              </label>
+            }
+            reviewHref={(t5Index >= T5_TOTAL || t5Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
+            reviewLabel={`Review mistakes (${stationMistakeCount})`}
+            rightStatus={`Q: ${Math.min(t5Index + 1, T5_TOTAL)}/${T5_TOTAL} · Correct: ${t5Correct}/${T5_TOTAL} (need ${T5_PASS}) · Lives: ${Math.max(0, HEARTS - t5Wrong)}/${HEARTS}`}
+          />
 
           <div className={`result r_${result}`}>
             {result === 'idle' && 'Test: name 10 triad qualities by ear. Need 8/10 to pass.'}
@@ -1893,32 +1888,31 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         </>
       ) : id === 'T6_DIATONIC_TRIADS' ? (
         <>
-          <div className="row">
-            <button className="primary" onClick={playPromptT6}>Hear triad</button>
-            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
-              <span>Playback</span>
-              <select
-                value={chordMode}
-                onChange={(e) => {
-                  const v = e.target.value === 'block' ? 'block' : 'arp';
-                  const next = { ...settings, chordPlayback: v } as typeof settings;
-                  setSettings(next);
-                  saveSettings(next);
-                }}
-              >
-                <option value="arp">Arp</option>
-                <option value="block">Block</option>
-              </select>
-            </label>
-            <button className="ghost" onClick={resetT6}>Restart</button>
-            {(t6Index >= T6_TOTAL || t6Wrong >= HEARTS) && stationMistakeCount > 0 ? (
-              <Link className="linkBtn" to={`/review?station=${id}`}>Review mistakes ({stationMistakeCount})</Link>
-            ) : null}
-            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
-              Q: {Math.min(t6Index + 1, T6_TOTAL)}/{T6_TOTAL} · Correct: {t6Correct}/{T6_TOTAL} (need {T6_PASS}) · Lives:{' '}
-              {Math.max(0, HEARTS - t6Wrong)}/{HEARTS}
-            </div>
-          </div>
+          <TestHeader
+            playLabel="Hear triad"
+            onPlay={playPromptT6}
+            onRestart={resetT6}
+            leftExtras={
+              <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
+                <span>Playback</span>
+                <select
+                  value={chordMode}
+                  onChange={(e) => {
+                    const v = e.target.value === 'block' ? 'block' : 'arp';
+                    const next = { ...settings, chordPlayback: v } as typeof settings;
+                    setSettings(next);
+                    saveSettings(next);
+                  }}
+                >
+                  <option value="arp">Arp</option>
+                  <option value="block">Block</option>
+                </select>
+              </label>
+            }
+            reviewHref={(t6Index >= T6_TOTAL || t6Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
+            reviewLabel={`Review mistakes (${stationMistakeCount})`}
+            rightStatus={`Q: ${Math.min(t6Index + 1, T6_TOTAL)}/${T6_TOTAL} · Correct: ${t6Correct}/${T6_TOTAL} (need ${T6_PASS}) · Lives: ${Math.max(0, HEARTS - t6Wrong)}/${HEARTS}`}
+          />
 
           <div className={`result r_${result}`}>
             {result === 'idle' && 'Test: identify diatonic triad quality in key by ear. Need 8/10 to pass.'}
@@ -2000,32 +1994,31 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         </>
       ) : id === 'T7_FUNCTIONS' ? (
         <>
-          <div className="row">
-            <button className="primary" onClick={playPromptT7}>Hear chord</button>
-            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
-              <span>Playback</span>
-              <select
-                value={chordMode}
-                onChange={(e) => {
-                  const v = e.target.value === 'block' ? 'block' : 'arp';
-                  const next = { ...settings, chordPlayback: v } as typeof settings;
-                  setSettings(next);
-                  saveSettings(next);
-                }}
-              >
-                <option value="arp">Arp</option>
-                <option value="block">Block</option>
-              </select>
-            </label>
-            <button className="ghost" onClick={resetT7}>Restart</button>
-            {(t7Index >= T7_TOTAL || t7Wrong >= HEARTS) && stationMistakeCount > 0 ? (
-              <Link className="linkBtn" to={`/review?station=${id}`}>Review mistakes ({stationMistakeCount})</Link>
-            ) : null}
-            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
-              Q: {Math.min(t7Index + 1, T7_TOTAL)}/{T7_TOTAL} · Correct: {t7Correct}/{T7_TOTAL} (need {T7_PASS}) · Lives:{' '}
-              {Math.max(0, HEARTS - t7Wrong)}/{HEARTS}
-            </div>
-          </div>
+          <TestHeader
+            playLabel="Hear chord"
+            onPlay={playPromptT7}
+            onRestart={resetT7}
+            leftExtras={
+              <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
+                <span>Playback</span>
+                <select
+                  value={chordMode}
+                  onChange={(e) => {
+                    const v = e.target.value === 'block' ? 'block' : 'arp';
+                    const next = { ...settings, chordPlayback: v } as typeof settings;
+                    setSettings(next);
+                    saveSettings(next);
+                  }}
+                >
+                  <option value="arp">Arp</option>
+                  <option value="block">Block</option>
+                </select>
+              </label>
+            }
+            reviewHref={(t7Index >= T7_TOTAL || t7Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
+            reviewLabel={`Review mistakes (${stationMistakeCount})`}
+            rightStatus={`Q: ${Math.min(t7Index + 1, T7_TOTAL)}/${T7_TOTAL} · Correct: ${t7Correct}/${T7_TOTAL} (need ${T7_PASS}) · Lives: ${Math.max(0, HEARTS - t7Wrong)}/${HEARTS}`}
+          />
 
           <div className={`result r_${result}`}>
             {result === 'idle' && 'Test: name function family (tonic / subdominant / dominant). Need 8/10 to pass.'}
@@ -2089,16 +2082,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         </>
       ) : id === 'T4_DEGREES' ? (
         <>
-          <div className="row">
-            <button className="primary" onClick={playPromptT4}>Hear degree</button>
-            <button className="ghost" onClick={resetT4}>Restart</button>
-            {(t4Index >= T4_TOTAL || t4Wrong >= HEARTS) && stationMistakeCount > 0 ? (
-              <Link className="linkBtn" to={`/review?station=${id}`}>Review mistakes ({stationMistakeCount})</Link>
-            ) : null}
-            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
-              Q: {Math.min(t4Index + 1, T4_TOTAL)}/{T4_TOTAL} · Correct: {t4Correct}/{T4_TOTAL} (need {T4_PASS}) · Lives: {Math.max(0, HEARTS - t4Wrong)}/{HEARTS}
-            </div>
-          </div>
+          <TestHeader
+            playLabel="Hear degree"
+            onPlay={playPromptT4}
+            onRestart={resetT4}
+            reviewHref={(t4Index >= T4_TOTAL || t4Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
+            reviewLabel={`Review mistakes (${stationMistakeCount})`}
+            rightStatus={`Q: ${Math.min(t4Index + 1, T4_TOTAL)}/${T4_TOTAL} · Correct: ${t4Correct}/${T4_TOTAL} (need ${T4_PASS}) · Lives: ${Math.max(0, HEARTS - t4Wrong)}/${HEARTS}`}
+          />
 
           <div className={`result r_${result}`}>
             {result === 'idle' && t4Q.prompt}
@@ -2153,16 +2144,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         </>
       ) : id === 'T8_DEGREE_INTERVALS' ? (
         <>
-          <div className="row">
-            <button className="primary" onClick={playPromptT8}>Hear tonic → degree</button>
-            <button className="ghost" onClick={resetT8}>Restart</button>
-            {(t8Index >= T8_TOTAL || t8Wrong >= HEARTS) && stationMistakeCount > 0 ? (
-              <Link className="linkBtn" to={`/review?station=${id}`}>Review mistakes ({stationMistakeCount})</Link>
-            ) : null}
-            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
-              Q: {Math.min(t8Index + 1, T8_TOTAL)}/{T8_TOTAL} · Correct: {t8Correct}/{T8_TOTAL} (need {T8_PASS}) · Lives: {Math.max(0, HEARTS - t8Wrong)}/{HEARTS}
-            </div>
-          </div>
+          <TestHeader
+            playLabel="Hear tonic → degree"
+            onPlay={playPromptT8}
+            onRestart={resetT8}
+            reviewHref={(t8Index >= T8_TOTAL || t8Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
+            reviewLabel={`Review mistakes (${stationMistakeCount})`}
+            rightStatus={`Q: ${Math.min(t8Index + 1, T8_TOTAL)}/${T8_TOTAL} · Correct: ${t8Correct}/${T8_TOTAL} (need ${T8_PASS}) · Lives: ${Math.max(0, HEARTS - t8Wrong)}/${HEARTS}`}
+          />
 
           <div className={`result r_${result}`}>
             {result === 'idle' && t8Q.prompt}
