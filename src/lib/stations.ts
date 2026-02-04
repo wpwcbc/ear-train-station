@@ -50,4 +50,10 @@ export const STATIONS: Station[] = [
     blurb: 'Stack 1-3-5 inside the scale: I ii iii IV V vi vii°.',
     kind: 'lesson',
   },
+  {
+    id: 'S6_FUNCTIONS',
+    title: 'Station 6 — Chord function families',
+    blurb: 'Group diatonic triads into tonic / subdominant / dominant (tension).',
+    kind: 'lesson',
+  },
 ];

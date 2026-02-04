@@ -31,7 +31,7 @@ function degreeToRoman(deg: 1 | 2 | 3 | 4 | 5 | 6 | 7, quality: TriadQuality) {
   return base.toLowerCase() + '°';
 }
 
-function buildDiatonicTriadMidis(opts: {
+export function buildDiatonicTriadMidis(opts: {
   tonicMidi: number;
   degree: 1 | 2 | 3 | 4 | 5 | 6 | 7;
 }): [number, number, number] {

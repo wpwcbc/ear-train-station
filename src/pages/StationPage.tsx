@@ -10,6 +10,7 @@ import { makeNoteNameQuestion } from '../exercises/noteName';
 import { makeMajorScaleSession, makeMajorScaleStepQuestion, makeMajorScaleTestQuestion } from '../exercises/majorScale';
 import { makeTriadQualityQuestion, triadQualityIntervals, triadQualityLabel } from '../exercises/triad';
 import { makeDiatonicTriadQualityQuestion } from '../exercises/diatonicTriad';
+import { makeFunctionFamilyQuestion, type FunctionFamily } from '../exercises/functionFamily';
 
 export function StationPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
   const { stationId } = useParams();
@@ -43,6 +44,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const diatonicQ = useMemo(() => makeDiatonicTriadQualityQuestion({ seed: seed * 1000 + 5 }), [seed]);
   const [s5Correct, setS5Correct] = useState(0);
   const S5_GOAL = 7;
+
+  // Station 6: chord function families (tonic / subdominant / dominant)
+  const funcQ = useMemo(() => makeFunctionFamilyQuestion({ seed: seed * 1000 + 6 }), [seed]);
+  const [s6Correct, setS6Correct] = useState(0);
+  const S6_GOAL = 6;
 
   // Test 1: note names across a wider range (G2 and above).
   const [t1Index, setT1Index] = useState(0);
@@ -116,6 +122,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     }
 
     if (id === 'S5_DIATONIC_TRIADS' && s5Correct + 1 >= S5_GOAL) {
+      p2 = markStationDone(p2, id);
+      p2 = applyStudyReward(p2, 12); // completion bonus
+    }
+
+    if (id === 'S6_FUNCTIONS' && s6Correct + 1 >= S6_GOAL) {
       p2 = markStationDone(p2, id);
       p2 = applyStudyReward(p2, 12); // completion bonus
     }
@@ -241,6 +252,22 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     >;
     setHighlighted(active);
     await piano.playChord(diatonicQ.chordMidis, { mode: 'arp', durationSec: 1.1, velocity: 0.92, gapMs: 130 });
+    setHighlighted({});
+  }
+
+  async function playPromptS6() {
+    setResult('idle');
+    // root then arpeggiated triad
+    const rootMidi = funcQ.chordMidis[0];
+    setHighlighted({ [rootMidi]: 'active' });
+    await piano.playMidi(rootMidi, { durationSec: 0.65, velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, 240));
+    const active: Record<number, 'active'> = Object.fromEntries(funcQ.chordMidis.map((m) => [m, 'active'])) as Record<
+      number,
+      'active'
+    >;
+    setHighlighted(active);
+    await piano.playChord(funcQ.chordMidis, { mode: 'arp', durationSec: 1.1, velocity: 0.92, gapMs: 130 });
     setHighlighted({});
   }
 
@@ -372,6 +399,31 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     }
 
     setS5Correct((n) => n + 1);
+    setHighlighted(correctHi);
+    rewardAndMaybeComplete(5);
+  }
+
+  function familyLabel(f: FunctionFamily) {
+    if (f === 'tonic') return 'Tonic (rest)';
+    if (f === 'subdominant') return 'Subdominant (move)';
+    return 'Dominant (tension)';
+  }
+
+  async function chooseS6(choice: FunctionFamily) {
+    const ok = choice === funcQ.family;
+    setResult(ok ? 'correct' : 'wrong');
+
+    const correctHi: Record<number, 'correct'> = Object.fromEntries(funcQ.chordMidis.map((m) => [m, 'correct'])) as Record<
+      number,
+      'correct'
+    >;
+
+    if (!ok) {
+      setHighlighted(correctHi);
+      return;
+    }
+
+    setS6Correct((n) => n + 1);
     setHighlighted(correctHi);
     rewardAndMaybeComplete(5);
   }
@@ -627,6 +679,41 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
             Hint: diatonic triad qualities in major are always: I ii iii IV V vi vii°.
+          </div>
+
+          <PianoKeyboard
+            startMidi={48}
+            octaves={2}
+            onPress={(m) => piano.playMidi(m, { durationSec: 0.9, velocity: 0.9 })}
+            highlighted={highlighted}
+          />
+        </>
+      ) : id === 'S6_FUNCTIONS' ? (
+        <>
+          <div className="row">
+            <button className="primary" onClick={playPromptS6}>Hear chord</button>
+            <button className="ghost" onClick={next}>Next</button>
+            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+              Progress: {Math.min(s6Correct, S6_GOAL)}/{S6_GOAL}
+            </div>
+          </div>
+
+          <div className={`result r_${result}`}>
+            {result === 'idle' && funcQ.prompt}
+            {result === 'correct' && `Correct — +5 XP. (${funcQ.key} major, ${funcQ.roman})`}
+            {result === 'wrong' && `Not quite — ${funcQ.roman} is ${familyLabel(funcQ.family)}.`}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            {funcQ.choices.map((c) => (
+              <button key={c} className="secondary" onClick={() => chooseS6(c)}>
+                {familyLabel(c)}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+            Quick map (major key): tonic = I iii vi · subdominant = ii IV · dominant = V vii°.
           </div>
 
           <PianoKeyboard
