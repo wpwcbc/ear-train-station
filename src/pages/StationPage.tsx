@@ -8,6 +8,7 @@ import { stationCopy } from '../lib/stationCopy';
 import { loadSettings, saveSettings } from '../lib/settings';
 import { PianoKeyboard } from '../components/PianoKeyboard';
 import { StaffNote } from '../components/StaffNote';
+import { useHotkeys } from '../lib/hooks/useHotkeys';
 import { piano } from '../audio/piano';
 import {
   makeIntervalQuestion,
@@ -1069,6 +1070,122 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     rewardAndMaybeComplete(5);
   }
 
+  function newKeyS2() {
+    setS2Step(1);
+    setSeed((x) => x + 1);
+    setHighlighted({});
+    setResult('idle');
+  }
+
+  // Duolingo-style hotkeys: Space/Enter = Play/Hear, Backspace = Next/Restart, 1..9 = answer.
+  useHotkeys({
+    enabled: true,
+    onPrimary: () => {
+      if (id === 'S1_NOTES') void playPromptS1();
+      else if (id === 'T1_NOTES') void playPromptT1();
+      else if (id === 'S2_MAJOR_SCALE') {
+        if (s2PatternDone) void playPromptS2();
+      } else if (id === 'T2_MAJOR_SCALE') void playPromptT2();
+      else if (id === 'S3_INTERVALS') void playPromptS3();
+      else if (id === 'T3_INTERVALS') void playPromptT3();
+      else if (id === 'S4_TRIADS') void playPromptS4();
+      else if (id === 'T5_TRIADS') void playPromptT5();
+      else if (id === 'S5_DIATONIC_TRIADS') void playPromptS5();
+      else if (id === 'T6_DIATONIC_TRIADS') void playPromptT6();
+      else if (id === 'S6_FUNCTIONS') void playPromptS6();
+      else if (id === 'T7_FUNCTIONS') void playPromptT7();
+      else if (id === 'S7_DEGREES') void playPromptS7();
+      else if (id === 'T4_DEGREES') void playPromptT4();
+    },
+    onSecondary: () => {
+      if (id === 'S1_NOTES') next();
+      else if (id === 'T1_NOTES') resetT1();
+      else if (id === 'S2_MAJOR_SCALE') newKeyS2();
+      else if (id === 'T2_MAJOR_SCALE') resetT2();
+      else if (id === 'S3_INTERVALS') next();
+      else if (id === 'T3_INTERVALS') resetT3();
+      else if (id === 'S4_TRIADS') next();
+      else if (id === 'T5_TRIADS') resetT5();
+      else if (id === 'S5_DIATONIC_TRIADS') next();
+      else if (id === 'T6_DIATONIC_TRIADS') resetT6();
+      else if (id === 'S6_FUNCTIONS') next();
+      else if (id === 'T7_FUNCTIONS') resetT7();
+      else if (id === 'S7_DEGREES') next();
+      else if (id === 'T4_DEGREES') resetT4();
+    },
+    onChoiceIndex: (idx) => {
+      if (id === 'S1_NOTES') {
+        const c = noteQ.choices[idx];
+        if (c) void chooseS1(c);
+        return;
+      }
+      if (id === 'T1_NOTES') {
+        const c = t1Q.choices[idx];
+        if (c) void chooseT1(c);
+        return;
+      }
+      if (id === 'S2_MAJOR_SCALE') {
+        if (!s2PatternDone) {
+          const c = s2PatternQ.choices[idx];
+          if (c) chooseS2Pattern(c);
+          return;
+        }
+        const c = s2Q.choices[idx];
+        if (c) void chooseS2(c);
+        return;
+      }
+      if (id === 'T2_MAJOR_SCALE') {
+        const c = t2Q.choices[idx];
+        if (c) void chooseT2(c);
+        return;
+      }
+      if (id === 'T3_INTERVALS') {
+        const c = t3Q.choices[idx];
+        if (c) void chooseT3(c);
+        return;
+      }
+      if (id === 'S4_TRIADS') {
+        const c = triadQ.choices[idx];
+        if (c) void chooseS4(c);
+        return;
+      }
+      if (id === 'T5_TRIADS') {
+        const c = t5Q.choices[idx];
+        if (c) void chooseT5(c);
+        return;
+      }
+      if (id === 'S5_DIATONIC_TRIADS') {
+        const c = diatonicQ.choices[idx];
+        if (c) void chooseS5(c);
+        return;
+      }
+      if (id === 'T6_DIATONIC_TRIADS') {
+        const c = t6Q.choices[idx];
+        if (c) void chooseT6(c);
+        return;
+      }
+      if (id === 'S6_FUNCTIONS') {
+        const c = funcQ.choices[idx];
+        if (c) void chooseS6(c);
+        return;
+      }
+      if (id === 'T7_FUNCTIONS') {
+        const c = t7Q.choices[idx];
+        if (c) void chooseT7(c);
+        return;
+      }
+      if (id === 'S7_DEGREES') {
+        const c = degreeQ.choices[idx];
+        if (c) void chooseS7(c);
+        return;
+      }
+      if (id === 'T4_DEGREES') {
+        const c = t4Q.choices[idx];
+        if (c) void chooseT4(c);
+      }
+    },
+  });
+
   if (!station) {
     return (
       <div className="card">
@@ -1125,6 +1242,10 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           </div>
         </details>
       ) : null}
+
+      <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+        Hotkeys: Space/Enter = Play/Hear • 1–9 = Answer • Backspace = Next/Restart
+      </div>
 
       {id === 'S1_NOTES' ? (
         <>

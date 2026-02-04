@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useHotkeys } from '../lib/hooks/useHotkeys';
 import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
 import { applyReviewResult, loadMistakes, snoozeMistake, updateMistake, type Mistake } from '../lib/mistakes';
@@ -78,9 +79,10 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
   const msQ = useMemo(() => {
     if (!active || active.kind !== 'majorScaleDegree') return null;
+    const key = (MAJOR_KEYS.find((k) => k.key === active.key)?.key ?? MAJOR_KEYS[0]?.key ?? 'C') as (typeof MAJOR_KEYS)[number]['key'];
     return makeMajorScaleDegreeReviewQuestion({
       seed: seed * 1000 + 9041,
-      key: active.key as any,
+      key,
       degree: active.degree,
       choiceCount: 6,
     });
@@ -88,7 +90,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
   const ffQ = useMemo(() => {
     if (!active || active.kind !== 'functionFamily') return null;
-    const key = active.key as (typeof MAJOR_KEYS)[number]['key'];
+    const key = (MAJOR_KEYS.find((k) => k.key === active.key)?.key ?? MAJOR_KEYS[0]?.key ?? 'C') as (typeof MAJOR_KEYS)[number]['key'];
     return makeFunctionFamilyQuestion({
       seed: seed * 1000 + 905,
       key,
@@ -218,6 +220,51 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     return Number.isFinite(min) ? min : null;
   }, [mistakes]);
 
+  // Hotkeys: Space/Enter = Play, Backspace = Skip, 1..9 = choose.
+  useHotkeys({
+    enabled: true,
+    onPrimary: () => {
+      void playPrompt();
+    },
+    onSecondary: () => {
+      if (!active) return;
+      snoozeMistake(active.id, 5 * 60_000);
+      refresh();
+    },
+    onChoiceIndex: (idx) => {
+      if (!active) return;
+      if (active.kind === 'noteName' && noteQ) {
+        const c = noteQ.choices[idx];
+        if (c) void chooseNote(c);
+        return;
+      }
+      if (active.kind === 'intervalLabel' && ilQ) {
+        const c = ilQ.choices[idx];
+        if (c) void chooseInterval(c);
+        return;
+      }
+      if (active.kind === 'triadQuality' && triadQ) {
+        const c = triadQ.choices[idx];
+        if (c) void chooseTriad(c);
+        return;
+      }
+      if (active.kind === 'scaleDegreeName' && degQ) {
+        const c = degQ.choices[idx];
+        if (c) void chooseDegree(c);
+        return;
+      }
+      if (active.kind === 'majorScaleDegree' && msQ) {
+        const c = msQ.choices[idx];
+        if (c) void chooseMajorScale(c);
+        return;
+      }
+      if (active.kind === 'functionFamily' && ffQ) {
+        const c = ffQ.choices[idx];
+        if (c) void chooseFamily(c);
+      }
+    },
+  });
+
   return (
     <div className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
@@ -275,6 +322,10 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
         <Link className="linkBtn" to="/">
           Back
         </Link>
+      </div>
+
+      <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+        Hotkeys: Space/Enter = Play • 1–9 = Answer • Backspace = Skip
       </div>
 
       {!active ? (
