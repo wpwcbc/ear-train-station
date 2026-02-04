@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { STATIONS } from '../lib/stations';
 import type { Progress } from '../lib/progress';
+import { mistakeCount } from '../lib/mistakes';
 
 export function MapPage({ progress }: { progress: Progress }) {
   return (
@@ -14,6 +15,11 @@ export function MapPage({ progress }: { progress: Progress }) {
           <div>XP: {progress.xp}</div>
           <div>Streak: {progress.streakDays} day(s)</div>
         </div>
+      </div>
+
+      <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 12, opacity: 0.85 }}>Review queue: {mistakeCount()}</div>
+        <Link className="linkBtn" to="/review">Review</Link>
       </div>
 
       <div className="line">

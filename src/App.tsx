@@ -3,6 +3,7 @@ import { Routes, Route, Link } from 'react-router-dom';
 import './App.css';
 import { MapPage } from './pages/MapPage';
 import { StationPage } from './pages/StationPage';
+import { ReviewPage } from './pages/ReviewPage';
 import { loadProgress, saveProgress, type Progress } from './lib/progress';
 import { BUILD_INFO } from './buildInfo';
 
@@ -29,6 +30,7 @@ function App() {
       <main className="main">
         <Routes>
           <Route path="/" element={<MapPage progress={progress} />} />
+          <Route path="/review" element={<ReviewPage progress={progress} setProgress={setProgress} />} />
           <Route path="/station/:stationId" element={<StationPage progress={progress} setProgress={setProgress} />} />
         </Routes>
       </main>

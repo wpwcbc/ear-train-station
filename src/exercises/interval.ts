@@ -109,6 +109,27 @@ export type IntervalLabelQuestion = {
 
 const ALL_INTERVAL_LABELS: IntervalLabel[] = ['P1', 'm2', 'M2', 'm3', 'M3', 'P4', 'TT', 'P5', 'm6', 'M6', 'm7', 'M7', 'P8'];
 
+function buildIntervalLabelChoices(opts: { seed: number; correct: IntervalLabel; choiceCount: number }) {
+  const rng = mulberry32(opts.seed);
+  const want = Math.max(2, Math.min(opts.choiceCount, ALL_INTERVAL_LABELS.length));
+
+  // pick distractors by shuffling label list deterministically
+  const pool = ALL_INTERVAL_LABELS.filter((x) => x !== opts.correct);
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  const choices = [opts.correct, ...pool.slice(0, want - 1)];
+  // shuffle choices
+  for (let i = choices.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [choices[i], choices[j]] = [choices[j], choices[i]];
+  }
+
+  return choices;
+}
+
 export function makeIntervalLabelQuestion(opts: {
   seed: number;
   rootMinMidi?: number;
@@ -132,21 +153,7 @@ export function makeIntervalLabelQuestion(opts: {
   const targetMidi = rootMidi + semitones;
   const correct = intervalLabel(semitones);
 
-  const want = Math.max(2, Math.min(opts.choiceCount ?? 6, ALL_INTERVAL_LABELS.length));
-
-  // pick distractors by shuffling label list deterministically
-  const pool = ALL_INTERVAL_LABELS.filter((x) => x !== correct);
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-
-  const choices = [correct, ...pool.slice(0, want - 1)];
-  // shuffle choices
-  for (let i = choices.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [choices[i], choices[j]] = [choices[j], choices[i]];
-  }
+  const choices = buildIntervalLabelChoices({ seed: opts.seed, correct, choiceCount: opts.choiceCount ?? 6 });
 
   return {
     id: `ilq_seed_${opts.seed}`,
@@ -157,5 +164,26 @@ export function makeIntervalLabelQuestion(opts: {
     correct,
     choices,
     prompt: 'What interval is this? (listen to root → target)',
+  };
+}
+
+export function makeIntervalLabelReviewQuestion(opts: {
+  seed: number;
+  rootMidi: number;
+  semitones: number;
+  choiceCount?: number;
+}): IntervalLabelQuestion {
+  const correct = intervalLabel(opts.semitones);
+  const choices = buildIntervalLabelChoices({ seed: opts.seed, correct, choiceCount: opts.choiceCount ?? 6 });
+
+  return {
+    id: `ilq_review_${opts.rootMidi}_${opts.semitones}_${opts.seed}`,
+    kind: 'intervalLabel',
+    rootMidi: opts.rootMidi,
+    targetMidi: opts.rootMidi + opts.semitones,
+    semitones: opts.semitones,
+    correct,
+    choices,
+    prompt: 'Review: what interval is this? (listen to root → target)',
   };
 }

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { StationId, Progress } from '../lib/progress';
 import { applyStudyReward, markStationDone } from '../lib/progress';
+import { addMistake } from '../lib/mistakes';
 import { STATIONS } from '../lib/stations';
 import { PianoKeyboard } from '../components/PianoKeyboard';
 import { StaffNote } from '../components/StaffNote';
@@ -237,10 +238,13 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult(ok ? 'correct' : 'wrong');
     setHighlighted({ [noteQ.midi]: ok ? 'correct' : 'wrong' });
 
-    if (ok) {
-      setS1Correct((x) => x + 1);
-      rewardAndMaybeComplete(2);
+    if (!ok) {
+      addMistake({ kind: 'noteName', sourceStationId: id, midi: noteQ.midi });
+      return;
     }
+
+    setS1Correct((x) => x + 1);
+    rewardAndMaybeComplete(2);
   }
 
   async function playPromptS2() {
@@ -412,7 +416,10 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult(ok ? 'correct' : 'wrong');
     setHighlighted({ [t1Q.midi]: ok ? 'correct' : 'wrong' });
 
-    if (!ok) return;
+    if (!ok) {
+      addMistake({ kind: 'noteName', sourceStationId: id, midi: t1Q.midi });
+      return;
+    }
 
     setT1Correct((n) => n + 1);
 
@@ -469,7 +476,10 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     const ok = choice === t3Q.correct;
     setResult(ok ? 'correct' : 'wrong');
 
-    if (!ok) return;
+    if (!ok) {
+      addMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: t3Q.rootMidi, semitones: t3Q.semitones });
+      return;
+    }
 
     setT3Correct((n) => n + 1);
 

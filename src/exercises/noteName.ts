@@ -24,19 +24,9 @@ export type NoteNameQuestion = {
   choices: string[]; // multiple-choice options, includes at least one accepted answer
 };
 
-export function makeNoteNameQuestion(opts: {
-  seed: number;
-  minMidi: number;
-  maxMidi: number;
-  choiceCount?: number;
-}): NoteNameQuestion {
-  const { seed, minMidi, maxMidi } = opts;
-  const choiceCount = opts.choiceCount ?? 4;
-  const rng = mulberry32(seed);
-
-  const span = Math.max(1, maxMidi - minMidi + 1);
-  const midi = minMidi + Math.floor(rng() * span);
-  const pc = ((midi % 12) + 12) % 12;
+function buildChoicesForPitchClass(opts: { seed: number; pc: number; choiceCount: number }) {
+  const rng = mulberry32(opts.seed);
+  const pc = ((opts.pc % 12) + 12) % 12;
 
   const spell = spellPitchClass(pc);
   const acceptedAnswers = spell.isEnharmonic ? [spell.sharp, spell.flat] : [spell.sharp];
@@ -58,10 +48,36 @@ export function makeNoteNameQuestion(opts: {
     // Mix sharps/flats in options to teach that both exist.
     const label = rng() < 0.5 ? s.sharp : s.flat;
     choicePool.push(label);
-    if (uniq(choicePool).length >= choiceCount) break;
+    if (uniq(choicePool).length >= opts.choiceCount) break;
   }
 
-  const choices = shuffle(uniq(choicePool).slice(0, choiceCount), rng);
+  const choices = shuffle(uniq(choicePool).slice(0, opts.choiceCount), rng);
+  return { pc, acceptedAnswers, promptLabel, choices };
+}
 
-  return { midi, pc, acceptedAnswers, promptLabel, choices };
+export function makeNoteNameQuestion(opts: {
+  seed: number;
+  minMidi: number;
+  maxMidi: number;
+  choiceCount?: number;
+}): NoteNameQuestion {
+  const { seed, minMidi, maxMidi } = opts;
+  const choiceCount = opts.choiceCount ?? 4;
+  const rng = mulberry32(seed);
+
+  const span = Math.max(1, maxMidi - minMidi + 1);
+  const midi = minMidi + Math.floor(rng() * span);
+  const pc = ((midi % 12) + 12) % 12;
+
+  const built = buildChoicesForPitchClass({ seed, pc, choiceCount });
+  return { midi, ...built };
+}
+
+export function makeNoteNameReviewQuestion(opts: { seed: number; midi: number; choiceCount?: number }): NoteNameQuestion {
+  const choiceCount = opts.choiceCount ?? 4;
+  const midi = opts.midi;
+  const pc = ((midi % 12) + 12) % 12;
+
+  const built = buildChoicesForPitchClass({ seed: opts.seed, pc, choiceCount });
+  return { midi, ...built };
 }
