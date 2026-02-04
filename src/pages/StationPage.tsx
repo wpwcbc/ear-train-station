@@ -1186,7 +1186,10 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             <div style={{ fontWeight: 700 }}>Completed.</div>
             <div style={{ fontSize: 12, opacity: 0.9 }}>Nice — keep the chain going.</div>
           </div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <button className={practice ? 'secondary' : 'ghost'} onClick={() => setPractice((p) => !p)}>
+              {practice ? 'Hide practice' : 'Practice'}
+            </button>
             <Link className="linkBtn" to="/">Map</Link>
             {nextId && nextUnlocked ? <Link className="linkBtn" to={`/station/${nextId}`}>Next</Link> : null}
           </div>
@@ -1202,6 +1205,17 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                 <li key={i}>{t}</li>
               ))}
             </ul>
+
+            {copy.tips?.length ? (
+              <>
+                <div style={{ marginTop: 10, fontWeight: 700, opacity: 0.95 }}>Tips</div>
+                <ul style={{ margin: 0, paddingLeft: 18, marginTop: 6, opacity: 0.9 }}>
+                  {copy.tips.map((t, i) => (
+                    <li key={i}>{t}</li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
           </div>
         </details>
       ) : null}
