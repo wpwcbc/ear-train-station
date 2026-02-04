@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { STATIONS, nextUnlockedIncomplete } from '../lib/stations';
 import type { Progress } from '../lib/progress';
-import { mistakeCount } from '../lib/mistakes';
+import { dueMistakeCount, mistakeCount } from '../lib/mistakes';
 
 export function MapPage({
   progress,
@@ -37,7 +37,9 @@ export function MapPage({
         }}
       >
         <div style={{ fontSize: 12, opacity: 0.85, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span>Review queue: {mistakeCount()}</span>
+          <span>
+            Review due: {dueMistakeCount()} (total {mistakeCount()})
+          </span>
           <span style={{ opacity: 0.65 }}>•</span>
           <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
             <span>Daily goal</span>

@@ -2,12 +2,24 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
-import { loadMistakes, removeMistake, type Mistake } from '../lib/mistakes';
+import { applyReviewResult, dueMistakes, loadMistakes, nextDueAt, updateMistake, type Mistake } from '../lib/mistakes';
 import { loadSettings, saveSettings } from '../lib/settings';
 import { piano } from '../audio/piano';
 import { makeNoteNameReviewQuestion } from '../exercises/noteName';
 import { makeIntervalLabelReviewQuestion, intervalLongName, type IntervalLabel } from '../exercises/interval';
 import { makeTriadQualityReviewQuestion, triadQualityLabel, type TriadQuality } from '../exercises/triad';
+
+function msToHuman(ms: number): string {
+  if (ms <= 0) return 'now';
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.round(m / 60);
+  if (h < 48) return `${h}h`;
+  const d = Math.round(h / 24);
+  return `${d}d`;
+}
 
 export function ReviewPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
   const [seed, setSeed] = useState(1);
@@ -15,9 +27,11 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const chordMode = settings.chordPlayback;
   const [result, setResult] = useState<'idle' | 'correct' | 'wrong'>('idle');
   const [doneCount, setDoneCount] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
 
-  const mistakes = loadMistakes();
-  const active = mistakes[0] as Mistake | undefined;
+  const allMistakes = useMemo(() => loadMistakes(), [seed, doneCount]);
+  const due = useMemo(() => dueMistakes(now), [now, seed, doneCount]);
+  const active = due[0] as Mistake | undefined;
 
   const noteQ = useMemo(() => {
     if (!active || active.kind !== 'noteName') return null;
@@ -69,49 +83,67 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     }
   }
 
-  function markCorrect() {
-    if (!active) return;
-    removeMistake(active.id);
-    setProgress(applyStudyReward(progress, 4));
-    setResult('correct');
-    setDoneCount((n) => n + 1);
+  function refresh() {
+    setResult('idle');
+    setNow(Date.now());
     setSeed((x) => x + 1);
   }
 
-  function markWrong() {
-    setResult('wrong');
+  function applyOutcome(outcome: 'correct' | 'wrong') {
+    if (!active) return;
+
+    let cleared = false;
+    updateMistake(active.id, (m) => {
+      const next = applyReviewResult(m, outcome, Date.now());
+      cleared = next == null;
+      return next;
+    });
+
+    if (outcome === 'correct' && cleared) {
+      setProgress(applyStudyReward(progress, 4));
+      setResult('correct');
+      setDoneCount((n) => n + 1);
+    } else {
+      setResult(outcome);
+    }
+
+    // Force a fresh localStorage read.
+    refresh();
   }
 
   async function chooseNote(choice: string) {
     if (!noteQ || !active || active.kind !== 'noteName') return;
     const ok = noteQ.acceptedAnswers.includes(choice);
-    if (ok) markCorrect();
-    else markWrong();
+    applyOutcome(ok ? 'correct' : 'wrong');
   }
 
   async function chooseInterval(choice: IntervalLabel) {
     if (!ilQ || !active || active.kind !== 'intervalLabel') return;
     const ok = choice === ilQ.correct;
-    if (ok) markCorrect();
-    else markWrong();
+    applyOutcome(ok ? 'correct' : 'wrong');
   }
 
   async function chooseTriad(choice: TriadQuality) {
     if (!triadQ || !active || active.kind !== 'triadQuality') return;
     const ok = choice === triadQ.quality;
-    if (ok) markCorrect();
-    else markWrong();
+    applyOutcome(ok ? 'correct' : 'wrong');
   }
+
+  const dueCount = due.length;
+  const totalCount = allMistakes.length;
+  const nextDue = nextDueAt();
 
   return (
     <div className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
         <div>
           <h1 className="title">Review</h1>
-          <p className="sub">Clear your mistakes. Small XP bonus for each cleared item.</p>
+          <p className="sub">Spaced review of missed items. Clear an item with 2 correct reviews in a row.</p>
         </div>
         <div style={{ textAlign: 'right', fontSize: 12, opacity: 0.85 }}>
-          <div>Queue: {mistakes.length}</div>
+          <div>
+            Due: {dueCount} / {totalCount}
+          </div>
           <div>Cleared: {doneCount}</div>
         </div>
       </div>
@@ -138,14 +170,10 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               </select>
             </label>
           ) : null}
-          <button
-            className="ghost"
-            onClick={() => {
-              setResult('idle');
-              setSeed((x) => x + 1);
-            }}
-            disabled={!active}
-          >
+          <button className="ghost" onClick={refresh}>
+            Refresh
+          </button>
+          <button className="ghost" onClick={refresh} disabled={!active}>
             Skip
           </button>
         </div>
@@ -155,7 +183,13 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       </div>
 
       {!active ? (
-        <div className="result r_idle">No mistakes queued. Go do a station and come back if you miss something.</div>
+        <div className="result r_idle">
+          {totalCount === 0
+            ? 'No mistakes queued. Go do a station and come back if you miss something.'
+            : nextDue
+              ? `Nothing due yet. Next item due in ${msToHuman(nextDue - now)}.`
+              : 'Nothing due yet.'}
+        </div>
       ) : active.kind === 'noteName' && noteQ ? (
         <>
           <div className={`result r_${result}`}>
@@ -172,7 +206,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             ))}
           </div>
 
-          <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>From: {active.sourceStationId}</div>
+          <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
+            From: {active.sourceStationId} • Streak: {active.correctStreak}/2
+          </div>
         </>
       ) : active.kind === 'intervalLabel' && ilQ ? (
         <>
@@ -190,7 +226,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             ))}
           </div>
 
-          <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>From: {active.sourceStationId}</div>
+          <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
+            From: {active.sourceStationId} • Streak: {active.correctStreak}/2
+          </div>
         </>
       ) : active.kind === 'triadQuality' && triadQ ? (
         <>
@@ -208,7 +246,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             ))}
           </div>
 
-          <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>From: {active.sourceStationId}</div>
+          <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
+            From: {active.sourceStationId} • Streak: {active.correctStreak}/2
+          </div>
         </>
       ) : (
         <div className="result r_idle">This mistake type is not reviewable yet.</div>
