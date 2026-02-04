@@ -144,6 +144,14 @@ export function updateMistake(id: string, updater: (m: Mistake) => Mistake | nul
   saveMistakes(next);
 }
 
+/**
+ * Snoozes an item (Duolingo-style “skip for now”).
+ * Keeps the item in the queue, but makes it ineligible until later.
+ */
+export function snoozeMistake(id: string, snoozeMs = 5 * 60_000, now = Date.now()) {
+  updateMistake(id, (m) => ({ ...m, dueAt: now + snoozeMs }));
+}
+
 export function dueMistakes(now = Date.now()): Mistake[] {
   const all = loadMistakes();
   return all

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
-import { applyReviewResult, loadMistakes, updateMistake, type Mistake } from '../lib/mistakes';
+import { applyReviewResult, loadMistakes, snoozeMistake, updateMistake, type Mistake } from '../lib/mistakes';
 import { loadSettings, saveSettings } from '../lib/settings';
 import { piano } from '../audio/piano';
 import { makeNoteNameReviewQuestion } from '../exercises/noteName';
@@ -207,7 +207,17 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           <button className="ghost" onClick={refresh}>
             Refresh
           </button>
-          <button className="ghost" onClick={refresh} disabled={!active}>
+          <button
+            className="ghost"
+            onClick={() => {
+              if (!active) return;
+              // Push it back a bit so the next due item can surface.
+              snoozeMistake(active.id, 5 * 60_000);
+              refresh();
+            }}
+            disabled={!active}
+            title="Skip this item for now (snooze 5 minutes)"
+          >
             Skip
           </button>
         </div>
