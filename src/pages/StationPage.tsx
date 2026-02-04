@@ -4,6 +4,7 @@ import type { StationId, Progress } from '../lib/progress';
 import { applyStudyReward, markStationDone } from '../lib/progress';
 import { STATIONS } from '../lib/stations';
 import { PianoKeyboard } from '../components/PianoKeyboard';
+import { StaffNote } from '../components/StaffNote';
 import { piano } from '../audio/piano';
 import { makeIntervalQuestion, makeIntervalLabelQuestion, intervalLongName, type IntervalLabel } from '../exercises/interval';
 import { makeNoteNameQuestion } from '../exercises/noteName';
@@ -699,12 +700,17 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             ))}
           </div>
 
-          <PianoKeyboard
-            startMidi={60}
-            octaves={1}
-            onPress={(m) => piano.playMidi(m, { durationSec: 0.9, velocity: 0.9 })}
-            highlighted={highlighted}
-          />
+          <div className="row" style={{ gap: 14, alignItems: 'center', flexWrap: 'wrap', marginTop: 10 }}>
+            <StaffNote midi={noteQ.midi} label={noteQ.promptLabel} />
+            <div style={{ flex: 1, minWidth: 240 }}>
+              <PianoKeyboard
+                startMidi={60}
+                octaves={1}
+                onPress={(m) => piano.playMidi(m, { durationSec: 0.9, velocity: 0.9 })}
+                highlighted={highlighted}
+              />
+            </div>
+          </div>
         </>
       ) : id === 'T1_NOTES' ? (
         <>
@@ -734,6 +740,10 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                 {c}
               </button>
             ))}
+          </div>
+
+          <div style={{ marginTop: 10 }}>
+            <StaffNote midi={t1Q.midi} label={t1Q.promptLabel} />
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
