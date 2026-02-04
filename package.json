@@ -4,7 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "gen:buildinfo": "node scripts/gen-build-info.mjs",
+    "predev": "npm run gen:buildinfo",
     "dev": "vite",
+    "prebuild": "npm run gen:buildinfo",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
