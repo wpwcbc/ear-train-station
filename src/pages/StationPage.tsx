@@ -4,6 +4,7 @@ import type { StationId, Progress } from '../lib/progress';
 import { applyStudyReward, markStationDone } from '../lib/progress';
 import { addMistake } from '../lib/mistakes';
 import { STATIONS, nextStationId, isStationUnlocked } from '../lib/stations';
+import { stationCopy } from '../lib/stationCopy';
 import { PianoKeyboard } from '../components/PianoKeyboard';
 import { StaffNote } from '../components/StaffNote';
 import { piano } from '../audio/piano';
@@ -23,6 +24,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const done = progress.stationDone[id];
   const nextId = nextStationId(id);
   const nextUnlocked = nextId ? isStationUnlocked(progress, nextId) : false;
+
+  const copy = stationCopy(id);
 
   const [seed, setSeed] = useState(1);
 
@@ -690,7 +693,16 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       </div>
 
       {done ? (
-        <div className="result r_correct" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div
+          className="result r_correct"
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
           <div>
             <div style={{ fontWeight: 700 }}>Completed.</div>
             <div style={{ fontSize: 12, opacity: 0.9 }}>Nice — keep the chain going.</div>
@@ -700,6 +712,19 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             {nextId && nextUnlocked ? <Link className="linkBtn" to={`/station/${nextId}`}>Next</Link> : null}
           </div>
         </div>
+      ) : null}
+
+      {copy ? (
+        <details style={{ marginTop: 10 }} open>
+          <summary style={{ cursor: 'pointer', fontWeight: 700 }}>Lesson notes</summary>
+          <div style={{ marginTop: 8, fontSize: 12, opacity: 0.9, lineHeight: 1.5 }}>
+            <ul style={{ margin: 0, paddingLeft: 18 }}>
+              {copy.primer.map((t, i) => (
+                <li key={i}>{t}</li>
+              ))}
+            </ul>
+          </div>
+        </details>
       ) : null}
 
       {id === 'S1_NOTES' ? (
@@ -1110,6 +1135,17 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       ) : (
         <div className="result">Content for this station is next.</div>
       )}
+
+      {copy?.tips?.length ? (
+        <div style={{ marginTop: 12, fontSize: 12, opacity: 0.8, lineHeight: 1.5 }}>
+          <div style={{ fontWeight: 700, opacity: 0.9 }}>Tip</div>
+          <ul style={{ margin: 6, paddingLeft: 18 }}>
+            {copy.tips.map((t, i) => (
+              <li key={i}>{t}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="row" style={{ marginTop: 14 }}>
         <Link className="linkBtn" to="/">Back to line</Link>
