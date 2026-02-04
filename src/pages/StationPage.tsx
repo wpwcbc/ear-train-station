@@ -114,6 +114,24 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     [seed, t5Index],
   );
 
+  // Test 6: diatonic triad quality in key across a wider register (G2 and above).
+  const [t6Index, setT6Index] = useState(0);
+  const [t6Correct, setT6Correct] = useState(0);
+  const [t6Wrong, setT6Wrong] = useState(0);
+  const T6_TOTAL = 10;
+  const T6_PASS = 8;
+  const t6Q = useMemo(
+    () =>
+      makeDiatonicTriadQualityQuestion({
+        seed: seed * 1000 + 1600 + t6Index,
+        mode: 'test',
+        tonicMinMidi: 43, // G2
+        tonicMaxMidi: 65, // F4-ish (keeps chord comfortably below C6)
+        choiceCount: 3,
+      }),
+    [seed, t6Index],
+  );
+
   // Station 5: diatonic triads inside a major key (stable register)
   const diatonicQ = useMemo(() => makeDiatonicTriadQualityQuestion({ seed: seed * 1000 + 5 }), [seed]);
   const [s5Correct, setS5Correct] = useState(0);
@@ -680,6 +698,21 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({});
   }
 
+  async function playPromptT6() {
+    setResult('idle');
+    const rootMidi = t6Q.chordMidis[0];
+    setHighlighted({ [rootMidi]: 'active' });
+    await piano.playMidi(rootMidi, { durationSec: 0.65, velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, 240));
+    const active: Record<number, 'active'> = Object.fromEntries(t6Q.chordMidis.map((m) => [m, 'active'])) as Record<
+      number,
+      'active'
+    >;
+    setHighlighted(active);
+    await piano.playChord(t6Q.chordMidis, { mode: chordMode, durationSec: 1.1, velocity: 0.92, gapMs: 130 });
+    setHighlighted({});
+  }
+
   async function chooseT5(choice: 'major' | 'minor' | 'diminished') {
     if (t5Index >= T5_TOTAL) return;
     if (t5Wrong >= HEARTS) return;
@@ -735,6 +768,66 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setT5Index(0);
     setT5Correct(0);
     setT5Wrong(0);
+    setResult('idle');
+    setHighlighted({});
+    setSeed((x) => x + 1);
+  }
+
+  async function chooseT6(choice: 'major' | 'minor' | 'diminished') {
+    if (t6Index >= T6_TOTAL) return;
+    if (t6Wrong >= HEARTS) return;
+
+    const ok = choice === t6Q.quality;
+    setResult(ok ? 'correct' : 'wrong');
+
+    if (!ok) {
+      // Reuse triadQuality mistake type so Review can replay the chord.
+      addMistake({ kind: 'triadQuality', sourceStationId: id, rootMidi: t6Q.chordMidis[0], quality: t6Q.quality });
+
+      const nextWrong = t6Wrong + 1;
+      setT6Wrong(nextWrong);
+
+      const nextIndex = t6Index + 1;
+      if (nextWrong >= HEARTS) {
+        setT6Index(T6_TOTAL);
+        return;
+      }
+
+      if (nextIndex >= T6_TOTAL) {
+        setT6Index(T6_TOTAL);
+        return;
+      }
+
+      setT6Index(nextIndex);
+      return;
+    }
+
+    setT6Correct((n) => n + 1);
+
+    let p2 = applyStudyReward(progress, 3);
+
+    const nextIndex = t6Index + 1;
+    if (nextIndex >= T6_TOTAL) {
+      const correct = t6Correct + 1;
+      const pass = correct >= T6_PASS;
+      if (pass) {
+        p2 = applyStudyReward(p2, 12);
+        p2 = markStationDone(p2, 'T6_DIATONIC_TRIADS');
+      }
+      setProgress(p2);
+      setResult(pass ? 'correct' : 'wrong');
+      setT6Index(T6_TOTAL);
+      return;
+    }
+
+    setProgress(p2);
+    setT6Index(nextIndex);
+  }
+
+  function resetT6() {
+    setT6Index(0);
+    setT6Correct(0);
+    setT6Wrong(0);
     setResult('idle');
     setHighlighted({});
     setSeed((x) => x + 1);
@@ -1324,6 +1417,58 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             onPress={(m) => piano.playMidi(m, { durationSec: 0.9, velocity: 0.9 })}
             highlighted={highlighted}
           />
+        </>
+      ) : id === 'T6_DIATONIC_TRIADS' ? (
+        <>
+          <div className="row">
+            <button className="primary" onClick={playPromptT6}>Hear triad</button>
+            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
+              <span>Playback</span>
+              <select
+                value={chordMode}
+                onChange={(e) => {
+                  const v = e.target.value === 'block' ? 'block' : 'arp';
+                  const next = { ...settings, chordPlayback: v } as typeof settings;
+                  setSettings(next);
+                  saveSettings(next);
+                }}
+              >
+                <option value="arp">Arp</option>
+                <option value="block">Block</option>
+              </select>
+            </label>
+            <button className="ghost" onClick={resetT6}>Restart</button>
+            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+              Q: {Math.min(t6Index + 1, T6_TOTAL)}/{T6_TOTAL} · Correct: {t6Correct}/{T6_TOTAL} (need {T6_PASS}) · Lives:{' '}
+              {Math.max(0, HEARTS - t6Wrong)}/{HEARTS}
+            </div>
+          </div>
+
+          <div className={`result r_${result}`}>
+            {result === 'idle' && 'Test: identify diatonic triad quality in key by ear. Need 8/10 to pass.'}
+            {result === 'correct' &&
+              (progress.stationDone['T6_DIATONIC_TRIADS']
+                ? 'Passed — nice. (+12 bonus XP)'
+                : `Correct — +3 XP. (${triadQualityLabel(t6Q.quality)})`)}
+            {result === 'wrong' &&
+              (t6Index + 1 >= T6_TOTAL
+                ? `Finished: ${t6Correct}/${T6_TOTAL}. Need ${T6_PASS}. Hit restart to try again.`
+                : `Not quite — it was ${triadQualityLabel(t6Q.quality)}.`)}
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>Prompt: {t6Q.prompt}</div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+            {t6Q.choices.map((c) => (
+              <button key={c} className="secondary" onClick={() => chooseT6(c)}>
+                {triadQualityLabel(c)}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+            Tip: tests roam across a bigger register (G2+); lessons stay in a stable register.
+          </div>
         </>
       ) : id === 'S6_FUNCTIONS' ? (
         <>

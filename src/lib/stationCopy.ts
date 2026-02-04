@@ -55,6 +55,9 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
       'I maj · ii min · iii min · IV maj · V maj · vi min · vii° dim.',
     ],
   },
+  T6_DIATONIC_TRIADS: {
+    primer: ['10 questions. Mixed keys + wider register (G2 and up). Need 8/10 to pass.'],
+  },
   S6_FUNCTIONS: {
     primer: [
       'Function families (major key):',

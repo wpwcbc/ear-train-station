@@ -63,6 +63,12 @@ export const STATIONS: Station[] = [
     kind: 'lesson',
   },
   {
+    id: 'T6_DIATONIC_TRIADS',
+    title: 'Test 6 — Diatonic triads',
+    blurb: 'Mixed keys: identify diatonic triad quality by ear across a wider range.',
+    kind: 'test',
+  },
+  {
     id: 'S6_FUNCTIONS',
     title: 'Station 6 — Chord function families',
     blurb: 'Group diatonic triads into tonic / subdominant / dominant (tension).',

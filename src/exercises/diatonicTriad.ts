@@ -56,8 +56,12 @@ export function buildDiatonicTriadMidis(opts: {
 
 export function makeDiatonicTriadQualityQuestion(opts: {
   seed: number;
+  mode?: 'lesson' | 'test';
   /** Lessons: keep stable register (C4..B4 tonic). */
   stableTonicMidi?: number;
+  /** Tests: tonic range (will be adjusted per key pitch-class). */
+  tonicMinMidi?: number;
+  tonicMaxMidi?: number;
   degree?: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   choiceCount?: number;
 }): DiatonicTriadQuestion {
@@ -67,7 +71,21 @@ export function makeDiatonicTriadQualityQuestion(opts: {
   const degree = (opts.degree ?? (1 + Math.floor(rng() * 7))) as 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
   const tonicPc = PC[k.key];
-  const tonicMidi = opts.stableTonicMidi ?? 60 + tonicPc; // stable: C4..B4
+  const mode = opts.mode ?? (opts.tonicMinMidi != null || opts.tonicMaxMidi != null ? 'test' : 'lesson');
+
+  let tonicMidi: number;
+  if (mode === 'test') {
+    const minTonic = opts.tonicMinMidi ?? 43; // G2
+    const maxTonic = opts.tonicMaxMidi ?? 65; // F4-ish
+    // Choose a tonic in [minTonic, maxTonic] while respecting the key pitch-class.
+    const minBase = minTonic - tonicPc;
+    const maxBase = maxTonic - tonicPc;
+    const span = Math.max(1, maxBase - minBase + 1);
+    const base = minBase + Math.floor(rng() * span);
+    tonicMidi = base + tonicPc;
+  } else {
+    tonicMidi = opts.stableTonicMidi ?? 60 + tonicPc; // stable: C4..B4
+  }
 
   const rootName = k.scale[degree - 1];
   const quality = DEGREE_QUALITY[degree];
