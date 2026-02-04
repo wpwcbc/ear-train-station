@@ -5,6 +5,7 @@ import { applyStudyReward, markStationDone } from '../lib/progress';
 import { addMistake } from '../lib/mistakes';
 import { STATIONS, nextStationId, isStationUnlocked } from '../lib/stations';
 import { stationCopy } from '../lib/stationCopy';
+import { loadSettings, saveSettings } from '../lib/settings';
 import { PianoKeyboard } from '../components/PianoKeyboard';
 import { StaffNote } from '../components/StaffNote';
 import { piano } from '../audio/piano';
@@ -28,6 +29,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const copy = stationCopy(id);
 
   const [seed, setSeed] = useState(1);
+
+  const [settings, setSettings] = useState(() => loadSettings());
+  const chordMode = settings.chordPlayback;
 
   // Station 3: interval question (deterministic per seed)
   const intervalQ = useMemo(
@@ -316,7 +320,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       'active'
     >;
     setHighlighted(active);
-    await piano.playChord(triadQ.chordMidis, { mode: 'arp', durationSec: 1.1, velocity: 0.92, gapMs: 130 });
+    await piano.playChord(triadQ.chordMidis, { mode: chordMode, durationSec: 1.1, velocity: 0.92, gapMs: 130 });
     setHighlighted({});
   }
 
@@ -332,7 +336,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       'active'
     >;
     setHighlighted(active);
-    await piano.playChord(diatonicQ.chordMidis, { mode: 'arp', durationSec: 1.1, velocity: 0.92, gapMs: 130 });
+    await piano.playChord(diatonicQ.chordMidis, { mode: chordMode, durationSec: 1.1, velocity: 0.92, gapMs: 130 });
     setHighlighted({});
   }
 
@@ -348,7 +352,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       'active'
     >;
     setHighlighted(active);
-    await piano.playChord(funcQ.chordMidis, { mode: 'arp', durationSec: 1.1, velocity: 0.92, gapMs: 130 });
+    await piano.playChord(funcQ.chordMidis, { mode: chordMode, durationSec: 1.1, velocity: 0.92, gapMs: 130 });
     setHighlighted({});
   }
 
@@ -601,7 +605,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       'active'
     >;
     setHighlighted(active);
-    await piano.playChord(t5Q.chordMidis, { mode: 'arp', durationSec: 1.1, velocity: 0.92, gapMs: 130 });
+    await piano.playChord(t5Q.chordMidis, { mode: chordMode, durationSec: 1.1, velocity: 0.92, gapMs: 130 });
     setHighlighted({});
   }
 
@@ -1063,6 +1067,21 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             <button className="secondary" onClick={() => piano.playMidi(triadQ.rootMidi, { durationSec: 0.8, velocity: 0.9 })}>
               Root
             </button>
+            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
+              <span>Playback</span>
+              <select
+                value={chordMode}
+                onChange={(e) => {
+                  const v = e.target.value === 'block' ? 'block' : 'arp';
+                  const next = { ...settings, chordPlayback: v } as typeof settings;
+                  setSettings(next);
+                  saveSettings(next);
+                }}
+              >
+                <option value="arp">Arp</option>
+                <option value="block">Block</option>
+              </select>
+            </label>
             <button className="ghost" onClick={next}>Next</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Progress: {Math.min(s4Correct, S4_GOAL)}/{S4_GOAL}
@@ -1094,6 +1113,21 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         <>
           <div className="row">
             <button className="primary" onClick={playPromptT5}>Hear chord</button>
+            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
+              <span>Playback</span>
+              <select
+                value={chordMode}
+                onChange={(e) => {
+                  const v = e.target.value === 'block' ? 'block' : 'arp';
+                  const next = { ...settings, chordPlayback: v } as typeof settings;
+                  setSettings(next);
+                  saveSettings(next);
+                }}
+              >
+                <option value="arp">Arp</option>
+                <option value="block">Block</option>
+              </select>
+            </label>
             <button className="ghost" onClick={resetT5}>Restart</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Q: {Math.min(t5Index + 1, T5_TOTAL)}/{T5_TOTAL} · Correct: {t5Correct}/{T5_TOTAL} (need {T5_PASS}) · Lives: {Math.max(0, HEARTS - t5Wrong)}/{HEARTS}
@@ -1126,6 +1160,21 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         <>
           <div className="row">
             <button className="primary" onClick={playPromptS5}>Hear triad</button>
+            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
+              <span>Playback</span>
+              <select
+                value={chordMode}
+                onChange={(e) => {
+                  const v = e.target.value === 'block' ? 'block' : 'arp';
+                  const next = { ...settings, chordPlayback: v } as typeof settings;
+                  setSettings(next);
+                  saveSettings(next);
+                }}
+              >
+                <option value="arp">Arp</option>
+                <option value="block">Block</option>
+              </select>
+            </label>
             <button className="ghost" onClick={next}>Next</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Progress: {Math.min(s5Correct, S5_GOAL)}/{S5_GOAL}
@@ -1161,6 +1210,21 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         <>
           <div className="row">
             <button className="primary" onClick={playPromptS6}>Hear chord</button>
+            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
+              <span>Playback</span>
+              <select
+                value={chordMode}
+                onChange={(e) => {
+                  const v = e.target.value === 'block' ? 'block' : 'arp';
+                  const next = { ...settings, chordPlayback: v } as typeof settings;
+                  setSettings(next);
+                  saveSettings(next);
+                }}
+              >
+                <option value="arp">Arp</option>
+                <option value="block">Block</option>
+              </select>
+            </label>
             <button className="ghost" onClick={next}>Next</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Progress: {Math.min(s6Correct, S6_GOAL)}/{S6_GOAL}

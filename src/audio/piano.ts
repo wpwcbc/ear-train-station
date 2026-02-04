@@ -81,7 +81,6 @@ export const piano: Piano = {
     // Arpeggiate (root->3rd->5th) with a small gap.
     for (let i = 0; i < midis.length; i++) {
       play(midis[i], 0, { gain: velocity, duration: Math.max(0.2, durationSec - i * 0.1) });
-      // eslint-disable-next-line no-await-in-loop
       await new Promise((r) => setTimeout(r, gapMs));
     }
   },

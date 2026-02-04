@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
 import { loadMistakes, removeMistake, type Mistake } from '../lib/mistakes';
+import { loadSettings, saveSettings } from '../lib/settings';
 import { piano } from '../audio/piano';
 import { makeNoteNameReviewQuestion } from '../exercises/noteName';
 import { makeIntervalLabelReviewQuestion, intervalLongName, type IntervalLabel } from '../exercises/interval';
@@ -10,10 +11,12 @@ import { makeTriadQualityReviewQuestion, triadQualityLabel, type TriadQuality } 
 
 export function ReviewPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
   const [seed, setSeed] = useState(1);
+  const [settings, setSettings] = useState(() => loadSettings());
+  const chordMode = settings.chordPlayback;
   const [result, setResult] = useState<'idle' | 'correct' | 'wrong'>('idle');
   const [doneCount, setDoneCount] = useState(0);
 
-  const mistakes = useMemo(() => loadMistakes(), [seed, doneCount]);
+  const mistakes = loadMistakes();
   const active = mistakes[0] as Mistake | undefined;
 
   const noteQ = useMemo(() => {
@@ -62,7 +65,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       const rootMidi = triadQ.chordMidis[0];
       await piano.playMidi(rootMidi, { durationSec: 0.65, velocity: 0.9 });
       await new Promise((r) => setTimeout(r, 240));
-      await piano.playChord(triadQ.chordMidis, { mode: 'arp', durationSec: 1.1, velocity: 0.92, gapMs: 130 });
+      await piano.playChord(triadQ.chordMidis, { mode: chordMode, durationSec: 1.1, velocity: 0.92, gapMs: 130 });
     }
   }
 
@@ -118,6 +121,23 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           <button className="primary" disabled={!active} onClick={playPrompt}>
             Play
           </button>
+          {active?.kind === 'triadQuality' ? (
+            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
+              <span>Playback</span>
+              <select
+                value={chordMode}
+                onChange={(e) => {
+                  const v = e.target.value === 'block' ? 'block' : 'arp';
+                  const next = { ...settings, chordPlayback: v } as typeof settings;
+                  setSettings(next);
+                  saveSettings(next);
+                }}
+              >
+                <option value="arp">Arp</option>
+                <option value="block">Block</option>
+              </select>
+            </label>
+          ) : null}
           <button
             className="ghost"
             onClick={() => {
