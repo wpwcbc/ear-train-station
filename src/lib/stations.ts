@@ -98,6 +98,12 @@ export const STATIONS: Station[] = [
     blurb: 'In major: 1=P1, 2=M2, 3=M3… connect scale degrees to interval sound.',
     kind: 'lesson',
   },
+  {
+    id: 'T8_DEGREE_INTERVALS',
+    title: 'Test 8 — Degree → interval mapping',
+    blurb: 'Mixed keys: name the interval label (tonic → degree) across a wider register.',
+    kind: 'test',
+  },
 ];
 
 export function stationIndex(id: StationId): number {

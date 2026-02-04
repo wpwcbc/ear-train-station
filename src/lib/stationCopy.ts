@@ -90,6 +90,9 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
     ],
     tips: ['This is the bridge between “degrees in a key” and “intervals from any root”.'],
   },
+  T8_DEGREE_INTERVALS: {
+    primer: ['10 questions. Mixed keys + wider register (G2 and up). Need 8/10 to pass.'],
+  },
 };
 
 export function stationCopy(id: StationId): StationCopy | null {

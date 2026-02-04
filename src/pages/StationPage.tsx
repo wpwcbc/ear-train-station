@@ -205,6 +205,22 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [s8Correct, setS8Correct] = useState(0);
   const S8_GOAL = 7;
 
+  // Test 8: degree → interval mapping across a wider register (G2 and above).
+  const [t8Index, setT8Index] = useState(0);
+  const [t8Correct, setT8Correct] = useState(0);
+  const [t8Wrong, setT8Wrong] = useState(0);
+  const T8_TOTAL = 10;
+  const T8_PASS = 8;
+  const t8Q = useMemo(
+    () =>
+      makeDegreeIntervalQuestion({
+        seed: seed * 1000 + 1800 + t8Index,
+        choiceCount: 6,
+        mode: 'test',
+      }),
+    [seed, t8Index],
+  );
+
   // Test 1: note names across a wider range (G2 and above).
   const [t1Index, setT1Index] = useState(0);
   const [t1Correct, setT1Correct] = useState(0);
@@ -826,6 +842,17 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     });
   }
 
+  async function playPromptT8() {
+    setResult('idle');
+    setHighlighted({});
+    await playTonicTargetPrompt(t8Q.tonicMidi, t8Q.targetMidi, {
+      gapMs: gap(260),
+      tonicDurationSec: dur(0.7),
+      targetDurationSec: dur(0.9),
+      velocity: 0.9,
+    });
+  }
+
   async function chooseT5(choice: 'major' | 'minor' | 'diminished') {
     if (t5Index >= T5_TOTAL) return;
     if (t5Wrong >= HEARTS) return;
@@ -1011,6 +1038,66 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setSeed((x) => x + 1);
   }
 
+  async function chooseT8(choice: IntervalLabel) {
+    if (t8Index >= T8_TOTAL) return;
+    if (t8Wrong >= HEARTS) return;
+
+    const ok = choice === t8Q.correct;
+    setResult(ok ? 'correct' : 'wrong');
+
+    if (!ok) {
+      // Feed review: tonic→degree is just an interval-label item.
+      addMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: t8Q.tonicMidi, semitones: t8Q.semitones });
+
+      const nextWrong = t8Wrong + 1;
+      setT8Wrong(nextWrong);
+
+      const nextIndex = t8Index + 1;
+      if (nextWrong >= HEARTS) {
+        setT8Index(T8_TOTAL);
+        return;
+      }
+
+      if (nextIndex >= T8_TOTAL) {
+        setT8Index(T8_TOTAL);
+        return;
+      }
+
+      setT8Index(nextIndex);
+      return;
+    }
+
+    setT8Correct((n) => n + 1);
+
+    let p2 = applyStudyReward(progress, 3);
+
+    const nextIndex = t8Index + 1;
+    if (nextIndex >= T8_TOTAL) {
+      const correct = t8Correct + 1;
+      const pass = correct >= T8_PASS;
+      if (pass) {
+        p2 = applyStudyReward(p2, 12);
+        p2 = markStationDone(p2, 'T8_DEGREE_INTERVALS');
+      }
+      setProgress(p2);
+      setResult(pass ? 'correct' : 'wrong');
+      setT8Index(T8_TOTAL);
+      return;
+    }
+
+    setProgress(p2);
+    setT8Index(nextIndex);
+  }
+
+  function resetT8() {
+    setT8Index(0);
+    setT8Correct(0);
+    setT8Wrong(0);
+    setResult('idle');
+    setHighlighted({});
+    setSeed((x) => x + 1);
+  }
+
   async function chooseT2(choice: string) {
     if (t2Index >= T2_TOTAL) return;
     if (t2Wrong >= HEARTS) return;
@@ -1176,6 +1263,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       else if (id === 'S7_DEGREES') void playPromptS7();
       else if (id === 'T4_DEGREES') void playPromptT4();
       else if (id === 'S8_DEGREE_INTERVALS') void playPromptS8();
+      else if (id === 'T8_DEGREE_INTERVALS') void playPromptT8();
     },
     onSecondary: () => {
       if (id === 'S1_NOTES') next();
@@ -1193,6 +1281,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       else if (id === 'S7_DEGREES') next();
       else if (id === 'T4_DEGREES') resetT4();
       else if (id === 'S8_DEGREE_INTERVALS') next();
+      else if (id === 'T8_DEGREE_INTERVALS') resetT8();
     },
     onChoiceIndex: (idx) => {
       if (id === 'S1_NOTES') {
@@ -1268,6 +1357,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       if (id === 'S8_DEGREE_INTERVALS') {
         const c = degreeIntervalQ.choices[idx];
         if (c) void chooseS8(c);
+        return;
+      }
+      if (id === 'T8_DEGREE_INTERVALS') {
+        const c = t8Q.choices[idx];
+        if (c) void chooseT8(c);
       }
     },
   });
@@ -2048,6 +2142,42 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
             {degreeIntervalQ.choices.map((c) => (
               <button key={c} className="secondary" onClick={() => chooseS8(c)}>
+                {c}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+            Major scale intervals: 1=P1 · 2=M2 · 3=M3 · 4=P4 · 5=P5 · 6=M6 · 7=M7
+          </div>
+        </>
+      ) : id === 'T8_DEGREE_INTERVALS' ? (
+        <>
+          <div className="row">
+            <button className="primary" onClick={playPromptT8}>Hear tonic → degree</button>
+            <button className="ghost" onClick={resetT8}>Restart</button>
+            {(t8Index >= T8_TOTAL || t8Wrong >= HEARTS) && stationMistakeCount > 0 ? (
+              <Link className="linkBtn" to={`/review?station=${id}`}>Review mistakes ({stationMistakeCount})</Link>
+            ) : null}
+            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+              Q: {Math.min(t8Index + 1, T8_TOTAL)}/{T8_TOTAL} · Correct: {t8Correct}/{T8_TOTAL} (need {T8_PASS}) · Lives: {Math.max(0, HEARTS - t8Wrong)}/{HEARTS}
+            </div>
+          </div>
+
+          <div className={`result r_${result}`}>
+            {result === 'idle' && t8Q.prompt}
+            {result === 'correct' && (progress.stationDone['T8_DEGREE_INTERVALS'] ? 'Passed — nice. (+12 bonus XP)' : `Correct — +3 XP. (${t8Q.correct})`)}
+            {result === 'wrong' &&
+              (t8Wrong >= HEARTS
+                ? `Out of lives. Score so far: ${t8Correct}/${T8_TOTAL}. Hit restart to try again${stationMistakeCount > 0 ? ' — or review your misses.' : '.'}`
+                : t8Index + 1 >= T8_TOTAL
+                  ? `Finished: ${t8Correct}/${T8_TOTAL}. Need ${T8_PASS}. Hit restart to try again.`
+                  : `Not quite — it was ${t8Q.correct}.`)}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            {t8Q.choices.map((c) => (
+              <button key={c} className="secondary" onClick={() => chooseT8(c)}>
                 {c}
               </button>
             ))}
