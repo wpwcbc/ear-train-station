@@ -12,7 +12,9 @@ let pianoPromise: Promise<Soundfont.Player> | null = null;
 async function getPianoPlayer() {
   if (pianoPromise) return pianoPromise;
 
-  const AudioContextCtor = window.AudioContext || (window as any).webkitAudioContext;
+  const w = window as unknown as { webkitAudioContext?: typeof AudioContext };
+  const AudioContextCtor = window.AudioContext || w.webkitAudioContext;
+  if (!AudioContextCtor) throw new Error('WebAudio AudioContext not available');
   const ctx: AudioContext = new AudioContextCtor();
 
   // Common, permissive CDN location. If this breaks, we can vendor the .js/.sf2 later.
@@ -37,11 +39,15 @@ export const piano: Piano = {
     const velocity = opts?.velocity ?? 0.9;
     // Ensure context is started (some browsers require a user gesture; our UI uses clicks).
     try {
-      const ctx = (p as any).context as AudioContext | undefined;
+      const ctx = (p as unknown as { context?: AudioContext }).context;
       if (ctx && ctx.state === 'suspended') await ctx.resume();
     } catch {
       // ignore
     }
-    (p as any).play(midi, 0, { gain: velocity, duration: durationSec });
+    (p as unknown as { play: (midi: number, when: number, opts: { gain: number; duration: number }) => void }).play(
+      midi,
+      0,
+      { gain: velocity, duration: durationSec },
+    );
   },
 };

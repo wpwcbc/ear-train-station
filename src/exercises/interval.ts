@@ -1,3 +1,5 @@
+import { mulberry32 } from '../lib/rng';
+
 export type IntervalQuestion = {
   id: string;
   kind: 'interval';
@@ -6,24 +8,24 @@ export type IntervalQuestion = {
   semitones: number;
 };
 
-export function makeIntervalQuestion(opts?: {
+export function makeIntervalQuestion(opts: {
+  seed: number;
   rootMidi?: number;
   minSemitones?: number;
   maxSemitones?: number;
 }): IntervalQuestion {
-  const rootMidi = opts?.rootMidi ?? 60; // C4
-  const min = opts?.minSemitones ?? 0;
-  const max = opts?.maxSemitones ?? 12;
-  const semitones = randInt(min, max);
+  const rootMidi = opts.rootMidi ?? 60; // C4
+  const min = opts.minSemitones ?? 0;
+  const max = opts.maxSemitones ?? 12;
+  const rng = mulberry32(opts.seed);
+  const span = Math.max(1, max - min + 1);
+  const semitones = min + Math.floor(rng() * span);
+
   return {
-    id: `iq_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    id: `iq_seed_${opts.seed}`,
     kind: 'interval',
     rootMidi,
     targetMidi: rootMidi + semitones,
     semitones,
   };
-}
-
-function randInt(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
