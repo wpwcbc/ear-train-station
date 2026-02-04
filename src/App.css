@@ -204,3 +204,16 @@ button.ghost {
   border: 1px solid rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.08);
 }
+
+select {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  color: #e9eefc;
+  padding: 6px 10px;
+}
+
+option {
+  background: #0b1020;
+  color: #e9eefc;
+}

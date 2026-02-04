@@ -32,7 +32,7 @@ function App() {
 
       <main className="main">
         <Routes>
-          <Route path="/" element={<MapPage progress={progress} />} />
+          <Route path="/" element={<MapPage progress={progress} setProgress={setProgress} />} />
           <Route path="/review" element={<ReviewPage progress={progress} setProgress={setProgress} />} />
           <Route path="/station/:stationId" element={<StationPage progress={progress} setProgress={setProgress} />} />
         </Routes>

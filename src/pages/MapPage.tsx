@@ -3,7 +3,13 @@ import { STATIONS, nextUnlockedIncomplete } from '../lib/stations';
 import type { Progress } from '../lib/progress';
 import { mistakeCount } from '../lib/mistakes';
 
-export function MapPage({ progress }: { progress: Progress }) {
+export function MapPage({
+  progress,
+  setProgress,
+}: {
+  progress: Progress;
+  setProgress: (p: Progress) => void;
+}) {
   return (
     <div className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
@@ -30,10 +36,28 @@ export function MapPage({ progress }: { progress: Progress }) {
           flexWrap: 'wrap',
         }}
       >
-        <div style={{ fontSize: 12, opacity: 0.85 }}>
-          Review queue: {mistakeCount()}
+        <div style={{ fontSize: 12, opacity: 0.85, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span>Review queue: {mistakeCount()}</span>
+          <span style={{ opacity: 0.65 }}>•</span>
+          <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+            <span>Daily goal</span>
+            <select
+              value={progress.dailyGoalXp}
+              onChange={(e) => {
+                const n = Number.parseInt(e.target.value, 10);
+                if (!Number.isFinite(n) || n <= 0) return;
+                setProgress({ ...progress, dailyGoalXp: n });
+              }}
+            >
+              {[10, 20, 40, 60].map((n) => (
+                <option key={n} value={n}>
+                  {n} XP
+                </option>
+              ))}
+            </select>
+          </label>
           {progress.dailyXpToday >= progress.dailyGoalXp ? (
-            <span style={{ marginLeft: 10, opacity: 0.95 }}>• Daily goal reached</span>
+            <span style={{ opacity: 0.95 }}>• Daily goal reached</span>
           ) : null}
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
