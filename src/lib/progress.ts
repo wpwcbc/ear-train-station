@@ -36,17 +36,28 @@ export type Progress = {
 const KEY_V2 = 'ets_progress_v2';
 const KEY_V1 = 'ets_progress_v1';
 
+function normalizeProgressForToday(p: Progress): Progress {
+  const ymd = todayYmd();
+  // If the user opens the app on a new day but doesn't study yet,
+  // we still want "Today" to show 0/goal rather than yesterday's XP.
+  if (p.dailyYmd !== ymd) {
+    return { ...p, dailyYmd: ymd, dailyXpToday: 0 };
+  }
+  return p;
+}
+
 export function loadProgress(): Progress {
   try {
     const rawV2 = localStorage.getItem(KEY_V2);
     if (rawV2) {
       const parsed = JSON.parse(rawV2) as Progress;
       if (parsed?.version === 2) {
-        return {
+        const merged: Progress = {
           ...defaultProgress(),
           ...parsed,
           stationDone: { ...defaultProgress().stationDone, ...(parsed.stationDone ?? {}) },
         };
+        return normalizeProgressForToday(merged);
       }
     }
 
@@ -55,24 +66,25 @@ export function loadProgress(): Progress {
     if (rawV1) {
       const parsed1 = JSON.parse(rawV1) as ProgressV1;
       if (parsed1?.version === 1) {
-        const migrated: Progress = {
+        const migrated: Progress = normalizeProgressForToday({
           ...defaultProgress(),
           xp: parsed1.xp ?? 0,
           streakDays: parsed1.streakDays ?? 0,
           lastStudyYmd: parsed1.lastStudyYmd ?? null,
           stationDone: { ...defaultProgress().stationDone, ...(parsed1.stationDone ?? {}) },
-        };
+        });
         // Save immediately so next load is v2.
         localStorage.setItem(KEY_V2, JSON.stringify(migrated));
         return migrated;
       }
     }
 
-    return defaultProgress();
+    return normalizeProgressForToday(defaultProgress());
   } catch {
-    return defaultProgress();
+    return normalizeProgressForToday(defaultProgress());
   }
 }
+
 
 export function saveProgress(p: Progress) {
   localStorage.setItem(KEY_V2, JSON.stringify(p));
