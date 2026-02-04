@@ -1,6 +1,6 @@
 import type { StationId } from './progress';
 
-export type MistakeKind = 'noteName' | 'intervalLabel' | 'triadQuality' | 'scaleDegreeName';
+export type MistakeKind = 'noteName' | 'intervalLabel' | 'triadQuality' | 'scaleDegreeName' | 'functionFamily';
 
 type ReviewFields = {
   /** When this item is eligible to appear in the review queue. */
@@ -46,7 +46,22 @@ export type TriadQualityMistake = {
   addedAt: number;
 } & ReviewFields;
 
-export type Mistake = NoteNameMistake | IntervalLabelMistake | ScaleDegreeNameMistake | TriadQualityMistake;
+export type FunctionFamilyMistake = {
+  id: string;
+  kind: 'functionFamily';
+  sourceStationId: StationId;
+  key: string;
+  degree: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  tonicMidi: number;
+  addedAt: number;
+} & ReviewFields;
+
+export type Mistake =
+  | NoteNameMistake
+  | IntervalLabelMistake
+  | ScaleDegreeNameMistake
+  | TriadQualityMistake
+  | FunctionFamilyMistake;
 
 type MistakeV1 = Omit<Mistake, keyof ReviewFields>;
 
@@ -96,6 +111,7 @@ function deDupeKey(m: Mistake): string {
   if (m.kind === 'noteName') return `noteName:${m.midi}`;
   if (m.kind === 'intervalLabel') return `intervalLabel:${m.rootMidi}:${m.semitones}`;
   if (m.kind === 'scaleDegreeName') return `scaleDegreeName:${m.key}:${m.degree}`;
+  if (m.kind === 'functionFamily') return `functionFamily:${m.key}:${m.degree}:${m.tonicMidi}`;
   return `triadQuality:${m.rootMidi}:${m.quality}`;
 }
 
@@ -104,7 +120,8 @@ export function addMistake(
     | Omit<NoteNameMistake, 'id' | 'addedAt' | keyof ReviewFields>
     | Omit<IntervalLabelMistake, 'id' | 'addedAt' | keyof ReviewFields>
     | Omit<ScaleDegreeNameMistake, 'id' | 'addedAt' | keyof ReviewFields>
-    | Omit<TriadQualityMistake, 'id' | 'addedAt' | keyof ReviewFields>,
+    | Omit<TriadQualityMistake, 'id' | 'addedAt' | keyof ReviewFields>
+    | Omit<FunctionFamilyMistake, 'id' | 'addedAt' | keyof ReviewFields>,
 ) {
   const now = Date.now();
   const entry: Mistake = {

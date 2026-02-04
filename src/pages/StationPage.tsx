@@ -142,6 +142,22 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [s6Correct, setS6Correct] = useState(0);
   const S6_GOAL = 6;
 
+  // Test 7: function families across a wider register (G2 and above).
+  const [t7Index, setT7Index] = useState(0);
+  const [t7Correct, setT7Correct] = useState(0);
+  const [t7Wrong, setT7Wrong] = useState(0);
+  const T7_TOTAL = 10;
+  const T7_PASS = 8;
+  const t7Q = useMemo(
+    () =>
+      makeFunctionFamilyQuestion({
+        seed: seed * 1000 + 1700 + t7Index,
+        tonicMinMidi: 43, // G2
+        tonicMaxMidi: 65, // F4-ish
+      }),
+    [seed, t7Index],
+  );
+
   // Station 7: scale degree role names (tonic, supertonic, ...)
   const degreeQ = useMemo(
     () => makeScaleDegreeNameQuestion({ seed: seed * 1000 + 7, choiceCount: 4, mode: 'lesson' }),
@@ -713,6 +729,21 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({});
   }
 
+  async function playPromptT7() {
+    setResult('idle');
+    const rootMidi = t7Q.chordMidis[0];
+    setHighlighted({ [rootMidi]: 'active' });
+    await piano.playMidi(rootMidi, { durationSec: 0.65, velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, 240));
+    const active: Record<number, 'active'> = Object.fromEntries(t7Q.chordMidis.map((m) => [m, 'active'])) as Record<
+      number,
+      'active'
+    >;
+    setHighlighted(active);
+    await piano.playChord(t7Q.chordMidis, { mode: chordMode, durationSec: 1.1, velocity: 0.92, gapMs: 130 });
+    setHighlighted({});
+  }
+
   async function chooseT5(choice: 'major' | 'minor' | 'diminished') {
     if (t5Index >= T5_TOTAL) return;
     if (t5Wrong >= HEARTS) return;
@@ -828,6 +859,71 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setT6Index(0);
     setT6Correct(0);
     setT6Wrong(0);
+    setResult('idle');
+    setHighlighted({});
+    setSeed((x) => x + 1);
+  }
+
+  async function chooseT7(choice: FunctionFamily) {
+    if (t7Index >= T7_TOTAL) return;
+    if (t7Wrong >= HEARTS) return;
+
+    const ok = choice === t7Q.family;
+    setResult(ok ? 'correct' : 'wrong');
+
+    if (!ok) {
+      addMistake({
+        kind: 'functionFamily',
+        sourceStationId: id,
+        key: t7Q.key,
+        degree: t7Q.degree,
+        tonicMidi: t7Q.tonicMidi,
+      });
+
+      const nextWrong = t7Wrong + 1;
+      setT7Wrong(nextWrong);
+
+      const nextIndex = t7Index + 1;
+      if (nextWrong >= HEARTS) {
+        setT7Index(T7_TOTAL);
+        return;
+      }
+
+      if (nextIndex >= T7_TOTAL) {
+        setT7Index(T7_TOTAL);
+        return;
+      }
+
+      setT7Index(nextIndex);
+      return;
+    }
+
+    setT7Correct((n) => n + 1);
+
+    let p2 = applyStudyReward(progress, 3);
+
+    const nextIndex = t7Index + 1;
+    if (nextIndex >= T7_TOTAL) {
+      const correct = t7Correct + 1;
+      const pass = correct >= T7_PASS;
+      if (pass) {
+        p2 = applyStudyReward(p2, 12);
+        p2 = markStationDone(p2, 'T7_FUNCTIONS');
+      }
+      setProgress(p2);
+      setResult(pass ? 'correct' : 'wrong');
+      setT7Index(T7_TOTAL);
+      return;
+    }
+
+    setProgress(p2);
+    setT7Index(nextIndex);
+  }
+
+  function resetT7() {
+    setT7Index(0);
+    setT7Correct(0);
+    setT7Wrong(0);
     setResult('idle');
     setHighlighted({});
     setSeed((x) => x + 1);
@@ -1519,6 +1615,56 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             onPress={(m) => piano.playMidi(m, { durationSec: 0.9, velocity: 0.9 })}
             highlighted={highlighted}
           />
+        </>
+      ) : id === 'T7_FUNCTIONS' ? (
+        <>
+          <div className="row">
+            <button className="primary" onClick={playPromptT7}>Hear chord</button>
+            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
+              <span>Playback</span>
+              <select
+                value={chordMode}
+                onChange={(e) => {
+                  const v = e.target.value === 'block' ? 'block' : 'arp';
+                  const next = { ...settings, chordPlayback: v } as typeof settings;
+                  setSettings(next);
+                  saveSettings(next);
+                }}
+              >
+                <option value="arp">Arp</option>
+                <option value="block">Block</option>
+              </select>
+            </label>
+            <button className="ghost" onClick={resetT7}>Restart</button>
+            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+              Q: {Math.min(t7Index + 1, T7_TOTAL)}/{T7_TOTAL} · Correct: {t7Correct}/{T7_TOTAL} (need {T7_PASS}) · Lives:{' '}
+              {Math.max(0, HEARTS - t7Wrong)}/{HEARTS}
+            </div>
+          </div>
+
+          <div className={`result r_${result}`}>
+            {result === 'idle' && 'Test: name function family (tonic / subdominant / dominant). Need 8/10 to pass.'}
+            {result === 'correct' &&
+              (progress.stationDone['T7_FUNCTIONS'] ? 'Passed — nice. (+12 bonus XP)' : `Correct — +3 XP. (${t7Q.family})`)}
+            {result === 'wrong' &&
+              (t7Index + 1 >= T7_TOTAL
+                ? `Finished: ${t7Correct}/${T7_TOTAL}. Need ${T7_PASS}. Hit restart to try again.`
+                : `Not quite — it was ${t7Q.family}.`)}
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>Prompt: {t7Q.prompt}</div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+            {t7Q.choices.map((c) => (
+              <button key={c} className="secondary" onClick={() => chooseT7(c)}>
+                {c}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+            Tip: listen for rest vs move vs tension. (Range is wider: G2+)
+          </div>
         </>
       ) : id === 'S7_DEGREES' ? (
         <>

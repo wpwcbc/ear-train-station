@@ -75,6 +75,12 @@ export const STATIONS: Station[] = [
     kind: 'lesson',
   },
   {
+    id: 'T7_FUNCTIONS',
+    title: 'Test 7 — Function families',
+    blurb: 'Mixed keys: name tonic/subdominant/dominant by ear across a wider register.',
+    kind: 'test',
+  },
+  {
     id: 'S7_DEGREES',
     title: 'Station 7 — Scale degree roles',
     blurb: 'Tonic, supertonic, mediant… learn the names and “job” of each degree.',

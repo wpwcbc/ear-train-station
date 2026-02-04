@@ -65,6 +65,9 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
       'We want fast grouping — not perfect theory debates.',
     ],
   },
+  T7_FUNCTIONS: {
+    primer: ['10 questions. Mixed keys + wider register (G2 and up). Need 8/10 to pass.'],
+  },
   S7_DEGREES: {
     primer: [
       'Scale degrees have names (roles):',

@@ -9,6 +9,8 @@ import { makeNoteNameReviewQuestion } from '../exercises/noteName';
 import { makeIntervalLabelReviewQuestion, intervalLongName, type IntervalLabel } from '../exercises/interval';
 import { makeTriadQualityReviewQuestion, triadQualityLabel, type TriadQuality } from '../exercises/triad';
 import { makeScaleDegreeNameReviewQuestion, type ScaleDegreeName } from '../exercises/scaleDegree';
+import { makeFunctionFamilyQuestion, type FunctionFamily } from '../exercises/functionFamily';
+import { MAJOR_KEYS } from '../lib/theory/major';
 
 function msToHuman(ms: number): string {
   if (ms <= 0) return 'now';
@@ -73,6 +75,17 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     });
   }, [active, seed]);
 
+  const ffQ = useMemo(() => {
+    if (!active || active.kind !== 'functionFamily') return null;
+    const key = active.key as (typeof MAJOR_KEYS)[number]['key'];
+    return makeFunctionFamilyQuestion({
+      seed: seed * 1000 + 905,
+      key,
+      degree: active.degree,
+      tonicMidi: active.tonicMidi,
+    });
+  }, [active, seed]);
+
   async function playPrompt() {
     setResult('idle');
     if (!active) return;
@@ -93,6 +106,14 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       await piano.playMidi(degQ.tonicMidi, { durationSec: 0.7, velocity: 0.9 });
       await new Promise((r) => setTimeout(r, 260));
       await piano.playMidi(degQ.targetMidi, { durationSec: 0.9, velocity: 0.92 });
+      return;
+    }
+
+    if (active.kind === 'functionFamily' && ffQ) {
+      const rootMidi = ffQ.chordMidis[0];
+      await piano.playMidi(rootMidi, { durationSec: 0.65, velocity: 0.9 });
+      await new Promise((r) => setTimeout(r, 240));
+      await piano.playChord(ffQ.chordMidis, { mode: chordMode, durationSec: 1.1, velocity: 0.92, gapMs: 130 });
       return;
     }
 
@@ -158,6 +179,12 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     applyOutcome(ok ? 'correct' : 'wrong');
   }
 
+  async function chooseFamily(choice: FunctionFamily) {
+    if (!ffQ || !active || active.kind !== 'functionFamily') return;
+    const ok = choice === ffQ.family;
+    applyOutcome(ok ? 'correct' : 'wrong');
+  }
+
   const dueCount = due.length;
   const totalCount = mistakes.length;
   const nextDue = useMemo(() => {
@@ -187,7 +214,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           <button className="primary" disabled={!active} onClick={playPrompt}>
             Play
           </button>
-          {active?.kind === 'triadQuality' ? (
+          {active?.kind === 'triadQuality' || active?.kind === 'functionFamily' ? (
             <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
               <span>Playback</span>
               <select
@@ -285,6 +312,26 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
             {degQ.choices.map((c) => (
               <button key={c} className="secondary" onClick={() => chooseDegree(c)}>
+                {c}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
+            From: {active.sourceStationId} • Streak: {active.correctStreak}/2
+          </div>
+        </>
+      ) : active.kind === 'functionFamily' && ffQ ? (
+        <>
+          <div className={`result r_${result}`}>
+            {result === 'idle' && ffQ.prompt}
+            {result === 'correct' && 'Cleared — +4 XP.'}
+            {result === 'wrong' && `Not quite — it was ${ffQ.family}.`}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            {ffQ.choices.map((c) => (
+              <button key={c} className="secondary" onClick={() => chooseFamily(c)}>
                 {c}
               </button>
             ))}

@@ -11,6 +11,8 @@ export type FunctionFamilyQuestion = {
   degree: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   roman: string;
   family: FunctionFamily;
+  /** Tonic midi used to generate the diatonic triad. */
+  tonicMidi: number;
   chordMidis: [number, number, number];
   prompt: string;
   choices: FunctionFamily[];
@@ -45,17 +47,37 @@ function degreeToRoman(deg: 1 | 2 | 3 | 4 | 5 | 6 | 7, quality: 'major' | 'minor
 
 export function makeFunctionFamilyQuestion(opts: {
   seed: number;
+  /** Optional fixed key (used for review / deterministic tests). */
+  key?: (typeof MAJOR_KEYS)[number]['key'];
   /** Lessons: keep stable register (C4..B4 tonic). */
   stableTonicMidi?: number;
+  /** Optional fixed tonic midi (used for tests/review). */
+  tonicMidi?: number;
+  /** If provided, randomize tonic midi inside [tonicMinMidi, tonicMaxMidi]. */
+  tonicMinMidi?: number;
+  tonicMaxMidi?: number;
   degree?: 1 | 2 | 3 | 4 | 5 | 6 | 7;
 }): FunctionFamilyQuestion {
   const rng = mulberry32(opts.seed);
 
-  const k = MAJOR_KEYS[Math.floor(rng() * MAJOR_KEYS.length)];
+  const key = opts.key ?? MAJOR_KEYS[Math.floor(rng() * MAJOR_KEYS.length)].key;
   const degree = (opts.degree ?? (1 + Math.floor(rng() * 7))) as 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
-  const tonicPc = PC[k.key];
-  const tonicMidi = opts.stableTonicMidi ?? 60 + tonicPc; // stable: C4..B4
+  const tonicPc = PC[key];
+
+  const tonicMidi =
+    opts.tonicMidi ??
+    (opts.tonicMinMidi != null && opts.tonicMaxMidi != null
+      ? // Pick a tonic in range but keep correct pitch-class.
+        (() => {
+          const min = opts.tonicMinMidi;
+          const max = opts.tonicMaxMidi;
+          const span = Math.max(0, max - min);
+          const base = min + Math.floor(rng() * (span + 1));
+          const aligned = base + ((tonicPc - (base % 12) + 12) % 12);
+          return aligned > max ? aligned - 12 : aligned;
+        })()
+      : opts.stableTonicMidi ?? 60 + tonicPc); // stable: C4..B4
 
   const quality = DEGREE_QUALITY[degree];
   const roman = degreeToRoman(degree, quality);
@@ -68,12 +90,13 @@ export function makeFunctionFamilyQuestion(opts: {
   return {
     id: `ff_seed_${opts.seed}`,
     kind: 'function-family',
-    key: k.key,
+    key,
     degree,
     roman,
     family,
+    tonicMidi,
     chordMidis,
-    prompt: `Key: ${k.key} major — what FUNCTION family does ${roman} belong to?`,
+    prompt: `Key: ${key} major — what FUNCTION family does ${roman} belong to?`,
     choices,
   };
 }
