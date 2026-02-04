@@ -63,11 +63,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     () => makeIntervalQuestion({ seed: seed * 1000 + 3, rootMidi: 60, minSemitones: 0, maxSemitones: 12 }),
     [seed],
   );
+  const [s3Correct, setS3Correct] = useState(0);
+  const S3_GOAL = 6;
 
   // Station 3 warm-up: derive interval names by ±1 semitone.
   const [s3DeriveIndex, setS3DeriveIndex] = useState(0);
   const [s3DeriveCorrect, setS3DeriveCorrect] = useState(0);
   const S3_DERIVE_GOAL = 5;
+  const s3WarmupDone = s3DeriveCorrect >= S3_DERIVE_GOAL;
   const [s3DeriveResult, setS3DeriveResult] = useState<'idle' | 'correct' | 'wrong'>('idle');
 
   const s3DeriveQ = useMemo(
@@ -287,7 +290,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   function rewardAndMaybeComplete(
     xpGain: number,
-    extra?: { stationDone?: StationId },
+    extra?: { stationDone?: StationId; completionBonusXp?: number },
     opts?: { combo?: boolean },
   ) {
     const comboEnabled = opts?.combo ?? station?.kind === 'lesson';
@@ -309,9 +312,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       p2 = applyStudyReward(p2, 8); // small completion bonus
     }
 
-    if (id === 'S3_INTERVALS') {
-      p2 = markStationDone(p2, id);
-    }
+    // S3 completion handled in-station once warm-up + goal are met.
 
     if (id === 'S4_TRIADS' && s4Correct + 1 >= S4_GOAL) {
       p2 = markStationDone(p2, id);
@@ -340,6 +341,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (extra?.stationDone) {
       p2 = markStationDone(p2, extra.stationDone);
+      if (extra.completionBonusXp) {
+        p2 = applyStudyReward(p2, extra.completionBonusXp);
+      }
     }
 
     setProgress(p2);
@@ -356,6 +360,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   }
 
   async function onPressS3(midi: number) {
+    if (!s3WarmupDone) return;
+
     setHighlighted({ [midi]: 'active' });
     await piano.playMidi(midi, { durationSec: dur(0.9), velocity: 0.9 });
     const ok = midi === intervalQ.targetMidi;
@@ -369,7 +375,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       return;
     }
 
-    rewardAndMaybeComplete(10);
+    const nextCorrect = s3Correct + 1;
+    setS3Correct(nextCorrect);
+
+    const willComplete = nextCorrect >= S3_GOAL && s3WarmupDone;
+    rewardAndMaybeComplete(10, willComplete ? { stationDone: 'S3_INTERVALS', completionBonusXp: 10 } : undefined);
   }
 
   function chooseS3Derive(choice: IntervalLabel) {
@@ -1720,16 +1730,28 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           </div>
 
           <div className="row">
-            <button className="primary" onClick={playPromptS3}>Play prompt</button>
-            <button className="secondary" onClick={() => piano.playMidi(intervalQ.rootMidi, { durationSec: dur(0.9) })}>
+            <button className="primary" onClick={playPromptS3} disabled={!s3WarmupDone}>
+              Play prompt
+            </button>
+            <button
+              className="secondary"
+              disabled={!s3WarmupDone}
+              onClick={() => piano.playMidi(intervalQ.rootMidi, { durationSec: dur(0.9) })}
+            >
               Root
             </button>
             <button className="ghost" onClick={next}>Next</button>
+            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+              Progress: {Math.min(s3Correct, S3_GOAL)}/{S3_GOAL}
+            </div>
           </div>
 
           <div className={`result r_${result}`}>
-            {result === 'idle' && 'Tap the target note.'}
-            {result === 'correct' && 'Correct — +10 XP.'}
+            {result === 'idle' &&
+              (s3WarmupDone
+                ? 'Tap the target note.'
+                : `Finish the warm-up first (${Math.min(s3DeriveCorrect, S3_DERIVE_GOAL)}/${S3_DERIVE_GOAL}).`)}
+            {result === 'correct' && (s3Correct + 1 >= S3_GOAL ? 'Nice — station complete. (+10 bonus XP)' : 'Correct — +10 XP.')}
             {result === 'wrong' && 'Not quite. Listen again.'}
           </div>
 
