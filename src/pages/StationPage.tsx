@@ -8,6 +8,7 @@ import { piano } from '../audio/piano';
 import { makeIntervalQuestion } from '../exercises/interval';
 import { makeNoteNameQuestion } from '../exercises/noteName';
 import { makeMajorScaleSession, makeMajorScaleStepQuestion } from '../exercises/majorScale';
+import { makeTriadQualityQuestion, triadQualityIntervals, triadQualityLabel } from '../exercises/triad';
 
 export function StationPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
   const { stationId } = useParams();
@@ -31,6 +32,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   const [result, setResult] = useState<'idle' | 'correct' | 'wrong'>('idle');
   const [highlighted, setHighlighted] = useState<Record<number, 'correct' | 'wrong' | 'active'>>({});
+
+  // Station 4: triad-quality question (stable register)
+  const triadQ = useMemo(() => makeTriadQualityQuestion({ seed: seed * 1000 + 4 }), [seed]);
+  const [s4Correct, setS4Correct] = useState(0);
+  const S4_GOAL = 6;
 
   // S1 micro-goal: require a few correct answers to mark as done (Duolingo-style “lesson set”).
   const [s1Correct, setS1Correct] = useState(0);
@@ -66,6 +72,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (id === 'S3_INTERVALS') {
       p2 = markStationDone(p2, id);
+    }
+
+    if (id === 'S4_TRIADS' && s4Correct + 1 >= S4_GOAL) {
+      p2 = markStationDone(p2, id);
+      p2 = applyStudyReward(p2, 10); // completion bonus
     }
 
     if (extra?.stationDone) {
@@ -159,6 +170,43 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult('idle');
     setHighlighted({});
     setSeed((x) => x + 1);
+  }
+
+  async function playPromptS4() {
+    setResult('idle');
+    // root then arpeggiated chord
+    setHighlighted({ [triadQ.rootMidi]: 'active' });
+    await piano.playMidi(triadQ.rootMidi, { durationSec: 0.65, velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, 250));
+    const active: Record<number, 'active'> = Object.fromEntries(triadQ.chordMidis.map((m) => [m, 'active'])) as Record<
+      number,
+      'active'
+    >;
+    setHighlighted(active);
+    await piano.playChord(triadQ.chordMidis, { mode: 'arp', durationSec: 1.1, velocity: 0.92, gapMs: 130 });
+    setHighlighted({});
+  }
+
+  async function chooseS4(choice: 'major' | 'minor' | 'diminished') {
+    const ok = choice === triadQ.quality;
+    setResult(ok ? 'correct' : 'wrong');
+
+    const correctHi: Record<number, 'correct'> = Object.fromEntries(triadQ.chordMidis.map((m) => [m, 'correct'])) as Record<
+      number,
+      'correct'
+    >;
+
+    if (!ok) {
+      setHighlighted({
+        ...correctHi,
+        ...(triadQ.chordMidis.includes(triadQ.rootMidi) ? {} : { [triadQ.rootMidi]: 'correct' }),
+      });
+      return;
+    }
+
+    setS4Correct((n) => n + 1);
+    setHighlighted(correctHi);
+    rewardAndMaybeComplete(4);
   }
 
   if (!station) {
@@ -285,6 +333,40 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           </div>
 
           <PianoKeyboard startMidi={48} octaves={2} onPress={onPressS3} highlighted={highlighted} />
+        </>
+      ) : id === 'S4_TRIADS' ? (
+        <>
+          <div className="row">
+            <button className="primary" onClick={playPromptS4}>Hear chord</button>
+            <button className="secondary" onClick={() => piano.playMidi(triadQ.rootMidi, { durationSec: 0.8, velocity: 0.9 })}>
+              Root
+            </button>
+            <button className="ghost" onClick={next}>Next</button>
+            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+              Progress: {Math.min(s4Correct, S4_GOAL)}/{S4_GOAL}
+            </div>
+          </div>
+
+          <div className={`result r_${result}`}>
+            {result === 'idle' && triadQ.prompt}
+            {result === 'correct' && 'Correct — +4 XP.'}
+            {result === 'wrong' && `Not quite — it was ${triadQualityLabel(triadQ.quality)} (${triadQualityIntervals(triadQ.quality).join('-')} semitones).`}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            {triadQ.choices.map((c) => (
+              <button key={c} className="secondary" onClick={() => chooseS4(c)}>
+                {triadQualityLabel(c)}
+              </button>
+            ))}
+          </div>
+
+          <PianoKeyboard
+            startMidi={48}
+            octaves={2}
+            onPress={(m) => piano.playMidi(m, { durationSec: 0.9, velocity: 0.9 })}
+            highlighted={highlighted}
+          />
         </>
       ) : (
         <div className="result">Content for this station is next.</div>
