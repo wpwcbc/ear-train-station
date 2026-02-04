@@ -43,6 +43,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const copy = stationCopy(id);
 
   const [seed, setSeed] = useState(1);
+  // If a station is already completed, default to a “summary” view with an optional practice toggle.
+  const [practice, setPractice] = useState(false);
 
   const [settings, setSettings] = useState(() => loadSettings());
   const chordMode = settings.chordPlayback;
@@ -1208,7 +1210,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         Hotkeys: Space/Enter = Play/Hear • 1–9 = Answer • Backspace = Next/Restart
       </div>
 
-      {id === 'S1_NOTES' ? (
+      {!done || practice ? (
+        id === 'S1_NOTES' ? (
         <>
           <div className="row">
             <button className="primary" onClick={playPromptS1}>Play note</button>
@@ -1831,7 +1834,27 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         </>
       ) : (
         <div className="result">Content for this station is next.</div>
-      )}
+      )
+    ) : (
+      <div
+        className="result r_correct"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}
+      >
+        <div>
+          <div style={{ fontWeight: 700 }}>Already completed.</div>
+          <div style={{ fontSize: 12, opacity: 0.9 }}>You can practice again for fun (XP still counts).</div>
+        </div>
+        <button className="primary" onClick={() => setPractice(true)}>
+          Practice again
+        </button>
+      </div>
+    )}
 
       {copy?.tips?.length ? (
         <div style={{ marginTop: 12, fontSize: 12, opacity: 0.8, lineHeight: 1.5 }}>
