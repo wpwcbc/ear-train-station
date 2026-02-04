@@ -92,6 +92,12 @@ export const STATIONS: Station[] = [
     blurb: 'Quick check: identify degree names in different keys (wider register).',
     kind: 'test',
   },
+  {
+    id: 'S8_DEGREE_INTERVALS',
+    title: 'Station 8 — Degree → interval mapping',
+    blurb: 'In major: 1=P1, 2=M2, 3=M3… connect scale degrees to interval sound.',
+    kind: 'lesson',
+  },
 ];
 
 export function stationIndex(id: StationId): number {

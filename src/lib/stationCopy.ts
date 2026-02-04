@@ -82,6 +82,14 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
   T4_DEGREES: {
     primer: ['10 questions. Identify degree names across a wider register. Need 8/10.'],
   },
+  S8_DEGREE_INTERVALS: {
+    primer: [
+      'In a major scale, each degree is a fixed interval above tonic:',
+      '1=P1 · 2=M2 · 3=M3 · 4=P4 · 5=P5 · 6=M6 · 7=M7.',
+      'Listen tonic → target and name the interval label.',
+    ],
+    tips: ['This is the bridge between “degrees in a key” and “intervals from any root”.'],
+  },
 };
 
 export function stationCopy(id: StationId): StationCopy | null {

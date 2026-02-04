@@ -12,7 +12,8 @@ export type StationId =
   | 'S6_FUNCTIONS'
   | 'T7_FUNCTIONS'
   | 'S7_DEGREES'
-  | 'T4_DEGREES';
+  | 'T4_DEGREES'
+  | 'S8_DEGREE_INTERVALS';
 
 type ProgressV1 = {
   version: 1;
@@ -176,6 +177,7 @@ export function defaultProgress(): Progress {
       T7_FUNCTIONS: false,
       S7_DEGREES: false,
       T4_DEGREES: false,
+      S8_DEGREE_INTERVALS: false,
     },
   };
 }

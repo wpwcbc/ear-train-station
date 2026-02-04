@@ -30,6 +30,7 @@ import { makeTriadQualityQuestion, triadQualityIntervals, triadQualityLabel } fr
 import { makeDiatonicTriadQualityQuestion } from '../exercises/diatonicTriad';
 import { makeFunctionFamilyQuestion, type FunctionFamily } from '../exercises/functionFamily';
 import { degreeMeaning, makeScaleDegreeNameQuestion, type ScaleDegreeName } from '../exercises/scaleDegree';
+import { makeDegreeIntervalQuestion } from '../exercises/degreeInterval';
 
 export function StationPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
   const { stationId } = useParams();
@@ -189,6 +190,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     [seed, t4Index],
   );
 
+  // Station 8: connect scale degrees to interval labels in a major key.
+  const degreeIntervalQ = useMemo(
+    () => makeDegreeIntervalQuestion({ seed: seed * 1000 + 8, choiceCount: 4, mode: 'lesson' }),
+    [seed],
+  );
+  const [s8Correct, setS8Correct] = useState(0);
+  const S8_GOAL = 7;
+
   // Test 1: note names across a wider range (G2 and above).
   const [t1Index, setT1Index] = useState(0);
   const [t1Correct, setT1Correct] = useState(0);
@@ -296,6 +305,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     }
 
     if (id === 'S7_DEGREES' && s7Correct + 1 >= S7_GOAL) {
+      p2 = markStationDone(p2, id);
+      p2 = applyStudyReward(p2, 10); // completion bonus
+    }
+
+    if (id === 'S8_DEGREE_INTERVALS' && s8Correct + 1 >= S8_GOAL) {
       p2 = markStationDone(p2, id);
       p2 = applyStudyReward(p2, 10); // completion bonus
     }
@@ -525,6 +539,36 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     }
 
     setS7Correct((n) => n + 1);
+    rewardAndMaybeComplete(3);
+  }
+
+  async function playPromptS8() {
+    setResult('idle');
+    setHighlighted({});
+    await playTonicTargetPrompt(degreeIntervalQ.tonicMidi, degreeIntervalQ.targetMidi, {
+      gapMs: 260,
+      targetDurationSec: 0.9,
+      velocity: 0.9,
+    });
+  }
+
+  async function chooseS8(choice: IntervalLabel) {
+    const ok = choice === degreeIntervalQ.correct;
+    setResult(ok ? 'correct' : 'wrong');
+
+    if (!ok) {
+      setCombo(0);
+      setLastComboBonus(0);
+      addMistake({
+        kind: 'intervalLabel',
+        sourceStationId: id,
+        rootMidi: degreeIntervalQ.tonicMidi,
+        semitones: degreeIntervalQ.semitones,
+      });
+      return;
+    }
+
+    setS8Correct((n) => n + 1);
     rewardAndMaybeComplete(3);
   }
 
@@ -1102,6 +1146,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       else if (id === 'T7_FUNCTIONS') void playPromptT7();
       else if (id === 'S7_DEGREES') void playPromptS7();
       else if (id === 'T4_DEGREES') void playPromptT4();
+      else if (id === 'S8_DEGREE_INTERVALS') void playPromptS8();
     },
     onSecondary: () => {
       if (id === 'S1_NOTES') next();
@@ -1118,6 +1163,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       else if (id === 'T7_FUNCTIONS') resetT7();
       else if (id === 'S7_DEGREES') next();
       else if (id === 'T4_DEGREES') resetT4();
+      else if (id === 'S8_DEGREE_INTERVALS') next();
     },
     onChoiceIndex: (idx) => {
       if (id === 'S1_NOTES') {
@@ -1188,6 +1234,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       if (id === 'T4_DEGREES') {
         const c = t4Q.choices[idx];
         if (c) void chooseT4(c);
+        return;
+      }
+      if (id === 'S8_DEGREE_INTERVALS') {
+        const c = degreeIntervalQ.choices[idx];
+        if (c) void chooseS8(c);
       }
     },
   });
@@ -1893,6 +1944,34 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
             Tip: tests can roam across a bigger register; lessons stay in a stable register.
+          </div>
+        </>
+      ) : id === 'S8_DEGREE_INTERVALS' ? (
+        <>
+          <div className="row">
+            <button className="primary" onClick={playPromptS8}>Hear tonic → degree</button>
+            <button className="ghost" onClick={next}>Next</button>
+            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+              Progress: {Math.min(s8Correct, S8_GOAL)}/{S8_GOAL}
+            </div>
+          </div>
+
+          <div className={`result r_${result}`}>
+            {result === 'idle' && degreeIntervalQ.prompt}
+            {result === 'correct' && `Correct — +3 XP. (${degreeIntervalQ.correct})`}
+            {result === 'wrong' && `Not quite — it was ${degreeIntervalQ.correct}.`}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            {degreeIntervalQ.choices.map((c) => (
+              <button key={c} className="secondary" onClick={() => chooseS8(c)}>
+                {c}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+            Major scale intervals: 1=P1 · 2=M2 · 3=M3 · 4=P4 · 5=P5 · 6=M6 · 7=M7
           </div>
         </>
       ) : (
