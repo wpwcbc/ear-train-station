@@ -19,16 +19,23 @@ export function MapPage({ progress }: { progress: Progress }) {
       <div className="line">
         {STATIONS.map((s, idx) => {
           const done = progress.stationDone[s.id];
+          const unlocked = idx === 0 ? true : STATIONS.slice(0, idx).every((p) => progress.stationDone[p.id]);
+
           return (
             <div key={s.id} className="stationRow">
-              <div className={`stationDot ${done ? 'done' : ''}`}>{idx + 1}</div>
+              <div className={`stationDot ${done ? 'done' : ''} ${unlocked ? '' : 'locked'}`}>{idx + 1}</div>
               <div className="stationBody">
                 <div className="stationTitle">
-                  {s.title} {done ? <span className="tinyDone">DONE</span> : null}
+                  {s.title}{' '}
+                  {done ? <span className="tinyDone">DONE</span> : unlocked ? null : <span className="tinyLocked">LOCKED</span>}
                 </div>
                 <div className="stationBlurb">{s.blurb}</div>
                 <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  <Link className="linkBtn" to={`/station/${s.id}`}>Start</Link>
+                  {unlocked ? (
+                    <Link className="linkBtn" to={`/station/${s.id}`}>Start</Link>
+                  ) : (
+                    <span style={{ fontSize: 12, opacity: 0.75 }}>Finish previous station(s) to unlock.</span>
+                  )}
                 </div>
               </div>
             </div>

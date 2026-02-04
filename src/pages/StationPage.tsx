@@ -38,6 +38,22 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [s4Correct, setS4Correct] = useState(0);
   const S4_GOAL = 6;
 
+  // Test 1: note names across a wider range (G2 and above).
+  const [t1Index, setT1Index] = useState(0);
+  const [t1Correct, setT1Correct] = useState(0);
+  const T1_TOTAL = 10;
+  const T1_PASS = 8;
+  const t1Q = useMemo(
+    () =>
+      makeNoteNameQuestion({
+        seed: seed * 1000 + 1100 + t1Index,
+        minMidi: 43, // G2
+        maxMidi: 84, // C6
+        choiceCount: 6,
+      }),
+    [seed, t1Index],
+  );
+
   // S1 micro-goal: require a few correct answers to mark as done (Duolingo-style “lesson set”).
   const [s1Correct, setS1Correct] = useState(0);
   const S1_GOAL = 8;
@@ -187,6 +203,51 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({});
   }
 
+  async function playPromptT1() {
+    setResult('idle');
+    setHighlighted({ [t1Q.midi]: 'active' });
+    await piano.playMidi(t1Q.midi, { durationSec: 0.9, velocity: 0.95 });
+    setHighlighted({});
+  }
+
+  async function chooseT1(choice: string) {
+    const ok = t1Q.acceptedAnswers.includes(choice);
+    setResult(ok ? 'correct' : 'wrong');
+    setHighlighted({ [t1Q.midi]: ok ? 'correct' : 'wrong' });
+
+    if (!ok) return;
+
+    setT1Correct((n) => n + 1);
+
+    // +3 XP per correct test item.
+    let p2 = applyStudyReward(progress, 3);
+
+    const nextIndex = t1Index + 1;
+    if (nextIndex >= T1_TOTAL) {
+      // finish: decide pass/fail based on *current* correct count
+      const correct = t1Correct + 1;
+      const pass = correct >= T1_PASS;
+      if (pass) {
+        p2 = applyStudyReward(p2, 12);
+        p2 = markStationDone(p2, 'T1_NOTES');
+      }
+      setProgress(p2);
+      setResult(pass ? 'correct' : 'wrong');
+      return;
+    }
+
+    setProgress(p2);
+    setT1Index(nextIndex);
+  }
+
+  function resetT1() {
+    setT1Index(0);
+    setT1Correct(0);
+    setResult('idle');
+    setHighlighted({});
+    setSeed((x) => x + 1);
+  }
+
   async function chooseS4(choice: 'major' | 'minor' | 'diminished') {
     const ok = choice === triadQ.quality;
     setResult(ok ? 'correct' : 'wrong');
@@ -261,6 +322,40 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             onPress={(m) => piano.playMidi(m, { durationSec: 0.9, velocity: 0.9 })}
             highlighted={highlighted}
           />
+        </>
+      ) : id === 'T1_NOTES' ? (
+        <>
+          <div className="row">
+            <button className="primary" onClick={playPromptT1}>Play note</button>
+            <button className="ghost" onClick={resetT1}>Restart</button>
+            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+              Q: {Math.min(t1Index + 1, T1_TOTAL)}/{T1_TOTAL} · Correct: {t1Correct}/{T1_TOTAL} (need {T1_PASS})
+            </div>
+          </div>
+
+          <div className={`result r_${result}`}>
+            {result === 'idle' && 'Test: name 10 notes (wider range). Need 8/10 to pass.'}
+            {result === 'correct' &&
+              (progress.stationDone['T1_NOTES']
+                ? 'Passed — nice. (+12 bonus XP)'
+                : `Correct — +3 XP. (${t1Q.promptLabel})`)}
+            {result === 'wrong' &&
+              (t1Index + 1 >= T1_TOTAL
+                ? `Finished: ${t1Correct}/${T1_TOTAL}. Need ${T1_PASS}. Hit restart to try again.`
+                : `Not quite — it was ${t1Q.promptLabel}.`)}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            {t1Q.choices.map((c) => (
+              <button key={c} className="secondary" onClick={() => chooseT1(c)}>
+                {c}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+            Tip: tests can roam across a bigger register; lessons stay in a stable register.
+          </div>
         </>
       ) : id === 'S2_MAJOR_SCALE' ? (
         <>

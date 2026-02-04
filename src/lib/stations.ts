@@ -15,6 +15,12 @@ export const STATIONS: Station[] = [
     kind: 'lesson',
   },
   {
+    id: 'T1_NOTES',
+    title: 'Test 1 — Notes & accidentals',
+    blurb: 'Mixed-register check: name notes across a wider range.',
+    kind: 'test',
+  },
+  {
     id: 'S2_MAJOR_SCALE',
     title: 'Station 2 — Major scale by sound',
     blurb: 'WWHWWWH + build scale notes with correct spelling rules.',

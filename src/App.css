@@ -160,6 +160,11 @@ button.ghost {
   background: rgba(90, 255, 160, 0.12);
 }
 
+.stationDot.locked {
+  opacity: 0.55;
+  filter: grayscale(0.35);
+}
+
 .stationTitle {
   font-weight: 650;
 }
@@ -178,6 +183,16 @@ button.ghost {
   border: 1px solid rgba(90, 255, 160, 0.35);
   background: rgba(90, 255, 160, 0.10);
   opacity: 0.9;
+}
+
+.tinyLocked {
+  margin-left: 8px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  opacity: 0.8;
 }
 
 .linkBtn {
