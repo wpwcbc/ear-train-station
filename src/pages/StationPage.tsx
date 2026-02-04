@@ -613,6 +613,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult(ok ? 'correct' : 'wrong');
 
     if (!ok) {
+      addMistake({ kind: 'triadQuality', sourceStationId: id, rootMidi: t5Q.rootMidi, quality: t5Q.quality });
+
       const nextWrong = t5Wrong + 1;
       setT5Wrong(nextWrong);
 

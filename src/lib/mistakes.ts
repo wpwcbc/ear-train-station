@@ -1,6 +1,6 @@
 import type { StationId } from './progress';
 
-export type MistakeKind = 'noteName' | 'intervalLabel';
+export type MistakeKind = 'noteName' | 'intervalLabel' | 'triadQuality';
 
 export type NoteNameMistake = {
   id: string;
@@ -19,7 +19,16 @@ export type IntervalLabelMistake = {
   addedAt: number;
 };
 
-export type Mistake = NoteNameMistake | IntervalLabelMistake;
+export type TriadQualityMistake = {
+  id: string;
+  kind: 'triadQuality';
+  sourceStationId: StationId;
+  rootMidi: number;
+  quality: 'major' | 'minor' | 'diminished';
+  addedAt: number;
+};
+
+export type Mistake = NoteNameMistake | IntervalLabelMistake | TriadQualityMistake;
 
 const KEY = 'ets_mistakes_v1';
 const MAX = 50;
@@ -45,13 +54,15 @@ export function saveMistakes(m: Mistake[]) {
 
 function deDupeKey(m: Mistake): string {
   if (m.kind === 'noteName') return `noteName:${m.midi}`;
-  return `intervalLabel:${m.rootMidi}:${m.semitones}`;
+  if (m.kind === 'intervalLabel') return `intervalLabel:${m.rootMidi}:${m.semitones}`;
+  return `triadQuality:${m.rootMidi}:${m.quality}`;
 }
 
 export function addMistake(
   m:
     | Omit<NoteNameMistake, 'id' | 'addedAt'>
-    | Omit<IntervalLabelMistake, 'id' | 'addedAt'>,
+    | Omit<IntervalLabelMistake, 'id' | 'addedAt'>
+    | Omit<TriadQualityMistake, 'id' | 'addedAt'>,
 ) {
   const now = Date.now();
   const entry: Mistake = { ...(m as Mistake), id: `${now}_${Math.random().toString(16).slice(2)}`, addedAt: now };

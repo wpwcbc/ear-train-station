@@ -6,6 +6,7 @@ import { loadMistakes, removeMistake, type Mistake } from '../lib/mistakes';
 import { piano } from '../audio/piano';
 import { makeNoteNameReviewQuestion } from '../exercises/noteName';
 import { makeIntervalLabelReviewQuestion, intervalLongName, type IntervalLabel } from '../exercises/interval';
+import { makeTriadQualityReviewQuestion, triadQualityLabel, type TriadQuality } from '../exercises/triad';
 
 export function ReviewPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
   const [seed, setSeed] = useState(1);
@@ -30,6 +31,16 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     });
   }, [active, seed]);
 
+  const triadQ = useMemo(() => {
+    if (!active || active.kind !== 'triadQuality') return null;
+    return makeTriadQualityReviewQuestion({
+      seed: seed * 1000 + 903,
+      rootMidi: active.rootMidi,
+      quality: active.quality,
+      choiceCount: 3,
+    });
+  }, [active, seed]);
+
   async function playPrompt() {
     setResult('idle');
     if (!active) return;
@@ -39,9 +50,20 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       return;
     }
 
-    await piano.playMidi(active.rootMidi, { durationSec: 0.7, velocity: 0.9 });
-    await new Promise((r) => setTimeout(r, 320));
-    await piano.playMidi(active.rootMidi + active.semitones, { durationSec: 0.95, velocity: 0.9 });
+    if (active.kind === 'intervalLabel') {
+      await piano.playMidi(active.rootMidi, { durationSec: 0.7, velocity: 0.9 });
+      await new Promise((r) => setTimeout(r, 320));
+      await piano.playMidi(active.rootMidi + active.semitones, { durationSec: 0.95, velocity: 0.9 });
+      return;
+    }
+
+    // triadQuality
+    if (triadQ) {
+      const rootMidi = triadQ.chordMidis[0];
+      await piano.playMidi(rootMidi, { durationSec: 0.65, velocity: 0.9 });
+      await new Promise((r) => setTimeout(r, 240));
+      await piano.playChord(triadQ.chordMidis, { mode: 'arp', durationSec: 1.1, velocity: 0.92, gapMs: 130 });
+    }
   }
 
   function markCorrect() {
@@ -67,6 +89,13 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   async function chooseInterval(choice: IntervalLabel) {
     if (!ilQ || !active || active.kind !== 'intervalLabel') return;
     const ok = choice === ilQ.correct;
+    if (ok) markCorrect();
+    else markWrong();
+  }
+
+  async function chooseTriad(choice: TriadQuality) {
+    if (!triadQ || !active || active.kind !== 'triadQuality') return;
+    const ok = choice === triadQ.quality;
     if (ok) markCorrect();
     else markWrong();
   }
@@ -137,6 +166,24 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             {ilQ.choices.map((c) => (
               <button key={c} className="secondary" onClick={() => chooseInterval(c)}>
                 {c}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>From: {active.sourceStationId}</div>
+        </>
+      ) : active.kind === 'triadQuality' && triadQ ? (
+        <>
+          <div className={`result r_${result}`}>
+            {result === 'idle' && triadQ.prompt}
+            {result === 'correct' && `Cleared — +4 XP. (${triadQualityLabel(triadQ.quality)})`}
+            {result === 'wrong' && `Not quite — it was ${triadQualityLabel(triadQ.quality)}.`}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            {triadQ.choices.map((c) => (
+              <button key={c} className="secondary" onClick={() => chooseTriad(c)}>
+                {triadQualityLabel(c)}
               </button>
             ))}
           </div>

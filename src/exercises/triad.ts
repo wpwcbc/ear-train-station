@@ -75,3 +75,40 @@ export function makeTriadQualityQuestion(opts: {
     choices,
   };
 }
+
+export function makeTriadQualityReviewQuestion(opts: {
+  seed: number;
+  rootMidi: number;
+  quality: TriadQuality;
+  choiceCount?: number;
+}): TriadQuestion {
+  const rng = mulberry32(opts.seed);
+
+  const qualities: TriadQuality[] = ['major', 'minor', 'diminished'];
+  const quality = opts.quality;
+
+  const intervals = QUALITY_INTERVALS[quality];
+  const chordMidis: [number, number, number] = [
+    opts.rootMidi + intervals[0],
+    opts.rootMidi + intervals[1],
+    opts.rootMidi + intervals[2],
+  ];
+
+  const choiceCount = Math.max(2, Math.min(opts.choiceCount ?? 3, qualities.length));
+  const distractors = shuffle(
+    qualities.filter((x) => x !== quality),
+    rng,
+  ).slice(0, Math.max(0, choiceCount - 1));
+
+  const choices = shuffle([quality, ...distractors], rng);
+
+  return {
+    id: `tq_review_${opts.rootMidi}_${quality}`,
+    kind: 'triad-quality',
+    rootMidi: opts.rootMidi,
+    quality,
+    chordMidis,
+    prompt: 'Review: which triad quality is this?',
+    choices,
+  };
+}
