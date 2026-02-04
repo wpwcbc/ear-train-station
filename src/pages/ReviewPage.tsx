@@ -5,6 +5,7 @@ import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
 import { applyReviewResult, loadMistakes, snoozeMistake, updateMistake, type Mistake } from '../lib/mistakes';
 import { loadSettings, saveSettings } from '../lib/settings';
+import { promptSpeedFactors, promptSpeedLabel } from '../lib/promptTiming';
 import { piano } from '../audio/piano';
 import { playIntervalPrompt, playRootThenChordPrompt, playTonicTargetPrompt } from '../audio/prompts';
 import { makeNoteNameReviewQuestion } from '../exercises/noteName';
@@ -31,6 +32,10 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const [seed, setSeed] = useState(1);
   const [settings, setSettings] = useState(() => loadSettings());
   const chordMode = settings.chordPlayback;
+  const speed = settings.promptSpeed;
+  const timing = useMemo(() => promptSpeedFactors(speed), [speed]);
+  const dur = (sec: number) => sec * timing.dur;
+  const gap = (ms: number) => Math.round(ms * timing.gap);
   const [result, setResult] = useState<'idle' | 'correct' | 'wrong'>('idle');
   const [doneCount, setDoneCount] = useState(0);
   const [now, setNow] = useState(() => Date.now());
@@ -105,33 +110,49 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     if (!active) return;
 
     if (active.kind === 'noteName') {
-      await piano.playMidi(active.midi, { durationSec: 0.9, velocity: 0.95 });
+      await piano.playMidi(active.midi, { durationSec: dur(0.9), velocity: 0.95 });
       return;
     }
 
     if (active.kind === 'intervalLabel') {
-      await playIntervalPrompt(active.rootMidi, active.rootMidi + active.semitones, { gapMs: 320 });
+      await playIntervalPrompt(active.rootMidi, active.rootMidi + active.semitones, {
+        gapMs: gap(320),
+        rootDurationSec: dur(0.7),
+        targetDurationSec: dur(0.95),
+      });
       return;
     }
 
     if (active.kind === 'scaleDegreeName' && degQ) {
-      await playTonicTargetPrompt(degQ.tonicMidi, degQ.targetMidi, { gapMs: 260 });
+      await playTonicTargetPrompt(degQ.tonicMidi, degQ.targetMidi, { gapMs: gap(260), tonicDurationSec: dur(0.7), targetDurationSec: dur(0.9) });
       return;
     }
 
     if (active.kind === 'majorScaleDegree' && msQ) {
-      await playTonicTargetPrompt(msQ.tonicMidi, msQ.targetMidi, { gapMs: 260 });
+      await playTonicTargetPrompt(msQ.tonicMidi, msQ.targetMidi, { gapMs: gap(260), tonicDurationSec: dur(0.7), targetDurationSec: dur(0.9) });
       return;
     }
 
     if (active.kind === 'functionFamily' && ffQ) {
-      await playRootThenChordPrompt(ffQ.chordMidis, { mode: chordMode });
+      await playRootThenChordPrompt(ffQ.chordMidis, {
+        mode: chordMode,
+        rootDurationSec: dur(0.65),
+        chordDurationSec: dur(1.1),
+        gapBeforeChordMs: gap(240),
+        gapMs: gap(130),
+      });
       return;
     }
 
     // triadQuality
     if (triadQ) {
-      await playRootThenChordPrompt(triadQ.chordMidis, { mode: chordMode });
+      await playRootThenChordPrompt(triadQ.chordMidis, {
+        mode: chordMode,
+        rootDurationSec: dur(0.65),
+        chordDurationSec: dur(1.1),
+        gapBeforeChordMs: gap(240),
+        gapMs: gap(130),
+      });
     }
   }
 
@@ -291,6 +312,24 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               </select>
             </label>
           ) : null}
+          <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
+            <span>Speed</span>
+            <select
+              value={speed}
+              onChange={(e) => {
+                const v = e.target.value === 'slow' ? 'slow' : e.target.value === 'fast' ? 'fast' : 'normal';
+                const next = { ...settings, promptSpeed: v } as typeof settings;
+                setSettings(next);
+                saveSettings(next);
+              }}
+            >
+              {(['slow', 'normal', 'fast'] as const).map((s) => (
+                <option key={s} value={s}>
+                  {promptSpeedLabel(s)}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className="ghost" onClick={refresh}>
             Refresh
           </button>

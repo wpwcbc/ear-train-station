@@ -6,6 +6,7 @@ import { addMistake } from '../lib/mistakes';
 import { STATIONS, nextStationId, isStationUnlocked } from '../lib/stations';
 import { stationCopy } from '../lib/stationCopy';
 import { loadSettings, saveSettings } from '../lib/settings';
+import { promptSpeedFactors, promptSpeedLabel } from '../lib/promptTiming';
 import { PianoKeyboard } from '../components/PianoKeyboard';
 import { StaffNote } from '../components/StaffNote';
 import { useHotkeys } from '../lib/hooks/useHotkeys';
@@ -49,6 +50,10 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   const [settings, setSettings] = useState(() => loadSettings());
   const chordMode = settings.chordPlayback;
+  const speed = settings.promptSpeed;
+  const timing = useMemo(() => promptSpeedFactors(speed), [speed]);
+  const dur = (sec: number) => sec * timing.dur;
+  const gap = (ms: number) => Math.round(ms * timing.gap);
 
   // Station 3: interval question (deterministic per seed)
   const intervalQ = useMemo(
@@ -324,16 +329,16 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   async function playPromptS3() {
     setResult('idle');
     setHighlighted({ [intervalQ.rootMidi]: 'active' });
-    await piano.playMidi(intervalQ.rootMidi, { durationSec: 0.7, velocity: 0.9 });
-    await new Promise((r) => setTimeout(r, 350));
+    await piano.playMidi(intervalQ.rootMidi, { durationSec: dur(0.7), velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, gap(350)));
     setHighlighted({ [intervalQ.targetMidi]: 'active' });
-    await piano.playMidi(intervalQ.targetMidi, { durationSec: 0.9, velocity: 0.9 });
+    await piano.playMidi(intervalQ.targetMidi, { durationSec: dur(0.9), velocity: 0.9 });
     setHighlighted({});
   }
 
   async function onPressS3(midi: number) {
     setHighlighted({ [midi]: 'active' });
-    await piano.playMidi(midi, { durationSec: 0.9, velocity: 0.9 });
+    await piano.playMidi(midi, { durationSec: dur(0.9), velocity: 0.9 });
     const ok = midi === intervalQ.targetMidi;
 
     setResult(ok ? 'correct' : 'wrong');
@@ -369,7 +374,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   async function playPromptS1() {
     setResult('idle');
     setHighlighted({ [noteQ.midi]: 'active' });
-    await piano.playMidi(noteQ.midi, { durationSec: 0.9, velocity: 0.95 });
+    await piano.playMidi(noteQ.midi, { durationSec: dur(0.9), velocity: 0.95 });
     setHighlighted({});
   }
 
@@ -392,10 +397,10 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   async function playPromptS2() {
     setResult('idle');
     setHighlighted({ [s2Q.tonicMidi]: 'active' });
-    await piano.playMidi(s2Q.tonicMidi, { durationSec: 0.65, velocity: 0.9 });
-    await new Promise((r) => setTimeout(r, 250));
+    await piano.playMidi(s2Q.tonicMidi, { durationSec: dur(0.65), velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, gap(250)));
     setHighlighted({ [s2Q.targetMidi]: 'active' });
-    await piano.playMidi(s2Q.targetMidi, { durationSec: 0.85, velocity: 0.9 });
+    await piano.playMidi(s2Q.targetMidi, { durationSec: dur(0.85), velocity: 0.9 });
     setHighlighted({});
   }
 
@@ -474,14 +479,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult('idle');
     // root then arpeggiated chord
     setHighlighted({ [triadQ.rootMidi]: 'active' });
-    await piano.playMidi(triadQ.rootMidi, { durationSec: 0.65, velocity: 0.9 });
-    await new Promise((r) => setTimeout(r, 250));
+    await piano.playMidi(triadQ.rootMidi, { durationSec: dur(0.65), velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, gap(250)));
     const active: Record<number, 'active'> = Object.fromEntries(triadQ.chordMidis.map((m) => [m, 'active'])) as Record<
       number,
       'active'
     >;
     setHighlighted(active);
-    await piano.playChord(triadQ.chordMidis, { mode: chordMode, durationSec: 1.1, velocity: 0.92, gapMs: 130 });
+    await piano.playChord(triadQ.chordMidis, { mode: chordMode, durationSec: dur(1.1), velocity: 0.92, gapMs: gap(130) });
     setHighlighted({});
   }
 
@@ -490,14 +495,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     // root then arpeggiated diatonic triad
     const rootMidi = diatonicQ.chordMidis[0];
     setHighlighted({ [rootMidi]: 'active' });
-    await piano.playMidi(rootMidi, { durationSec: 0.65, velocity: 0.9 });
-    await new Promise((r) => setTimeout(r, 240));
+    await piano.playMidi(rootMidi, { durationSec: dur(0.65), velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, gap(240)));
     const active: Record<number, 'active'> = Object.fromEntries(diatonicQ.chordMidis.map((m) => [m, 'active'])) as Record<
       number,
       'active'
     >;
     setHighlighted(active);
-    await piano.playChord(diatonicQ.chordMidis, { mode: chordMode, durationSec: 1.1, velocity: 0.92, gapMs: 130 });
+    await piano.playChord(diatonicQ.chordMidis, { mode: chordMode, durationSec: dur(1.1), velocity: 0.92, gapMs: gap(130) });
     setHighlighted({});
   }
 
@@ -506,24 +511,24 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     // root then arpeggiated triad
     const rootMidi = funcQ.chordMidis[0];
     setHighlighted({ [rootMidi]: 'active' });
-    await piano.playMidi(rootMidi, { durationSec: 0.65, velocity: 0.9 });
-    await new Promise((r) => setTimeout(r, 240));
+    await piano.playMidi(rootMidi, { durationSec: dur(0.65), velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, gap(240)));
     const active: Record<number, 'active'> = Object.fromEntries(funcQ.chordMidis.map((m) => [m, 'active'])) as Record<
       number,
       'active'
     >;
     setHighlighted(active);
-    await piano.playChord(funcQ.chordMidis, { mode: chordMode, durationSec: 1.1, velocity: 0.92, gapMs: 130 });
+    await piano.playChord(funcQ.chordMidis, { mode: chordMode, durationSec: dur(1.1), velocity: 0.92, gapMs: gap(130) });
     setHighlighted({});
   }
 
   async function playPromptS7() {
     setResult('idle');
     setHighlighted({ [degreeQ.tonicMidi]: 'active' });
-    await piano.playMidi(degreeQ.tonicMidi, { durationSec: 0.7, velocity: 0.9 });
-    await new Promise((r) => setTimeout(r, 260));
+    await piano.playMidi(degreeQ.tonicMidi, { durationSec: dur(0.7), velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, gap(260)));
     setHighlighted({ [degreeQ.targetMidi]: 'active' });
-    await piano.playMidi(degreeQ.targetMidi, { durationSec: 0.9, velocity: 0.92 });
+    await piano.playMidi(degreeQ.targetMidi, { durationSec: dur(0.9), velocity: 0.92 });
     setHighlighted({});
   }
 
@@ -546,8 +551,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult('idle');
     setHighlighted({});
     await playTonicTargetPrompt(degreeIntervalQ.tonicMidi, degreeIntervalQ.targetMidi, {
-      gapMs: 260,
-      targetDurationSec: 0.9,
+      gapMs: gap(260),
+      targetDurationSec: dur(0.9),
       velocity: 0.9,
     });
   }
@@ -575,7 +580,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   async function playPromptT4() {
     setResult('idle');
     setHighlighted({});
-    await playTonicTargetPrompt(t4Q.tonicMidi, t4Q.targetMidi, { gapMs: 260, targetDurationSec: 0.9, velocity: 0.9 });
+    await playTonicTargetPrompt(t4Q.tonicMidi, t4Q.targetMidi, {
+      gapMs: gap(260),
+      targetDurationSec: dur(0.9),
+      velocity: 0.9,
+    });
   }
 
   async function chooseT4(choice: ScaleDegreeName) {
@@ -640,7 +649,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   async function playPromptT1() {
     setResult('idle');
     setHighlighted({});
-    await piano.playMidi(t1Q.midi, { durationSec: 0.9, velocity: 0.95 });
+    await piano.playMidi(t1Q.midi, { durationSec: dur(0.9), velocity: 0.95 });
   }
 
   async function chooseT1(choice: string) {
@@ -710,13 +719,13 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   async function playPromptT2() {
     setResult('idle');
     setHighlighted({});
-    await playTonicTargetPrompt(t2Q.tonicMidi, t2Q.targetMidi, { gapMs: 300 });
+    await playTonicTargetPrompt(t2Q.tonicMidi, t2Q.targetMidi, { gapMs: gap(300) });
   }
 
   async function playPromptT3() {
     setResult('idle');
     setHighlighted({});
-    await playIntervalPrompt(t3Q.rootMidi, t3Q.targetMidi, { gapMs: 320 });
+    await playIntervalPrompt(t3Q.rootMidi, t3Q.targetMidi, { gapMs: gap(320), rootDurationSec: dur(0.7), targetDurationSec: dur(0.95) });
   }
 
   async function chooseT3(choice: IntervalLabel) {
@@ -782,19 +791,37 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   async function playPromptT5() {
     setResult('idle');
     setHighlighted({});
-    await playRootThenChordPrompt(t5Q.chordMidis, { mode: chordMode });
+    await playRootThenChordPrompt(t5Q.chordMidis, {
+      mode: chordMode,
+      rootDurationSec: dur(0.65),
+      chordDurationSec: dur(1.1),
+      gapBeforeChordMs: gap(240),
+      gapMs: gap(130),
+    });
   }
 
   async function playPromptT6() {
     setResult('idle');
     setHighlighted({});
-    await playRootThenChordPrompt(t6Q.chordMidis, { mode: chordMode });
+    await playRootThenChordPrompt(t6Q.chordMidis, {
+      mode: chordMode,
+      rootDurationSec: dur(0.65),
+      chordDurationSec: dur(1.1),
+      gapBeforeChordMs: gap(240),
+      gapMs: gap(130),
+    });
   }
 
   async function playPromptT7() {
     setResult('idle');
     setHighlighted({});
-    await playRootThenChordPrompt(t7Q.chordMidis, { mode: chordMode });
+    await playRootThenChordPrompt(t7Q.chordMidis, {
+      mode: chordMode,
+      rootDurationSec: dur(0.65),
+      chordDurationSec: dur(1.1),
+      gapBeforeChordMs: gap(240),
+      gapMs: gap(130),
+    });
   }
 
   async function chooseT5(choice: 'major' | 'minor' | 'diminished') {
@@ -1314,8 +1341,27 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         </details>
       ) : null}
 
-      <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+      <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
         <span>Hotkeys: Space/Enter = Play/Hear • 1–9 = Answer • Backspace = Next/Restart</span>
+        <span style={{ opacity: 0.55 }}>•</span>
+        <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+          <span>Speed</span>
+          <select
+            value={speed}
+            onChange={(e) => {
+              const v = e.target.value === 'slow' ? 'slow' : e.target.value === 'fast' ? 'fast' : 'normal';
+              const next = { ...settings, promptSpeed: v } as typeof settings;
+              setSettings(next);
+              saveSettings(next);
+            }}
+          >
+            {(['slow', 'normal', 'fast'] as const).map((s) => (
+              <option key={s} value={s}>
+                {promptSpeedLabel(s)}
+              </option>
+            ))}
+          </select>
+        </label>
         {station?.kind === 'lesson' && combo >= 2 ? (
           <span style={{ opacity: 0.9 }}>
             Combo: x{combo}
@@ -1355,7 +1401,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
               <PianoKeyboard
                 startMidi={60}
                 octaves={1}
-                onPress={(m) => piano.playMidi(m, { durationSec: 0.9, velocity: 0.9 })}
+                onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
                 highlighted={highlighted}
               />
             </div>
@@ -1471,7 +1517,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             </button>
             <button
               className="secondary"
-              onClick={() => piano.playMidi(s2Session.tonicMidi, { durationSec: 0.75, velocity: 0.9 })}
+              onClick={() => piano.playMidi(s2Session.tonicMidi, { durationSec: dur(0.75), velocity: 0.9 })}
             >
               Tonic
             </button>
@@ -1535,7 +1581,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
               <PianoKeyboard
                 startMidi={60}
                 octaves={1}
-                onPress={(m) => piano.playMidi(m, { durationSec: 0.9, velocity: 0.9 })}
+                onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
                 highlighted={highlighted}
               />
             </>
@@ -1569,7 +1615,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
           <div className="row">
             <button className="primary" onClick={playPromptS3}>Play prompt</button>
-            <button className="secondary" onClick={() => piano.playMidi(intervalQ.rootMidi, { durationSec: 0.9 })}>
+            <button className="secondary" onClick={() => piano.playMidi(intervalQ.rootMidi, { durationSec: dur(0.9) })}>
               Root
             </button>
             <button className="ghost" onClick={next}>Next</button>
@@ -1587,7 +1633,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         <>
           <div className="row">
             <button className="primary" onClick={playPromptS4}>Hear chord</button>
-            <button className="secondary" onClick={() => piano.playMidi(triadQ.rootMidi, { durationSec: 0.8, velocity: 0.9 })}>
+            <button className="secondary" onClick={() => piano.playMidi(triadQ.rootMidi, { durationSec: dur(0.8), velocity: 0.9 })}>
               Root
             </button>
             <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
@@ -1628,7 +1674,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           <PianoKeyboard
             startMidi={48}
             octaves={2}
-            onPress={(m) => piano.playMidi(m, { durationSec: 0.9, velocity: 0.9 })}
+            onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
             highlighted={highlighted}
           />
         </>
@@ -1725,7 +1771,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           <PianoKeyboard
             startMidi={48}
             octaves={2}
-            onPress={(m) => piano.playMidi(m, { durationSec: 0.9, velocity: 0.9 })}
+            onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
             highlighted={highlighted}
           />
         </>
@@ -1827,7 +1873,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           <PianoKeyboard
             startMidi={48}
             octaves={2}
-            onPress={(m) => piano.playMidi(m, { durationSec: 0.9, velocity: 0.9 })}
+            onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
             highlighted={highlighted}
           />
         </>
