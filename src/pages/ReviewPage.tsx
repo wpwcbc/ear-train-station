@@ -6,6 +6,7 @@ import { applyStudyReward } from '../lib/progress';
 import { applyReviewResult, loadMistakes, snoozeMistake, updateMistake, type Mistake } from '../lib/mistakes';
 import { loadSettings, saveSettings } from '../lib/settings';
 import { piano } from '../audio/piano';
+import { playIntervalPrompt, playRootThenChordPrompt, playTonicTargetPrompt } from '../audio/prompts';
 import { makeNoteNameReviewQuestion } from '../exercises/noteName';
 import { makeIntervalLabelReviewQuestion, intervalLongName, type IntervalLabel } from '../exercises/interval';
 import { makeTriadQualityReviewQuestion, triadQualityLabel, type TriadQuality } from '../exercises/triad';
@@ -109,40 +110,28 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     }
 
     if (active.kind === 'intervalLabel') {
-      await piano.playMidi(active.rootMidi, { durationSec: 0.7, velocity: 0.9 });
-      await new Promise((r) => setTimeout(r, 320));
-      await piano.playMidi(active.rootMidi + active.semitones, { durationSec: 0.95, velocity: 0.9 });
+      await playIntervalPrompt(active.rootMidi, active.rootMidi + active.semitones, { gapMs: 320 });
       return;
     }
 
     if (active.kind === 'scaleDegreeName' && degQ) {
-      await piano.playMidi(degQ.tonicMidi, { durationSec: 0.7, velocity: 0.9 });
-      await new Promise((r) => setTimeout(r, 260));
-      await piano.playMidi(degQ.targetMidi, { durationSec: 0.9, velocity: 0.92 });
+      await playTonicTargetPrompt(degQ.tonicMidi, degQ.targetMidi, { gapMs: 260 });
       return;
     }
 
     if (active.kind === 'majorScaleDegree' && msQ) {
-      await piano.playMidi(msQ.tonicMidi, { durationSec: 0.7, velocity: 0.9 });
-      await new Promise((r) => setTimeout(r, 260));
-      await piano.playMidi(msQ.targetMidi, { durationSec: 0.9, velocity: 0.92 });
+      await playTonicTargetPrompt(msQ.tonicMidi, msQ.targetMidi, { gapMs: 260 });
       return;
     }
 
     if (active.kind === 'functionFamily' && ffQ) {
-      const rootMidi = ffQ.chordMidis[0];
-      await piano.playMidi(rootMidi, { durationSec: 0.65, velocity: 0.9 });
-      await new Promise((r) => setTimeout(r, 240));
-      await piano.playChord(ffQ.chordMidis, { mode: chordMode, durationSec: 1.1, velocity: 0.92, gapMs: 130 });
+      await playRootThenChordPrompt(ffQ.chordMidis, { mode: chordMode });
       return;
     }
 
     // triadQuality
     if (triadQ) {
-      const rootMidi = triadQ.chordMidis[0];
-      await piano.playMidi(rootMidi, { durationSec: 0.65, velocity: 0.9 });
-      await new Promise((r) => setTimeout(r, 240));
-      await piano.playChord(triadQ.chordMidis, { mode: chordMode, durationSec: 1.1, velocity: 0.92, gapMs: 130 });
+      await playRootThenChordPrompt(triadQ.chordMidis, { mode: chordMode });
     }
   }
 

@@ -10,6 +10,7 @@ import { PianoKeyboard } from '../components/PianoKeyboard';
 import { StaffNote } from '../components/StaffNote';
 import { useHotkeys } from '../lib/hooks/useHotkeys';
 import { piano } from '../audio/piano';
+import { playIntervalPrompt, playRootThenChordPrompt, playTonicTargetPrompt } from '../audio/prompts';
 import {
   makeIntervalQuestion,
   makeIntervalLabelQuestion,
@@ -490,12 +491,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   async function playPromptT4() {
     setResult('idle');
-    setHighlighted({ [t4Q.tonicMidi]: 'active' });
-    await piano.playMidi(t4Q.tonicMidi, { durationSec: 0.7, velocity: 0.9 });
-    await new Promise((r) => setTimeout(r, 260));
-    setHighlighted({ [t4Q.targetMidi]: 'active' });
-    await piano.playMidi(t4Q.targetMidi, { durationSec: 0.9, velocity: 0.92 });
     setHighlighted({});
+    await playTonicTargetPrompt(t4Q.tonicMidi, t4Q.targetMidi, { gapMs: 260, targetDurationSec: 0.9, velocity: 0.9 });
   }
 
   async function chooseT4(choice: ScaleDegreeName) {
@@ -559,9 +556,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   async function playPromptT1() {
     setResult('idle');
-    setHighlighted({ [t1Q.midi]: 'active' });
-    await piano.playMidi(t1Q.midi, { durationSec: 0.9, velocity: 0.95 });
     setHighlighted({});
+    await piano.playMidi(t1Q.midi, { durationSec: 0.9, velocity: 0.95 });
   }
 
   async function chooseT1(choice: string) {
@@ -630,22 +626,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   async function playPromptT2() {
     setResult('idle');
-    setHighlighted({ [t2Q.tonicMidi]: 'active' });
-    await piano.playMidi(t2Q.tonicMidi, { durationSec: 0.7, velocity: 0.9 });
-    await new Promise((r) => setTimeout(r, 300));
-    setHighlighted({ [t2Q.targetMidi]: 'active' });
-    await piano.playMidi(t2Q.targetMidi, { durationSec: 0.9, velocity: 0.9 });
     setHighlighted({});
+    await playTonicTargetPrompt(t2Q.tonicMidi, t2Q.targetMidi, { gapMs: 300 });
   }
 
   async function playPromptT3() {
     setResult('idle');
-    setHighlighted({ [t3Q.rootMidi]: 'active' });
-    await piano.playMidi(t3Q.rootMidi, { durationSec: 0.7, velocity: 0.9 });
-    await new Promise((r) => setTimeout(r, 320));
-    setHighlighted({ [t3Q.targetMidi]: 'active' });
-    await piano.playMidi(t3Q.targetMidi, { durationSec: 0.95, velocity: 0.9 });
     setHighlighted({});
+    await playIntervalPrompt(t3Q.rootMidi, t3Q.targetMidi, { gapMs: 320 });
   }
 
   async function chooseT3(choice: IntervalLabel) {
@@ -710,47 +698,20 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   async function playPromptT5() {
     setResult('idle');
-    const rootMidi = t5Q.chordMidis[0];
-    setHighlighted({ [rootMidi]: 'active' });
-    await piano.playMidi(rootMidi, { durationSec: 0.65, velocity: 0.9 });
-    await new Promise((r) => setTimeout(r, 240));
-    const active: Record<number, 'active'> = Object.fromEntries(t5Q.chordMidis.map((m) => [m, 'active'])) as Record<
-      number,
-      'active'
-    >;
-    setHighlighted(active);
-    await piano.playChord(t5Q.chordMidis, { mode: chordMode, durationSec: 1.1, velocity: 0.92, gapMs: 130 });
     setHighlighted({});
+    await playRootThenChordPrompt(t5Q.chordMidis, { mode: chordMode });
   }
 
   async function playPromptT6() {
     setResult('idle');
-    const rootMidi = t6Q.chordMidis[0];
-    setHighlighted({ [rootMidi]: 'active' });
-    await piano.playMidi(rootMidi, { durationSec: 0.65, velocity: 0.9 });
-    await new Promise((r) => setTimeout(r, 240));
-    const active: Record<number, 'active'> = Object.fromEntries(t6Q.chordMidis.map((m) => [m, 'active'])) as Record<
-      number,
-      'active'
-    >;
-    setHighlighted(active);
-    await piano.playChord(t6Q.chordMidis, { mode: chordMode, durationSec: 1.1, velocity: 0.92, gapMs: 130 });
     setHighlighted({});
+    await playRootThenChordPrompt(t6Q.chordMidis, { mode: chordMode });
   }
 
   async function playPromptT7() {
     setResult('idle');
-    const rootMidi = t7Q.chordMidis[0];
-    setHighlighted({ [rootMidi]: 'active' });
-    await piano.playMidi(rootMidi, { durationSec: 0.65, velocity: 0.9 });
-    await new Promise((r) => setTimeout(r, 240));
-    const active: Record<number, 'active'> = Object.fromEntries(t7Q.chordMidis.map((m) => [m, 'active'])) as Record<
-      number,
-      'active'
-    >;
-    setHighlighted(active);
-    await piano.playChord(t7Q.chordMidis, { mode: chordMode, durationSec: 1.1, velocity: 0.92, gapMs: 130 });
     setHighlighted({});
+    await playRootThenChordPrompt(t7Q.chordMidis, { mode: chordMode });
   }
 
   async function chooseT5(choice: 'major' | 'minor' | 'diminished') {
