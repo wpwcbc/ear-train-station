@@ -44,9 +44,12 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [result, setResult] = useState<'idle' | 'correct' | 'wrong'>('idle');
   const [highlighted, setHighlighted] = useState<Record<number, 'correct' | 'wrong' | 'active'>>({});
 
+  const HEARTS = 3;
+
   // Test 3: interval recognition across a wider register (G2 and above).
   const [t3Index, setT3Index] = useState(0);
   const [t3Correct, setT3Correct] = useState(0);
+  const [t3Wrong, setT3Wrong] = useState(0);
   const T3_TOTAL = 10;
   const T3_PASS = 8;
   const t3Q = useMemo(
@@ -70,6 +73,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   // Test 5: triad quality recognition across a wider register (G2 and above).
   const [t5Index, setT5Index] = useState(0);
   const [t5Correct, setT5Correct] = useState(0);
+  const [t5Wrong, setT5Wrong] = useState(0);
   const T5_TOTAL = 10;
   const T5_PASS = 8;
   const t5Q = useMemo(
@@ -104,6 +108,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   // Test 4: degree names across a wider register (G2 and above).
   const [t4Index, setT4Index] = useState(0);
   const [t4Correct, setT4Correct] = useState(0);
+  const [t4Wrong, setT4Wrong] = useState(0);
   const T4_TOTAL = 10;
   const T4_PASS = 8;
   const t4Q = useMemo(
@@ -119,6 +124,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   // Test 1: note names across a wider range (G2 and above).
   const [t1Index, setT1Index] = useState(0);
   const [t1Correct, setT1Correct] = useState(0);
+  const [t1Wrong, setT1Wrong] = useState(0);
   const T1_TOTAL = 10;
   const T1_PASS = 8;
   const t1Q = useMemo(
@@ -135,6 +141,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   // Test 2: major scale spelling (degrees) across a broader register.
   const [t2Index, setT2Index] = useState(0);
   const [t2Correct, setT2Correct] = useState(0);
+  const [t2Wrong, setT2Wrong] = useState(0);
   const T2_TOTAL = 10;
   const T2_PASS = 8;
   const t2Q = useMemo(
@@ -376,10 +383,30 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   }
 
   async function chooseT4(choice: ScaleDegreeName) {
+    if (t4Index >= T4_TOTAL) return;
+    if (t4Wrong >= HEARTS) return;
+
     const ok = choice === t4Q.correct;
     setResult(ok ? 'correct' : 'wrong');
 
-    if (!ok) return;
+    if (!ok) {
+      const nextWrong = t4Wrong + 1;
+      setT4Wrong(nextWrong);
+
+      const nextIndex = t4Index + 1;
+      if (nextWrong >= HEARTS) {
+        setT4Index(T4_TOTAL);
+        return;
+      }
+
+      if (nextIndex >= T4_TOTAL) {
+        setT4Index(T4_TOTAL);
+        return;
+      }
+
+      setT4Index(nextIndex);
+      return;
+    }
 
     setT4Correct((n) => n + 1);
 
@@ -395,6 +422,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       }
       setProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
+      setT4Index(T4_TOTAL);
       return;
     }
 
@@ -405,6 +433,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   function resetT4() {
     setT4Index(0);
     setT4Correct(0);
+    setT4Wrong(0);
     setResult('idle');
     setHighlighted({});
     setSeed((x) => x + 1);
@@ -418,15 +447,37 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   }
 
   async function chooseT1(choice: string) {
+    if (t1Index >= T1_TOTAL) return;
+    if (t1Wrong >= HEARTS) return;
+
     const ok = t1Q.acceptedAnswers.includes(choice);
     setResult(ok ? 'correct' : 'wrong');
     setHighlighted({ [t1Q.midi]: ok ? 'correct' : 'wrong' });
 
+    // Wrong: spend a life, record mistake, and advance.
     if (!ok) {
       addMistake({ kind: 'noteName', sourceStationId: id, midi: t1Q.midi });
+
+      const nextWrong = t1Wrong + 1;
+      setT1Wrong(nextWrong);
+
+      const nextIndex = t1Index + 1;
+      if (nextWrong >= HEARTS) {
+        // fail immediately
+        setT1Index(T1_TOTAL);
+        return;
+      }
+
+      if (nextIndex >= T1_TOTAL) {
+        setT1Index(T1_TOTAL);
+        return;
+      }
+
+      setT1Index(nextIndex);
       return;
     }
 
+    // Correct
     setT1Correct((n) => n + 1);
 
     // +3 XP per correct test item.
@@ -434,7 +485,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     const nextIndex = t1Index + 1;
     if (nextIndex >= T1_TOTAL) {
-      // finish: decide pass/fail based on *current* correct count
       const correct = t1Correct + 1;
       const pass = correct >= T1_PASS;
       if (pass) {
@@ -443,6 +493,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       }
       setProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
+      setT1Index(T1_TOTAL);
       return;
     }
 
@@ -453,6 +504,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   function resetT1() {
     setT1Index(0);
     setT1Correct(0);
+    setT1Wrong(0);
     setResult('idle');
     setHighlighted({});
     setSeed((x) => x + 1);
@@ -479,11 +531,30 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   }
 
   async function chooseT3(choice: IntervalLabel) {
+    if (t3Index >= T3_TOTAL) return;
+    if (t3Wrong >= HEARTS) return;
+
     const ok = choice === t3Q.correct;
     setResult(ok ? 'correct' : 'wrong');
 
     if (!ok) {
       addMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: t3Q.rootMidi, semitones: t3Q.semitones });
+
+      const nextWrong = t3Wrong + 1;
+      setT3Wrong(nextWrong);
+
+      const nextIndex = t3Index + 1;
+      if (nextWrong >= HEARTS) {
+        setT3Index(T3_TOTAL);
+        return;
+      }
+
+      if (nextIndex >= T3_TOTAL) {
+        setT3Index(T3_TOTAL);
+        return;
+      }
+
+      setT3Index(nextIndex);
       return;
     }
 
@@ -502,6 +573,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       }
       setProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
+      setT3Index(T3_TOTAL);
       return;
     }
 
@@ -512,6 +584,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   function resetT3() {
     setT3Index(0);
     setT3Correct(0);
+    setT3Wrong(0);
     setResult('idle');
     setHighlighted({});
     setSeed((x) => x + 1);
@@ -533,10 +606,30 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   }
 
   async function chooseT5(choice: 'major' | 'minor' | 'diminished') {
+    if (t5Index >= T5_TOTAL) return;
+    if (t5Wrong >= HEARTS) return;
+
     const ok = choice === t5Q.quality;
     setResult(ok ? 'correct' : 'wrong');
 
-    if (!ok) return;
+    if (!ok) {
+      const nextWrong = t5Wrong + 1;
+      setT5Wrong(nextWrong);
+
+      const nextIndex = t5Index + 1;
+      if (nextWrong >= HEARTS) {
+        setT5Index(T5_TOTAL);
+        return;
+      }
+
+      if (nextIndex >= T5_TOTAL) {
+        setT5Index(T5_TOTAL);
+        return;
+      }
+
+      setT5Index(nextIndex);
+      return;
+    }
 
     setT5Correct((n) => n + 1);
 
@@ -553,6 +646,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       }
       setProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
+      setT5Index(T5_TOTAL);
       return;
     }
 
@@ -563,16 +657,37 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   function resetT5() {
     setT5Index(0);
     setT5Correct(0);
+    setT5Wrong(0);
     setResult('idle');
     setHighlighted({});
     setSeed((x) => x + 1);
   }
 
   async function chooseT2(choice: string) {
+    if (t2Index >= T2_TOTAL) return;
+    if (t2Wrong >= HEARTS) return;
+
     const ok = choice === t2Q.correct;
     setResult(ok ? 'correct' : 'wrong');
 
-    if (!ok) return;
+    if (!ok) {
+      const nextWrong = t2Wrong + 1;
+      setT2Wrong(nextWrong);
+
+      const nextIndex = t2Index + 1;
+      if (nextWrong >= HEARTS) {
+        setT2Index(T2_TOTAL);
+        return;
+      }
+
+      if (nextIndex >= T2_TOTAL) {
+        setT2Index(T2_TOTAL);
+        return;
+      }
+
+      setT2Index(nextIndex);
+      return;
+    }
 
     setT2Correct((n) => n + 1);
 
@@ -589,6 +704,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       }
       setProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
+      setT2Index(T2_TOTAL);
       return;
     }
 
@@ -599,6 +715,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   function resetT2() {
     setT2Index(0);
     setT2Correct(0);
+    setT2Wrong(0);
     setResult('idle');
     setHighlighted({});
     setSeed((x) => x + 1);
@@ -769,7 +886,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             <button className="primary" onClick={playPromptT1}>Play note</button>
             <button className="ghost" onClick={resetT1}>Restart</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
-              Q: {Math.min(t1Index + 1, T1_TOTAL)}/{T1_TOTAL} · Correct: {t1Correct}/{T1_TOTAL} (need {T1_PASS})
+              Q: {Math.min(t1Index + 1, T1_TOTAL)}/{T1_TOTAL} · Correct: {t1Correct}/{T1_TOTAL} (need {T1_PASS}) · Lives: {Math.max(0, HEARTS - t1Wrong)}/{HEARTS}
             </div>
           </div>
 
@@ -807,7 +924,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             <button className="primary" onClick={playPromptT2}>Hear prompt</button>
             <button className="ghost" onClick={resetT2}>Restart</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
-              Q: {Math.min(t2Index + 1, T2_TOTAL)}/{T2_TOTAL} · Correct: {t2Correct}/{T2_TOTAL} (need {T2_PASS})
+              Q: {Math.min(t2Index + 1, T2_TOTAL)}/{T2_TOTAL} · Correct: {t2Correct}/{T2_TOTAL} (need {T2_PASS}) · Lives: {Math.max(0, HEARTS - t2Wrong)}/{HEARTS}
             </div>
           </div>
 
@@ -839,7 +956,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             <button className="primary" onClick={playPromptT3}>Hear interval</button>
             <button className="ghost" onClick={resetT3}>Restart</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
-              Q: {Math.min(t3Index + 1, T3_TOTAL)}/{T3_TOTAL} · Correct: {t3Correct}/{T3_TOTAL} (need {T3_PASS})
+              Q: {Math.min(t3Index + 1, T3_TOTAL)}/{T3_TOTAL} · Correct: {t3Correct}/{T3_TOTAL} (need {T3_PASS}) · Lives: {Math.max(0, HEARTS - t3Wrong)}/{HEARTS}
             </div>
           </div>
 
@@ -977,7 +1094,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             <button className="primary" onClick={playPromptT5}>Hear chord</button>
             <button className="ghost" onClick={resetT5}>Restart</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
-              Q: {Math.min(t5Index + 1, T5_TOTAL)}/{T5_TOTAL} · Correct: {t5Correct}/{T5_TOTAL} (need {T5_PASS})
+              Q: {Math.min(t5Index + 1, T5_TOTAL)}/{T5_TOTAL} · Correct: {t5Correct}/{T5_TOTAL} (need {T5_PASS}) · Lives: {Math.max(0, HEARTS - t5Wrong)}/{HEARTS}
             </div>
           </div>
 
@@ -1107,7 +1224,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             <button className="primary" onClick={playPromptT4}>Hear degree</button>
             <button className="ghost" onClick={resetT4}>Restart</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
-              Q: {Math.min(t4Index + 1, T4_TOTAL)}/{T4_TOTAL} · Correct: {t4Correct}/{T4_TOTAL} (need {T4_PASS})
+              Q: {Math.min(t4Index + 1, T4_TOTAL)}/{T4_TOTAL} · Correct: {t4Correct}/{T4_TOTAL} (need {T4_PASS}) · Lives: {Math.max(0, HEARTS - t4Wrong)}/{HEARTS}
             </div>
           </div>
 
