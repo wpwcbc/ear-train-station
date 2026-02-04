@@ -63,22 +63,35 @@ function diatonicNumber(letter: string, octave: number): number {
   return octave * 7 + letterIndex(letter);
 }
 
+function parseSpellingLabel(spelling: string): { letter: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G'; accidental: Accidental } | null {
+  const s = spelling.trim();
+  const m = /^([A-Ga-g])([#b]?)$/.exec(s);
+  if (!m) return null;
+  const letter = m[1].toUpperCase() as 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
+  const accidental = m[2] === '#' ? 'sharp' : m[2] === 'b' ? 'flat' : 'natural';
+  return { letter, accidental };
+}
+
 export function StaffNote({
   midi,
   label,
+  spelling,
   width = 280,
   height = 120,
 }: {
   midi: number;
   label?: string;
+  /** Optional explicit spelling (e.g. "C#" or "Db") to render correct accidentals on staff. */
+  spelling?: string;
   width?: number;
   height?: number;
 }) {
   const pc = ((midi % 12) + 12) % 12;
   const octave = Math.floor(midi / 12) - 1;
 
-  const spelling = pcToDefaultSpelling(pc);
-  const noteDia = diatonicNumber(spelling.letter, octave);
+  const parsed = spelling ? parseSpellingLabel(spelling) : null;
+  const noteSpelling = parsed ?? pcToDefaultSpelling(pc);
+  const noteDia = diatonicNumber(noteSpelling.letter, octave);
 
   // Treble clef staff reference:
   // bottom line is E4, top line is F5.
@@ -114,9 +127,10 @@ export function StaffNote({
     ledgerLines.push(d);
   }
 
-  const accidentalGlyph = spelling.accidental === 'sharp' ? '♯' : spelling.accidental === 'flat' ? '♭' : '';
+  const accidentalGlyph = noteSpelling.accidental === 'sharp' ? '♯' : noteSpelling.accidental === 'flat' ? '♭' : '';
 
-  const legend = label ?? `${spelling.letter}${spelling.accidental === 'natural' ? '' : spelling.accidental === 'sharp' ? '#' : 'b'}${octave}`;
+  const legend =
+    label ?? `${noteSpelling.letter}${noteSpelling.accidental === 'natural' ? '' : noteSpelling.accidental === 'sharp' ? '#' : 'b'}${octave}`;
 
   return (
     <div style={{ width, maxWidth: '100%' }}>

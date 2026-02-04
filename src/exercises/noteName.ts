@@ -20,6 +20,8 @@ export type NoteNameQuestion = {
   midi: number;
   pc: number;
   acceptedAnswers: string[]; // e.g. ["C#", "Db"]
+  /** A single spelling to render on staff/piano labels (still accepts enharmonics). */
+  displaySpelling: string;
   promptLabel: string; // for feedback
   choices: string[]; // multiple-choice options, includes at least one accepted answer
 };
@@ -30,6 +32,8 @@ function buildChoicesForPitchClass(opts: { seed: number; pc: number; choiceCount
 
   const spell = spellPitchClass(pc);
   const acceptedAnswers = spell.isEnharmonic ? [spell.sharp, spell.flat] : [spell.sharp];
+  // Pick a deterministic “preferred” spelling for visuals.
+  const displaySpelling = acceptedAnswers[Math.floor(rng() * acceptedAnswers.length)];
   const promptLabel = spell.isEnharmonic ? `${spell.sharp} / ${spell.flat}` : spell.sharp;
 
   // Build distractors from pitch classes (so labels remain musically meaningful).
@@ -41,7 +45,7 @@ function buildChoicesForPitchClass(opts: { seed: number; pc: number; choiceCount
 
   const choicePool: string[] = [];
   // Include at least one correct spelling in the visible choices.
-  choicePool.push(acceptedAnswers[Math.floor(rng() * acceptedAnswers.length)]);
+  choicePool.push(displaySpelling);
 
   for (const dpc of distractorPcs) {
     const s = spellPitchClass(dpc);
@@ -52,7 +56,7 @@ function buildChoicesForPitchClass(opts: { seed: number; pc: number; choiceCount
   }
 
   const choices = shuffle(uniq(choicePool).slice(0, opts.choiceCount), rng);
-  return { pc, acceptedAnswers, promptLabel, choices };
+  return { pc, acceptedAnswers, displaySpelling, promptLabel, choices };
 }
 
 export function makeNoteNameQuestion(opts: {

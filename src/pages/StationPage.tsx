@@ -946,7 +946,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           </div>
 
           <div className="row" style={{ gap: 14, alignItems: 'center', flexWrap: 'wrap', marginTop: 10 }}>
-            <StaffNote midi={noteQ.midi} label={noteQ.promptLabel} />
+            <StaffNote midi={noteQ.midi} spelling={noteQ.displaySpelling} label={noteQ.displaySpelling} />
             <div style={{ flex: 1, minWidth: 240 }}>
               <PianoKeyboard
                 startMidi={60}
@@ -988,7 +988,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           </div>
 
           <div style={{ marginTop: 10 }}>
-            <StaffNote midi={t1Q.midi} label={t1Q.promptLabel} />
+            <StaffNote midi={t1Q.midi} spelling={t1Q.displaySpelling} label={t1Q.displaySpelling} />
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
