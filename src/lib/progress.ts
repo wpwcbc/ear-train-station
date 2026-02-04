@@ -7,7 +7,9 @@ export type StationId =
   | 'T3_INTERVALS'
   | 'S4_TRIADS'
   | 'S5_DIATONIC_TRIADS'
-  | 'S6_FUNCTIONS';
+  | 'S6_FUNCTIONS'
+  | 'S7_DEGREES'
+  | 'T4_DEGREES';
 
 export type Progress = {
   version: 1;
@@ -109,6 +111,8 @@ export function defaultProgress(): Progress {
       S4_TRIADS: false,
       S5_DIATONIC_TRIADS: false,
       S6_FUNCTIONS: false,
+      S7_DEGREES: false,
+      T4_DEGREES: false,
     },
   };
 }

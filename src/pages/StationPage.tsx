@@ -11,6 +11,7 @@ import { makeMajorScaleSession, makeMajorScaleStepQuestion, makeMajorScaleTestQu
 import { makeTriadQualityQuestion, triadQualityIntervals, triadQualityLabel } from '../exercises/triad';
 import { makeDiatonicTriadQualityQuestion } from '../exercises/diatonicTriad';
 import { makeFunctionFamilyQuestion, type FunctionFamily } from '../exercises/functionFamily';
+import { makeScaleDegreeNameQuestion, type ScaleDegreeName } from '../exercises/scaleDegree';
 
 export function StationPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
   const { stationId } = useParams();
@@ -67,6 +68,29 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const funcQ = useMemo(() => makeFunctionFamilyQuestion({ seed: seed * 1000 + 6 }), [seed]);
   const [s6Correct, setS6Correct] = useState(0);
   const S6_GOAL = 6;
+
+  // Station 7: scale degree role names (tonic, supertonic, ...)
+  const degreeQ = useMemo(
+    () => makeScaleDegreeNameQuestion({ seed: seed * 1000 + 7, choiceCount: 4, mode: 'lesson' }),
+    [seed],
+  );
+  const [s7Correct, setS7Correct] = useState(0);
+  const S7_GOAL = 7;
+
+  // Test 4: degree names across a wider register (G2 and above).
+  const [t4Index, setT4Index] = useState(0);
+  const [t4Correct, setT4Correct] = useState(0);
+  const T4_TOTAL = 10;
+  const T4_PASS = 8;
+  const t4Q = useMemo(
+    () =>
+      makeScaleDegreeNameQuestion({
+        seed: seed * 1000 + 1400 + t4Index,
+        choiceCount: 6,
+        mode: 'test',
+      }),
+    [seed, t4Index],
+  );
 
   // Test 1: note names across a wider range (G2 and above).
   const [t1Index, setT1Index] = useState(0);
@@ -147,6 +171,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     if (id === 'S6_FUNCTIONS' && s6Correct + 1 >= S6_GOAL) {
       p2 = markStationDone(p2, id);
       p2 = applyStudyReward(p2, 12); // completion bonus
+    }
+
+    if (id === 'S7_DEGREES' && s7Correct + 1 >= S7_GOAL) {
+      p2 = markStationDone(p2, id);
+      p2 = applyStudyReward(p2, 10); // completion bonus
     }
 
     if (extra?.stationDone) {
@@ -287,6 +316,71 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted(active);
     await piano.playChord(funcQ.chordMidis, { mode: 'arp', durationSec: 1.1, velocity: 0.92, gapMs: 130 });
     setHighlighted({});
+  }
+
+  async function playPromptS7() {
+    setResult('idle');
+    setHighlighted({ [degreeQ.tonicMidi]: 'active' });
+    await piano.playMidi(degreeQ.tonicMidi, { durationSec: 0.7, velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, 260));
+    setHighlighted({ [degreeQ.targetMidi]: 'active' });
+    await piano.playMidi(degreeQ.targetMidi, { durationSec: 0.9, velocity: 0.92 });
+    setHighlighted({});
+  }
+
+  async function chooseS7(choice: ScaleDegreeName) {
+    const ok = choice === degreeQ.correct;
+    setResult(ok ? 'correct' : 'wrong');
+
+    if (!ok) return;
+
+    setS7Correct((n) => n + 1);
+    rewardAndMaybeComplete(3);
+  }
+
+  async function playPromptT4() {
+    setResult('idle');
+    setHighlighted({ [t4Q.tonicMidi]: 'active' });
+    await piano.playMidi(t4Q.tonicMidi, { durationSec: 0.7, velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, 260));
+    setHighlighted({ [t4Q.targetMidi]: 'active' });
+    await piano.playMidi(t4Q.targetMidi, { durationSec: 0.9, velocity: 0.92 });
+    setHighlighted({});
+  }
+
+  async function chooseT4(choice: ScaleDegreeName) {
+    const ok = choice === t4Q.correct;
+    setResult(ok ? 'correct' : 'wrong');
+
+    if (!ok) return;
+
+    setT4Correct((n) => n + 1);
+
+    let p2 = applyStudyReward(progress, 3);
+
+    const nextIndex = t4Index + 1;
+    if (nextIndex >= T4_TOTAL) {
+      const correct = t4Correct + 1;
+      const pass = correct >= T4_PASS;
+      if (pass) {
+        p2 = applyStudyReward(p2, 12);
+        p2 = markStationDone(p2, 'T4_DEGREES');
+      }
+      setProgress(p2);
+      setResult(pass ? 'correct' : 'wrong');
+      return;
+    }
+
+    setProgress(p2);
+    setT4Index(nextIndex);
+  }
+
+  function resetT4() {
+    setT4Index(0);
+    setT4Correct(0);
+    setResult('idle');
+    setHighlighted({});
+    setSeed((x) => x + 1);
   }
 
   async function playPromptT1() {
@@ -818,6 +912,65 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             onPress={(m) => piano.playMidi(m, { durationSec: 0.9, velocity: 0.9 })}
             highlighted={highlighted}
           />
+        </>
+      ) : id === 'S7_DEGREES' ? (
+        <>
+          <div className="row">
+            <button className="primary" onClick={playPromptS7}>Hear degree</button>
+            <button className="ghost" onClick={next}>Next</button>
+            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+              Progress: {Math.min(s7Correct, S7_GOAL)}/{S7_GOAL}
+            </div>
+          </div>
+
+          <div className={`result r_${result}`}>
+            {result === 'idle' && degreeQ.prompt}
+            {result === 'correct' && 'Correct — +3 XP.'}
+            {result === 'wrong' && `Not quite — it was ${degreeQ.correct}.`}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            {degreeQ.choices.map((c) => (
+              <button key={c} className="secondary" onClick={() => chooseS7(c)}>
+                {c}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+            Cheat sheet: 1 tonic · 2 supertonic · 3 mediant · 4 subdominant · 5 dominant · 6 submediant · 7 leading tone
+          </div>
+        </>
+      ) : id === 'T4_DEGREES' ? (
+        <>
+          <div className="row">
+            <button className="primary" onClick={playPromptT4}>Hear degree</button>
+            <button className="ghost" onClick={resetT4}>Restart</button>
+            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+              Q: {Math.min(t4Index + 1, T4_TOTAL)}/{T4_TOTAL} · Correct: {t4Correct}/{T4_TOTAL} (need {T4_PASS})
+            </div>
+          </div>
+
+          <div className={`result r_${result}`}>
+            {result === 'idle' && t4Q.prompt}
+            {result === 'correct' && (progress.stationDone['T4_DEGREES'] ? 'Passed — nice. (+12 bonus XP)' : 'Correct — +3 XP.')}
+            {result === 'wrong' &&
+              (t4Index + 1 >= T4_TOTAL
+                ? `Finished: ${t4Correct}/${T4_TOTAL}. Need ${T4_PASS}. Hit restart to try again.`
+                : `Not quite — it was ${t4Q.correct}.`)}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            {t4Q.choices.map((c) => (
+              <button key={c} className="secondary" onClick={() => chooseT4(c)}>
+                {c}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+            Tip: tests can roam across a bigger register; lessons stay in a stable register.
+          </div>
         </>
       ) : (
         <div className="result">Content for this station is next.</div>

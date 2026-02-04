@@ -62,4 +62,16 @@ export const STATIONS: Station[] = [
     blurb: 'Group diatonic triads into tonic / subdominant / dominant (tension).',
     kind: 'lesson',
   },
+  {
+    id: 'S7_DEGREES',
+    title: 'Station 7 — Scale degree roles',
+    blurb: 'Tonic, supertonic, mediant… learn the names and “job” of each degree.',
+    kind: 'lesson',
+  },
+  {
+    id: 'T4_DEGREES',
+    title: 'Test 4 — Degree names',
+    blurb: 'Quick check: identify degree names in different keys (wider register).',
+    kind: 'test',
+  },
 ];
