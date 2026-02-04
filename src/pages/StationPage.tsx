@@ -405,7 +405,10 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     const ok = choice === degreeQ.correct;
     setResult(ok ? 'correct' : 'wrong');
 
-    if (!ok) return;
+    if (!ok) {
+      addMistake({ kind: 'scaleDegreeName', sourceStationId: id, key: degreeQ.key, degree: degreeQ.degree });
+      return;
+    }
 
     setS7Correct((n) => n + 1);
     rewardAndMaybeComplete(3);
@@ -429,6 +432,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult(ok ? 'correct' : 'wrong');
 
     if (!ok) {
+      addMistake({ kind: 'scaleDegreeName', sourceStationId: id, key: t4Q.key, degree: t4Q.degree });
+
       const nextWrong = t4Wrong + 1;
       setT4Wrong(nextWrong);
 

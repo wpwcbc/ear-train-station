@@ -2,12 +2,13 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
-import { applyReviewResult, dueMistakes, loadMistakes, nextDueAt, updateMistake, type Mistake } from '../lib/mistakes';
+import { applyReviewResult, loadMistakes, updateMistake, type Mistake } from '../lib/mistakes';
 import { loadSettings, saveSettings } from '../lib/settings';
 import { piano } from '../audio/piano';
 import { makeNoteNameReviewQuestion } from '../exercises/noteName';
 import { makeIntervalLabelReviewQuestion, intervalLongName, type IntervalLabel } from '../exercises/interval';
 import { makeTriadQualityReviewQuestion, triadQualityLabel, type TriadQuality } from '../exercises/triad';
+import { makeScaleDegreeNameReviewQuestion, type ScaleDegreeName } from '../exercises/scaleDegree';
 
 function msToHuman(ms: number): string {
   if (ms <= 0) return 'now';
@@ -28,9 +29,13 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const [result, setResult] = useState<'idle' | 'correct' | 'wrong'>('idle');
   const [doneCount, setDoneCount] = useState(0);
   const [now, setNow] = useState(() => Date.now());
+  const [mistakes, setMistakes] = useState<Mistake[]>(() => loadMistakes());
 
-  const allMistakes = useMemo(() => loadMistakes(), [seed, doneCount]);
-  const due = useMemo(() => dueMistakes(now), [now, seed, doneCount]);
+  const due = useMemo(() => {
+    return mistakes
+      .filter((m) => (m.dueAt ?? 0) <= now)
+      .sort((a, b) => (a.dueAt ?? a.addedAt) - (b.dueAt ?? b.addedAt) || b.addedAt - a.addedAt);
+  }, [mistakes, now]);
   const active = due[0] as Mistake | undefined;
 
   const noteQ = useMemo(() => {
@@ -58,6 +63,16 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     });
   }, [active, seed]);
 
+  const degQ = useMemo(() => {
+    if (!active || active.kind !== 'scaleDegreeName') return null;
+    return makeScaleDegreeNameReviewQuestion({
+      seed: seed * 1000 + 904,
+      key: active.key,
+      degree: active.degree,
+      choiceCount: 6,
+    });
+  }, [active, seed]);
+
   async function playPrompt() {
     setResult('idle');
     if (!active) return;
@@ -74,6 +89,13 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       return;
     }
 
+    if (active.kind === 'scaleDegreeName' && degQ) {
+      await piano.playMidi(degQ.tonicMidi, { durationSec: 0.7, velocity: 0.9 });
+      await new Promise((r) => setTimeout(r, 260));
+      await piano.playMidi(degQ.targetMidi, { durationSec: 0.9, velocity: 0.92 });
+      return;
+    }
+
     // triadQuality
     if (triadQ) {
       const rootMidi = triadQ.chordMidis[0];
@@ -85,8 +107,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
   function refresh() {
     setResult('idle');
-    setNow(Date.now());
+    setNow(() => Date.now());
     setSeed((x) => x + 1);
+    setMistakes(loadMistakes());
   }
 
   function applyOutcome(outcome: 'correct' | 'wrong') {
@@ -129,9 +152,20 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     applyOutcome(ok ? 'correct' : 'wrong');
   }
 
+  async function chooseDegree(choice: ScaleDegreeName) {
+    if (!degQ || !active || active.kind !== 'scaleDegreeName') return;
+    const ok = choice === degQ.correct;
+    applyOutcome(ok ? 'correct' : 'wrong');
+  }
+
   const dueCount = due.length;
-  const totalCount = allMistakes.length;
-  const nextDue = nextDueAt();
+  const totalCount = mistakes.length;
+  const nextDue = useMemo(() => {
+    if (mistakes.length === 0) return null;
+    let min = Number.POSITIVE_INFINITY;
+    for (const m of mistakes) min = Math.min(min, m.dueAt ?? m.addedAt);
+    return Number.isFinite(min) ? min : null;
+  }, [mistakes]);
 
   return (
     <div className="card">
@@ -221,6 +255,26 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
             {ilQ.choices.map((c) => (
               <button key={c} className="secondary" onClick={() => chooseInterval(c)}>
+                {c}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
+            From: {active.sourceStationId} • Streak: {active.correctStreak}/2
+          </div>
+        </>
+      ) : active.kind === 'scaleDegreeName' && degQ ? (
+        <>
+          <div className={`result r_${result}`}>
+            {result === 'idle' && degQ.prompt}
+            {result === 'correct' && 'Cleared — +4 XP.'}
+            {result === 'wrong' && `Not quite — it was ${degQ.correct}.`}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            {degQ.choices.map((c) => (
+              <button key={c} className="secondary" onClick={() => chooseDegree(c)}>
                 {c}
               </button>
             ))}

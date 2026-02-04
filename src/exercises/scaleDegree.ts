@@ -67,3 +67,35 @@ export function makeScaleDegreeNameQuestion(opts: {
     prompt,
   };
 }
+
+export function makeScaleDegreeNameReviewQuestion(opts: {
+  seed: number;
+  key: string;
+  degree: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  choiceCount: 4 | 6 | 7;
+}): ScaleDegreeQuestion {
+  const rng = mulberry32(opts.seed);
+
+  const degree = opts.degree;
+  const correct = degreeNameFor(degree);
+
+  const tonicPc = PC[opts.key];
+  const tonicMidi = 60 + tonicPc; // keep review in a stable register
+  const targetMidi = tonicMidi + MAJOR_OFFSETS[degree - 1];
+
+  const wrongPool = DEGREE_NAMES.filter((x) => x !== correct);
+  const pickedWrongs = shuffle(wrongPool, rng).slice(0, Math.max(0, opts.choiceCount - 1));
+  const choices = shuffle([correct, ...pickedWrongs], rng);
+
+  const prompt = `Review: in ${opts.key} major, what do we call scale degree ${degree}?`;
+
+  return {
+    key: opts.key,
+    degree,
+    correct,
+    choices,
+    tonicMidi,
+    targetMidi,
+    prompt,
+  };
+}
