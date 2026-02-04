@@ -32,6 +32,16 @@ export type MajorScaleStepQuestion = {
   shownSoFar: string[]; // includes tonic + already-correct steps
 };
 
+export type MajorScaleTestQuestion = {
+  key: string;
+  degree: number; // 2..7
+  prompt: string;
+  choices: string[];
+  correct: string;
+  tonicMidi: number;
+  targetMidi: number;
+};
+
 const PC: Record<string, number> = {
   C: 0,
   'C#': 1,
@@ -53,6 +63,13 @@ const PC: Record<string, number> = {
 };
 
 const MAJOR_OFFSETS = [0, 2, 4, 5, 7, 9, 11];
+
+function pickTestTonicMidi(tonicPc: number, rng: () => number) {
+  // Lessons stay in a stable register; tests can roam (but keep >= G2).
+  const base = 60 + tonicPc;
+  const candidates = [base - 24, base - 12, base].filter((m) => m >= 43 && m <= 72);
+  return candidates[Math.floor(rng() * candidates.length)] ?? base;
+}
 
 export function makeMajorScaleSession(opts: { seed: number }): MajorScaleSession {
   const rng = mulberry32(opts.seed);
@@ -110,5 +127,55 @@ export function makeMajorScaleStepQuestion(opts: {
     tonicMidi: opts.session.tonicMidi,
     targetMidi,
     shownSoFar: opts.shownSoFar,
+  };
+}
+
+export function makeMajorScaleTestQuestion(opts: {
+  seed: number;
+  degree?: number; // 2..7
+  choiceCount?: number;
+}): MajorScaleTestQuestion {
+  const rng = mulberry32(opts.seed);
+  const choiceCount = opts.choiceCount ?? 6;
+
+  const i = Math.floor(rng() * MAJOR_KEYS.length);
+  const k = MAJOR_KEYS[i];
+  const tonicPc = PC[k.key];
+  const tonicMidi = pickTestTonicMidi(tonicPc, rng);
+
+  const degree = Math.min(7, Math.max(2, opts.degree ?? (2 + Math.floor(rng() * 6))));
+  const stepIndex = degree - 1;
+  const correct = k.scale[stepIndex];
+
+  const pool: string[] = [correct];
+
+  const distractorPool = uniq([
+    ...k.scale,
+    'C#',
+    'F#',
+    'G#',
+    'D#',
+    'A#',
+    'Bb',
+    'Eb',
+    'Ab',
+  ]).filter((x) => x !== correct);
+
+  for (const d of shuffle(distractorPool, rng)) {
+    pool.push(d);
+    if (uniq(pool).length >= choiceCount) break;
+  }
+
+  const choices = shuffle(uniq(pool).slice(0, choiceCount), rng);
+  const targetMidi = tonicMidi + MAJOR_OFFSETS[stepIndex];
+
+  return {
+    key: k.key,
+    degree,
+    prompt: `Test: ${k.key} major — which note is degree ${degree} (of 7)?`,
+    choices,
+    correct,
+    tonicMidi,
+    targetMidi,
   };
 }

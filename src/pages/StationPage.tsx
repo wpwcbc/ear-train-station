@@ -7,7 +7,7 @@ import { PianoKeyboard } from '../components/PianoKeyboard';
 import { piano } from '../audio/piano';
 import { makeIntervalQuestion } from '../exercises/interval';
 import { makeNoteNameQuestion } from '../exercises/noteName';
-import { makeMajorScaleSession, makeMajorScaleStepQuestion } from '../exercises/majorScale';
+import { makeMajorScaleSession, makeMajorScaleStepQuestion, makeMajorScaleTestQuestion } from '../exercises/majorScale';
 import { makeTriadQualityQuestion, triadQualityIntervals, triadQualityLabel } from '../exercises/triad';
 
 export function StationPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
@@ -52,6 +52,20 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         choiceCount: 6,
       }),
     [seed, t1Index],
+  );
+
+  // Test 2: major scale spelling (degrees) across a broader register.
+  const [t2Index, setT2Index] = useState(0);
+  const [t2Correct, setT2Correct] = useState(0);
+  const T2_TOTAL = 10;
+  const T2_PASS = 8;
+  const t2Q = useMemo(
+    () =>
+      makeMajorScaleTestQuestion({
+        seed: seed * 1000 + 1200 + t2Index,
+        choiceCount: 6,
+      }),
+    [seed, t2Index],
   );
 
   // S1 micro-goal: require a few correct answers to mark as done (Duolingo-style “lesson set”).
@@ -248,6 +262,52 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setSeed((x) => x + 1);
   }
 
+  async function playPromptT2() {
+    setResult('idle');
+    setHighlighted({ [t2Q.tonicMidi]: 'active' });
+    await piano.playMidi(t2Q.tonicMidi, { durationSec: 0.7, velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, 300));
+    setHighlighted({ [t2Q.targetMidi]: 'active' });
+    await piano.playMidi(t2Q.targetMidi, { durationSec: 0.9, velocity: 0.9 });
+    setHighlighted({});
+  }
+
+  async function chooseT2(choice: string) {
+    const ok = choice === t2Q.correct;
+    setResult(ok ? 'correct' : 'wrong');
+
+    if (!ok) return;
+
+    setT2Correct((n) => n + 1);
+
+    // +3 XP per correct test item.
+    let p2 = applyStudyReward(progress, 3);
+
+    const nextIndex = t2Index + 1;
+    if (nextIndex >= T2_TOTAL) {
+      const correct = t2Correct + 1;
+      const pass = correct >= T2_PASS;
+      if (pass) {
+        p2 = applyStudyReward(p2, 12);
+        p2 = markStationDone(p2, 'T2_MAJOR_SCALE');
+      }
+      setProgress(p2);
+      setResult(pass ? 'correct' : 'wrong');
+      return;
+    }
+
+    setProgress(p2);
+    setT2Index(nextIndex);
+  }
+
+  function resetT2() {
+    setT2Index(0);
+    setT2Correct(0);
+    setResult('idle');
+    setHighlighted({});
+    setSeed((x) => x + 1);
+  }
+
   async function chooseS4(choice: 'major' | 'minor' | 'diminished') {
     const ok = choice === triadQ.quality;
     setResult(ok ? 'correct' : 'wrong');
@@ -355,6 +415,38 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
             Tip: tests can roam across a bigger register; lessons stay in a stable register.
+          </div>
+        </>
+      ) : id === 'T2_MAJOR_SCALE' ? (
+        <>
+          <div className="row">
+            <button className="primary" onClick={playPromptT2}>Hear prompt</button>
+            <button className="ghost" onClick={resetT2}>Restart</button>
+            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+              Q: {Math.min(t2Index + 1, T2_TOTAL)}/{T2_TOTAL} · Correct: {t2Correct}/{T2_TOTAL} (need {T2_PASS})
+            </div>
+          </div>
+
+          <div className={`result r_${result}`}>
+            {result === 'idle' && t2Q.prompt}
+            {result === 'correct' &&
+              (progress.stationDone['T2_MAJOR_SCALE'] ? 'Passed — nice. (+12 bonus XP)' : 'Correct — +3 XP.')}
+            {result === 'wrong' &&
+              (t2Index + 1 >= T2_TOTAL
+                ? `Finished: ${t2Correct}/${T2_TOTAL}. Need ${T2_PASS}. Hit restart to try again.`
+                : `Not quite — it was ${t2Q.correct}.`)}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            {t2Q.choices.map((c) => (
+              <button key={c} className="secondary" onClick={() => chooseT2(c)}>
+                {c}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+            Tip: listen for the degree, but answer with correct spelling.
           </div>
         </>
       ) : id === 'S2_MAJOR_SCALE' ? (

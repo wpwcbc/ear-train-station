@@ -27,6 +27,12 @@ export const STATIONS: Station[] = [
     kind: 'lesson',
   },
   {
+    id: 'T2_MAJOR_SCALE',
+    title: 'Test 2 — Major scale spelling',
+    blurb: 'Quick check: identify scale degrees in different keys.',
+    kind: 'test',
+  },
+  {
     id: 'S3_INTERVALS',
     title: 'Station 3 — Intervals',
     blurb: 'Intervals from the root + minor/aug/dim as ± semitones.',
