@@ -1,0 +1,39 @@
+.pianoWrap {
+  position: relative;
+  padding: 12px;
+  overflow-x: auto;
+}
+
+.whiteRow {
+  position: relative;
+  height: 160px;
+  width: max-content;
+}
+
+.whiteKey {
+  width: 40px;
+  height: 160px;
+  border: 1px solid #1f1f1f;
+  background: #fff;
+  padding: 0;
+}
+
+.blackKey {
+  position: absolute;
+  top: 0;
+  width: 24px;
+  height: 100px;
+  border: 1px solid #111;
+  background: #111;
+  border-radius: 0 0 4px 4px;
+  padding: 0;
+}
+
+.whiteKey.k_active { background: #e9f3ff; }
+.blackKey.k_active { background: #233b5a; }
+
+.whiteKey.k_correct { background: #d4f7dd; }
+.blackKey.k_correct { background: #1f6b36; }
+
+.whiteKey.k_wrong { background: #ffd7d7; }
+.blackKey.k_wrong { background: #7b1f1f; }

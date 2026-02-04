@@ -1,0 +1,103 @@
+.app {
+  min-height: 100vh;
+  background: #0b1020;
+  color: #e9eefc;
+}
+
+.topBar {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 14, 28, 0.8);
+  backdrop-filter: blur(10px);
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.badge {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.main {
+  padding: 20px 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.card {
+  width: min(920px, 100%);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.title {
+  font-size: 20px;
+  margin: 0 0 6px;
+}
+
+.sub {
+  margin: 0 0 14px;
+  opacity: 0.85;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 12px 0 10px;
+}
+
+button {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  color: #e9eefc;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+button.primary {
+  background: #2d6cff;
+  border-color: #2d6cff;
+}
+
+button.secondary {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+button.ghost {
+  background: transparent;
+}
+
+.result {
+  margin: 8px 0 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.result.r_correct {
+  border-color: rgba(90, 255, 160, 0.4);
+}
+.result.r_wrong {
+  border-color: rgba(255, 120, 120, 0.5);
+}
+
+.meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  opacity: 0.75;
+  margin-top: 8px;
+}
