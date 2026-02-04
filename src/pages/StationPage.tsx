@@ -9,6 +9,7 @@ import { makeIntervalQuestion } from '../exercises/interval';
 import { makeNoteNameQuestion } from '../exercises/noteName';
 import { makeMajorScaleSession, makeMajorScaleStepQuestion, makeMajorScaleTestQuestion } from '../exercises/majorScale';
 import { makeTriadQualityQuestion, triadQualityIntervals, triadQualityLabel } from '../exercises/triad';
+import { makeDiatonicTriadQualityQuestion } from '../exercises/diatonicTriad';
 
 export function StationPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
   const { stationId } = useParams();
@@ -37,6 +38,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const triadQ = useMemo(() => makeTriadQualityQuestion({ seed: seed * 1000 + 4 }), [seed]);
   const [s4Correct, setS4Correct] = useState(0);
   const S4_GOAL = 6;
+
+  // Station 5: diatonic triads inside a major key (stable register)
+  const diatonicQ = useMemo(() => makeDiatonicTriadQualityQuestion({ seed: seed * 1000 + 5 }), [seed]);
+  const [s5Correct, setS5Correct] = useState(0);
+  const S5_GOAL = 7;
 
   // Test 1: note names across a wider range (G2 and above).
   const [t1Index, setT1Index] = useState(0);
@@ -107,6 +113,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     if (id === 'S4_TRIADS' && s4Correct + 1 >= S4_GOAL) {
       p2 = markStationDone(p2, id);
       p2 = applyStudyReward(p2, 10); // completion bonus
+    }
+
+    if (id === 'S5_DIATONIC_TRIADS' && s5Correct + 1 >= S5_GOAL) {
+      p2 = markStationDone(p2, id);
+      p2 = applyStudyReward(p2, 12); // completion bonus
     }
 
     if (extra?.stationDone) {
@@ -214,6 +225,22 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     >;
     setHighlighted(active);
     await piano.playChord(triadQ.chordMidis, { mode: 'arp', durationSec: 1.1, velocity: 0.92, gapMs: 130 });
+    setHighlighted({});
+  }
+
+  async function playPromptS5() {
+    setResult('idle');
+    // root then arpeggiated diatonic triad
+    const rootMidi = diatonicQ.chordMidis[0];
+    setHighlighted({ [rootMidi]: 'active' });
+    await piano.playMidi(rootMidi, { durationSec: 0.65, velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, 240));
+    const active: Record<number, 'active'> = Object.fromEntries(diatonicQ.chordMidis.map((m) => [m, 'active'])) as Record<
+      number,
+      'active'
+    >;
+    setHighlighted(active);
+    await piano.playChord(diatonicQ.chordMidis, { mode: 'arp', durationSec: 1.1, velocity: 0.92, gapMs: 130 });
     setHighlighted({});
   }
 
@@ -328,6 +355,25 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setS4Correct((n) => n + 1);
     setHighlighted(correctHi);
     rewardAndMaybeComplete(4);
+  }
+
+  async function chooseS5(choice: 'major' | 'minor' | 'diminished') {
+    const ok = choice === diatonicQ.quality;
+    setResult(ok ? 'correct' : 'wrong');
+
+    const correctHi: Record<number, 'correct'> = Object.fromEntries(diatonicQ.chordMidis.map((m) => [m, 'correct'])) as Record<
+      number,
+      'correct'
+    >;
+
+    if (!ok) {
+      setHighlighted(correctHi);
+      return;
+    }
+
+    setS5Correct((n) => n + 1);
+    setHighlighted(correctHi);
+    rewardAndMaybeComplete(5);
   }
 
   if (!station) {
@@ -546,6 +592,41 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                 {triadQualityLabel(c)}
               </button>
             ))}
+          </div>
+
+          <PianoKeyboard
+            startMidi={48}
+            octaves={2}
+            onPress={(m) => piano.playMidi(m, { durationSec: 0.9, velocity: 0.9 })}
+            highlighted={highlighted}
+          />
+        </>
+      ) : id === 'S5_DIATONIC_TRIADS' ? (
+        <>
+          <div className="row">
+            <button className="primary" onClick={playPromptS5}>Hear triad</button>
+            <button className="ghost" onClick={next}>Next</button>
+            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+              Progress: {Math.min(s5Correct, S5_GOAL)}/{S5_GOAL}
+            </div>
+          </div>
+
+          <div className={`result r_${result}`}>
+            {result === 'idle' && diatonicQ.prompt}
+            {result === 'correct' && `Correct — +5 XP. (${diatonicQ.key} major, degree ${diatonicQ.degree})`}
+            {result === 'wrong' && `Not quite — it was ${triadQualityLabel(diatonicQ.quality)}.`}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            {diatonicQ.choices.map((c) => (
+              <button key={c} className="secondary" onClick={() => chooseS5(c)}>
+                {triadQualityLabel(c)}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+            Hint: diatonic triad qualities in major are always: I ii iii IV V vi vii°.
           </div>
 
           <PianoKeyboard

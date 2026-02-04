@@ -44,4 +44,10 @@ export const STATIONS: Station[] = [
     blurb: 'Build triads; major/minor/dim; recognize by ear.',
     kind: 'lesson',
   },
+  {
+    id: 'S5_DIATONIC_TRIADS',
+    title: 'Station 5 — Diatonic triads in a key',
+    blurb: 'Stack 1-3-5 inside the scale: I ii iii IV V vi vii°.',
+    kind: 'lesson',
+  },
 ];
