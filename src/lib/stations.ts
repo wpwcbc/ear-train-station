@@ -51,6 +51,12 @@ export const STATIONS: Station[] = [
     kind: 'lesson',
   },
   {
+    id: 'T5_TRIADS',
+    title: 'Test 5 — Triad quality recognition',
+    blurb: 'Name the chord quality by ear across a wider range.',
+    kind: 'test',
+  },
+  {
     id: 'S5_DIATONIC_TRIADS',
     title: 'Station 5 — Diatonic triads in a key',
     blurb: 'Stack 1-3-5 inside the scale: I ii iii IV V vi vii°.',

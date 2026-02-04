@@ -59,6 +59,22 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [s4Correct, setS4Correct] = useState(0);
   const S4_GOAL = 6;
 
+  // Test 5: triad quality recognition across a wider register (G2 and above).
+  const [t5Index, setT5Index] = useState(0);
+  const [t5Correct, setT5Correct] = useState(0);
+  const T5_TOTAL = 10;
+  const T5_PASS = 8;
+  const t5Q = useMemo(
+    () =>
+      makeTriadQualityQuestion({
+        seed: seed * 1000 + 1500 + t5Index,
+        minRootMidi: 43, // G2
+        maxRootMidi: 77, // F5 (keeps 5th <= C6-ish)
+        choiceCount: 3,
+      }),
+    [seed, t5Index],
+  );
+
   // Station 5: diatonic triads inside a major key (stable register)
   const diatonicQ = useMemo(() => makeDiatonicTriadQualityQuestion({ seed: seed * 1000 + 5 }), [seed]);
   const [s5Correct, setS5Correct] = useState(0);
@@ -484,6 +500,57 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setSeed((x) => x + 1);
   }
 
+  async function playPromptT5() {
+    setResult('idle');
+    const rootMidi = t5Q.chordMidis[0];
+    setHighlighted({ [rootMidi]: 'active' });
+    await piano.playMidi(rootMidi, { durationSec: 0.65, velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, 240));
+    const active: Record<number, 'active'> = Object.fromEntries(t5Q.chordMidis.map((m) => [m, 'active'])) as Record<
+      number,
+      'active'
+    >;
+    setHighlighted(active);
+    await piano.playChord(t5Q.chordMidis, { mode: 'arp', durationSec: 1.1, velocity: 0.92, gapMs: 130 });
+    setHighlighted({});
+  }
+
+  async function chooseT5(choice: 'major' | 'minor' | 'diminished') {
+    const ok = choice === t5Q.quality;
+    setResult(ok ? 'correct' : 'wrong');
+
+    if (!ok) return;
+
+    setT5Correct((n) => n + 1);
+
+    // +3 XP per correct test item.
+    let p2 = applyStudyReward(progress, 3);
+
+    const nextIndex = t5Index + 1;
+    if (nextIndex >= T5_TOTAL) {
+      const correct = t5Correct + 1;
+      const pass = correct >= T5_PASS;
+      if (pass) {
+        p2 = applyStudyReward(p2, 12);
+        p2 = markStationDone(p2, 'T5_TRIADS');
+      }
+      setProgress(p2);
+      setResult(pass ? 'correct' : 'wrong');
+      return;
+    }
+
+    setProgress(p2);
+    setT5Index(nextIndex);
+  }
+
+  function resetT5() {
+    setT5Index(0);
+    setT5Correct(0);
+    setResult('idle');
+    setHighlighted({});
+    setSeed((x) => x + 1);
+  }
+
   async function chooseT2(choice: string) {
     const ok = choice === t2Q.correct;
     setResult(ok ? 'correct' : 'wrong');
@@ -842,6 +909,38 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             onPress={(m) => piano.playMidi(m, { durationSec: 0.9, velocity: 0.9 })}
             highlighted={highlighted}
           />
+        </>
+      ) : id === 'T5_TRIADS' ? (
+        <>
+          <div className="row">
+            <button className="primary" onClick={playPromptT5}>Hear chord</button>
+            <button className="ghost" onClick={resetT5}>Restart</button>
+            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+              Q: {Math.min(t5Index + 1, T5_TOTAL)}/{T5_TOTAL} · Correct: {t5Correct}/{T5_TOTAL} (need {T5_PASS})
+            </div>
+          </div>
+
+          <div className={`result r_${result}`}>
+            {result === 'idle' && 'Test: name 10 triad qualities by ear. Need 8/10 to pass.'}
+            {result === 'correct' &&
+              (progress.stationDone['T5_TRIADS'] ? 'Passed — nice. (+12 bonus XP)' : `Correct — +3 XP. (${triadQualityLabel(t5Q.quality)})`)}
+            {result === 'wrong' &&
+              (t5Index + 1 >= T5_TOTAL
+                ? `Finished: ${t5Correct}/${T5_TOTAL}. Need ${T5_PASS}. Hit restart to try again.`
+                : `Not quite — it was ${triadQualityLabel(t5Q.quality)}.`)}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            {t5Q.choices.map((c) => (
+              <button key={c} className="secondary" onClick={() => chooseT5(c)}>
+                {triadQualityLabel(c)}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+            Tip: tests can roam across a bigger register; lessons stay in a stable register.
+          </div>
         </>
       ) : id === 'S5_DIATONIC_TRIADS' ? (
         <>
