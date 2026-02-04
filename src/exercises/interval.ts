@@ -39,6 +39,10 @@ export const SEMITONE_TO_LABEL: Record<number, IntervalLabel> = {
   12: 'P8',
 };
 
+export const LABEL_TO_SEMITONE: Record<IntervalLabel, number> = Object.fromEntries(
+  Object.entries(SEMITONE_TO_LABEL).map(([k, v]) => [v, Number(k)]),
+) as Record<IntervalLabel, number>;
+
 export function intervalLabel(semitones: number): IntervalLabel {
   return SEMITONE_TO_LABEL[Math.max(0, Math.min(12, semitones))] ?? 'P1';
 }
@@ -185,5 +189,72 @@ export function makeIntervalLabelReviewQuestion(opts: {
     correct,
     choices,
     prompt: 'Review: what interval is this? (listen to root → target)',
+  };
+}
+
+export type IntervalDeriveQuestion = {
+  id: string;
+  kind: 'intervalDerive';
+  base: IntervalLabel;
+  delta: -1 | 1;
+  correct: IntervalLabel;
+  choices: IntervalLabel[];
+  prompt: string;
+};
+
+function buildDeriveChoices(opts: { seed: number; correct: IntervalLabel; choiceCount: number }) {
+  // Bias distractors toward “nearby” interval labels to teach semitone adjacency.
+  const rng = mulberry32(opts.seed);
+  const want = Math.max(2, Math.min(opts.choiceCount, ALL_INTERVAL_LABELS.length));
+
+  const correctSemi = LABEL_TO_SEMITONE[opts.correct];
+  const near: IntervalLabel[] = [];
+  for (const d of [-2, -1, 1, 2]) {
+    const s = correctSemi + d;
+    if (s >= 0 && s <= 12) near.push(intervalLabel(s));
+  }
+
+  const pool = Array.from(new Set([...near, ...ALL_INTERVAL_LABELS])).filter((x) => x !== opts.correct);
+
+  // shuffle pool
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  const choices = [opts.correct, ...pool.slice(0, want - 1)];
+  // shuffle choices
+  for (let i = choices.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [choices[i], choices[j]] = [choices[j], choices[i]];
+  }
+
+  return choices;
+}
+
+export function makeIntervalDeriveQuestion(opts: { seed: number; choiceCount?: number }): IntervalDeriveQuestion {
+  const rng = mulberry32(opts.seed);
+
+  // Pick a base semitone where ±1 stays within 0..12.
+  const baseSemi = 1 + Math.floor(rng() * 11); // 1..11
+  const delta: -1 | 1 = rng() < 0.5 ? -1 : 1;
+  const targetSemi = Math.max(0, Math.min(12, baseSemi + delta));
+
+  const base = intervalLabel(baseSemi);
+  const correct = intervalLabel(targetSemi);
+
+  const dirWord = delta === 1 ? 'larger' : 'smaller';
+  const prompt = `If ${base} becomes 1 semitone ${dirWord}, what interval is it?`;
+
+  const choices = buildDeriveChoices({ seed: opts.seed * 33 + 7, correct, choiceCount: opts.choiceCount ?? 4 });
+
+  return {
+    id: `idq_seed_${opts.seed}`,
+    kind: 'intervalDerive',
+    base,
+    delta,
+    correct,
+    choices,
+    prompt,
   };
 }

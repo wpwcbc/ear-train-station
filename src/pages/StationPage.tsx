@@ -9,7 +9,13 @@ import { loadSettings, saveSettings } from '../lib/settings';
 import { PianoKeyboard } from '../components/PianoKeyboard';
 import { StaffNote } from '../components/StaffNote';
 import { piano } from '../audio/piano';
-import { makeIntervalQuestion, makeIntervalLabelQuestion, intervalLongName, type IntervalLabel } from '../exercises/interval';
+import {
+  makeIntervalQuestion,
+  makeIntervalLabelQuestion,
+  makeIntervalDeriveQuestion,
+  intervalLongName,
+  type IntervalLabel,
+} from '../exercises/interval';
 import { makeNoteNameQuestion } from '../exercises/noteName';
 import {
   makeMajorScaleSession,
@@ -43,6 +49,17 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const intervalQ = useMemo(
     () => makeIntervalQuestion({ seed: seed * 1000 + 3, rootMidi: 60, minSemitones: 0, maxSemitones: 12 }),
     [seed],
+  );
+
+  // Station 3 warm-up: derive interval names by ±1 semitone.
+  const [s3DeriveIndex, setS3DeriveIndex] = useState(0);
+  const [s3DeriveCorrect, setS3DeriveCorrect] = useState(0);
+  const S3_DERIVE_GOAL = 5;
+  const [s3DeriveResult, setS3DeriveResult] = useState<'idle' | 'correct' | 'wrong'>('idle');
+
+  const s3DeriveQ = useMemo(
+    () => makeIntervalDeriveQuestion({ seed: seed * 1000 + 3000 + s3DeriveIndex, choiceCount: 4 }),
+    [seed, s3DeriveIndex],
   );
 
   // Station 1: note-name question (stable register)
@@ -254,6 +271,20 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     if (ok) {
       rewardAndMaybeComplete(10);
     }
+  }
+
+  function chooseS3Derive(choice: IntervalLabel) {
+    const ok = choice === s3DeriveQ.correct;
+    setS3DeriveResult(ok ? 'correct' : 'wrong');
+
+    if (!ok) return;
+
+    setS3DeriveCorrect((n) => n + 1);
+    setProgress(applyStudyReward(progress, 1));
+
+    // advance
+    setS3DeriveIndex((i) => i + 1);
+    setS3DeriveResult('idle');
   }
 
   async function playPromptS1() {
@@ -1108,12 +1139,33 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         </>
       ) : id === 'S3_INTERVALS' ? (
         <>
+          <div style={{ marginTop: 6, marginBottom: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+              <div style={{ fontWeight: 800 }}>Warm-up: ±1 semitone</div>
+              <div style={{ fontSize: 12, opacity: 0.85 }}>
+                Progress: {Math.min(s3DeriveCorrect, S3_DERIVE_GOAL)}/{S3_DERIVE_GOAL}
+              </div>
+            </div>
+            <div className={`result r_${s3DeriveResult}`} style={{ marginTop: 8 }}>
+              {s3DeriveResult === 'idle' && s3DeriveQ.prompt}
+              {s3DeriveResult === 'correct' && 'Correct — +1 XP.'}
+              {s3DeriveResult === 'wrong' && `Not quite — it was ${s3DeriveQ.correct}.`}
+            </div>
+            <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+              {s3DeriveQ.choices.map((c) => (
+                <button key={c} className="secondary" onClick={() => chooseS3Derive(c)}>
+                  {c}
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: 12, opacity: 0.75, marginTop: 6 }}>
+              Hint: minor = major − 1 semitone. (Perfect ± 1 is “the weird ones”.)
+            </div>
+          </div>
+
           <div className="row">
             <button className="primary" onClick={playPromptS3}>Play prompt</button>
-            <button
-              className="secondary"
-              onClick={() => piano.playMidi(intervalQ.rootMidi, { durationSec: 0.9 })}
-            >
+            <button className="secondary" onClick={() => piano.playMidi(intervalQ.rootMidi, { durationSec: 0.9 })}>
               Root
             </button>
             <button className="ghost" onClick={next}>Next</button>
