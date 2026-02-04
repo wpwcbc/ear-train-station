@@ -76,6 +76,7 @@ export function StaffNote({
   midi,
   label,
   spelling,
+  showLegend = true,
   width = 280,
   height = 120,
 }: {
@@ -83,6 +84,8 @@ export function StaffNote({
   label?: string;
   /** Optional explicit spelling (e.g. "C#" or "Db") to render correct accidentals on staff. */
   spelling?: string;
+  /** Hide the answer/label for "sight reading" style questions. */
+  showLegend?: boolean;
   width?: number;
   height?: number;
 }) {
@@ -132,9 +135,11 @@ export function StaffNote({
   const legend =
     label ?? `${noteSpelling.letter}${noteSpelling.accidental === 'natural' ? '' : noteSpelling.accidental === 'sharp' ? '#' : 'b'}${octave}`;
 
+  const ariaLabel = showLegend ? `Staff note ${legend}` : 'Staff note';
+
   return (
     <div style={{ width, maxWidth: '100%' }}>
-      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`Staff note ${legend}`}>
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={ariaLabel}>
         <rect x={0} y={0} width={width} height={height} rx={12} fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" />
 
         {/* Staff lines */}
@@ -173,9 +178,11 @@ export function StaffNote({
         <line x1={noteX + headRx - 1} x2={noteX + headRx - 1} y1={y} y2={y - 30} stroke="rgba(255,255,255,0.92)" strokeWidth={2} />
 
         {/* Label */}
-        <text x={staffLeft} y={height - 12} fontSize={12} fill="rgba(255,255,255,0.75)">
-          {legend}
-        </text>
+        {showLegend ? (
+          <text x={staffLeft} y={height - 12} fontSize={12} fill="rgba(255,255,255,0.75)">
+            {legend}
+          </text>
+        ) : null}
       </svg>
     </div>
   );
