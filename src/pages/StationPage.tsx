@@ -11,7 +11,13 @@ import { StaffNote } from '../components/StaffNote';
 import { piano } from '../audio/piano';
 import { makeIntervalQuestion, makeIntervalLabelQuestion, intervalLongName, type IntervalLabel } from '../exercises/interval';
 import { makeNoteNameQuestion } from '../exercises/noteName';
-import { makeMajorScaleSession, makeMajorScaleStepQuestion, makeMajorScaleTestQuestion } from '../exercises/majorScale';
+import {
+  makeMajorScaleSession,
+  makeMajorScaleStepQuestion,
+  makeMajorScaleTestQuestion,
+  makeMajorScaleStepTypeQuestion,
+  type StepType,
+} from '../exercises/majorScale';
 import { makeTriadQualityQuestion, triadQualityIntervals, triadQualityLabel } from '../exercises/triad';
 import { makeDiatonicTriadQualityQuestion } from '../exercises/diatonicTriad';
 import { makeFunctionFamilyQuestion, type FunctionFamily } from '../exercises/functionFamily';
@@ -161,7 +167,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [s1Correct, setS1Correct] = useState(0);
   const S1_GOAL = 8;
 
-  // S2 micro-goal: spell major scales in order (letters ascend; correct accidentals).
+  // S2 micro-goal: internalize WWHWWWH, then spell major scales in order (letters ascend; correct accidentals).
+  const [s2PatternIndex, setS2PatternIndex] = useState(0); // 0..6 (7→8 ends the pattern)
+  const [s2PatternDone, setS2PatternDone] = useState(false);
+  const s2PatternQ = useMemo(
+    () => makeMajorScaleStepTypeQuestion({ seed: seed * 1000 + 210, stepIndex: s2PatternIndex }),
+    [seed, s2PatternIndex],
+  );
+
   const s2Session = useMemo(() => makeMajorScaleSession({ seed: seed * 1000 + 2 }), [seed]);
   const [s2Step, setS2Step] = useState(1); // 1..6 (next note after tonic)
   const [s2CompletedScales, setS2CompletedScales] = useState(0);
@@ -272,6 +285,28 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({ [s2Q.targetMidi]: 'active' });
     await piano.playMidi(s2Q.targetMidi, { durationSec: 0.85, velocity: 0.9 });
     setHighlighted({});
+  }
+
+  function chooseS2Pattern(choice: StepType) {
+    if (s2PatternDone) return;
+
+    const ok = choice === s2PatternQ.correct;
+    setResult(ok ? 'correct' : 'wrong');
+
+    if (!ok) return;
+
+    // Small reward per step; completion bonus for locking the formula in.
+    rewardAndMaybeComplete(1);
+
+    if (s2PatternIndex >= 6) {
+      setS2PatternDone(true);
+      rewardAndMaybeComplete(6);
+      setResult('idle');
+      return;
+    }
+
+    setS2PatternIndex((x) => Math.min(6, x + 1));
+    setResult('idle');
   }
 
   async function chooseS2(choice: string) {
@@ -991,7 +1026,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       ) : id === 'S2_MAJOR_SCALE' ? (
         <>
           <div className="row">
-            <button className="primary" onClick={playPromptS2}>Hear target step</button>
+            <button className="primary" onClick={playPromptS2} disabled={!s2PatternDone}>
+              Hear target step
+            </button>
             <button
               className="secondary"
               onClick={() => piano.playMidi(s2Session.tonicMidi, { durationSec: 0.75, velocity: 0.9 })}
@@ -1014,30 +1051,55 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             </div>
           </div>
 
-          <div className={`result r_${result}`}>
-            {result === 'idle' && s2Q.prompt}
-            {result === 'correct' && 'Correct — +2 XP.'}
-            {result === 'wrong' && `Not quite — next note is ${s2Q.correct}.`}
-          </div>
+          {!s2PatternDone ? (
+            <>
+              <div className={`result r_${result}`}>
+                {result === 'idle' && s2PatternQ.prompt}
+                {result === 'correct' && 'Correct — +1 XP.'}
+                {result === 'wrong' && 'Not quite — try again. (Remember: W W H W W W H)'}
+              </div>
 
-          <div style={{ fontSize: 12, opacity: 0.85, marginTop: 10 }}>
-            So far: <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>{s2ShownSoFar.join(' ')}</span>
-          </div>
+              <div style={{ fontSize: 12, opacity: 0.85, marginTop: 10 }}>
+                Formula warm-up: {Math.min(s2PatternIndex + 1, 7)}/7
+              </div>
 
-          <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
-            {s2Q.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseS2(c)}>
-                {c}
-              </button>
-            ))}
-          </div>
+              <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+                {s2PatternQ.choices.map((c) => (
+                  <button key={c} className="secondary" onClick={() => chooseS2Pattern(c)}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className={`result r_${result}`}>
+                {result === 'idle' && s2Q.prompt}
+                {result === 'correct' && 'Correct — +2 XP.'}
+                {result === 'wrong' && `Not quite — next note is ${s2Q.correct}.`}
+              </div>
 
-          <PianoKeyboard
-            startMidi={60}
-            octaves={1}
-            onPress={(m) => piano.playMidi(m, { durationSec: 0.9, velocity: 0.9 })}
-            highlighted={highlighted}
-          />
+              <div style={{ fontSize: 12, opacity: 0.85, marginTop: 10 }}>
+                So far:{' '}
+                <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>{s2ShownSoFar.join(' ')}</span>
+              </div>
+
+              <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+                {s2Q.choices.map((c) => (
+                  <button key={c} className="secondary" onClick={() => chooseS2(c)}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+
+              <PianoKeyboard
+                startMidi={60}
+                octaves={1}
+                onPress={(m) => piano.playMidi(m, { durationSec: 0.9, velocity: 0.9 })}
+                highlighted={highlighted}
+              />
+            </>
+          )}
         </>
       ) : id === 'S3_INTERVALS' ? (
         <>

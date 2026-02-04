@@ -4,6 +4,32 @@ import { MAJOR_KEYS, MAJOR_OFFSETS, PC, pickTestTonicMidi } from '../lib/theory/
 // Sound-first major scale work, but with correct spelling (letters ascend).
 // We start with a small set of friendly keys.
 
+export type StepType = 'W' | 'H';
+
+/** Between degrees 1→2, 2→3, ... 7→8 (octave). */
+export const MAJOR_STEP_TYPES: StepType[] = ['W', 'W', 'H', 'W', 'W', 'W', 'H'];
+
+export type MajorScaleStepTypeQuestion = {
+  stepIndex: number; // 0..6 (degree n → n+1, ending with 7→8)
+  prompt: string;
+  choices: StepType[];
+  correct: StepType;
+};
+
+export function makeMajorScaleStepTypeQuestion(opts: { seed: number; stepIndex: number }): MajorScaleStepTypeQuestion {
+  const rng = mulberry32(opts.seed);
+  const stepIndex = Math.min(6, Math.max(0, opts.stepIndex));
+  const correct = MAJOR_STEP_TYPES[stepIndex];
+  const choices = shuffle(['W', 'H'] as StepType[], rng);
+
+  return {
+    stepIndex,
+    correct,
+    choices,
+    prompt: `Major scale step ${stepIndex + 1} of 7: is the next move a whole tone (W) or semitone (H)?`,
+  };
+}
+
 export type MajorScaleSession = {
   key: (typeof MAJOR_KEYS)[number]['key'];
   scale: string[]; // 7 notes

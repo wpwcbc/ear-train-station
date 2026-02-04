@@ -22,6 +22,7 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
   S2_MAJOR_SCALE: {
     primer: [
       'Major scale formula: W W H W W W H.',
+      'Warm-up: drill each step as Whole tone (W) or semitone (H).',
       'Spelling rule: letter names must ascend (no skipping letters).',
       'Listen for the target degree, answer with correct note spelling.',
     ],
