@@ -1,14 +1,16 @@
 import { Link } from 'react-router-dom';
-import { STATIONS, nextUnlockedIncomplete } from '../lib/stations';
+import { STATIONS, nextUnlockedIncompleteIn, isStationUnlockedIn, type Station } from '../lib/stations';
 import type { Progress } from '../lib/progress';
 import { useMistakeStats } from '../lib/hooks/useMistakeStats';
 
 export function MapPage({
   progress,
   setProgress,
+  stations,
 }: {
   progress: Progress;
   setProgress: (p: Progress) => void;
+  stations?: ReadonlyArray<Station>;
 }) {
   const stats = useMistakeStats();
 
@@ -23,6 +25,8 @@ export function MapPage({
 
   const nextDueIn =
     stats.nextDueAt != null && stats.nextDueAt > stats.now ? formatIn(stats.nextDueAt - stats.now) : null;
+
+  const list = stations ?? STATIONS;
 
   return (
     <div className="card">
@@ -79,7 +83,7 @@ export function MapPage({
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {(() => {
-            const nextId = nextUnlockedIncomplete(progress);
+            const nextId = nextUnlockedIncompleteIn(progress, list);
             return nextId ? (
               <Link className="linkBtn" to={`/lesson/${nextId}`}>Continue</Link>
             ) : null;
@@ -91,9 +95,9 @@ export function MapPage({
       </div>
 
       <div className="line">
-        {STATIONS.map((s, idx) => {
+        {list.map((s, idx) => {
           const done = progress.stationDone[s.id];
-          const unlocked = idx === 0 ? true : STATIONS.slice(0, idx).every((p) => progress.stationDone[p.id]);
+          const unlocked = isStationUnlockedIn(progress, s.id, list);
 
           return (
             <div key={s.id} className="stationRow">

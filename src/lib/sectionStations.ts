@@ -1,0 +1,42 @@
+import type { StationId } from './progress';
+import { STATIONS, type Station } from './stations';
+import type { SectionId } from './sections';
+
+export type SectionStations = {
+  /** Ordered stations shown for this section (subset of the global line). */
+  stationIds: StationId[];
+  /** The section's "exam" station (usually the last test). */
+  examId: StationId;
+};
+
+const SECTION_STATIONS: Record<SectionId, SectionStations> = {
+  NOTES: {
+    stationIds: ['S1_NOTES', 'T1_NOTES'],
+    examId: 'T1_NOTES',
+  },
+  MAJOR_SCALE: {
+    stationIds: ['S2_MAJOR_SCALE', 'T2_MAJOR_SCALE'],
+    examId: 'T2_MAJOR_SCALE',
+  },
+  INTERVALS: {
+    stationIds: ['S3_INTERVALS', 'T3_INTERVALS', 'S8_DEGREE_INTERVALS', 'T8_DEGREE_INTERVALS'],
+    examId: 'T8_DEGREE_INTERVALS',
+  },
+  TRIADS: {
+    stationIds: ['S4_TRIADS', 'T5_TRIADS', 'S5_DIATONIC_TRIADS', 'T6_DIATONIC_TRIADS'],
+    examId: 'T6_DIATONIC_TRIADS',
+  },
+  FUNCTION: {
+    stationIds: ['S6_FUNCTIONS', 'T7_FUNCTIONS', 'S7_DEGREES', 'T4_DEGREES'],
+    examId: 'T4_DEGREES',
+  },
+};
+
+export function sectionStations(sectionId: SectionId): SectionStations {
+  return SECTION_STATIONS[sectionId];
+}
+
+export function sectionStationList(sectionId: SectionId): Station[] {
+  const ids = new Set(sectionStations(sectionId).stationIds);
+  return STATIONS.filter((s) => ids.has(s.id));
+}

@@ -117,15 +117,23 @@ export function nextStationId(id: StationId): StationId | null {
   return next ? next.id : null;
 }
 
-export function isStationUnlocked(progress: Progress, id: StationId): boolean {
-  const idx = stationIndex(id);
+export function isStationUnlockedIn(progress: Progress, id: StationId, stations: ReadonlyArray<Station>): boolean {
+  const idx = stations.findIndex((s) => s.id === id);
   if (idx <= 0) return idx === 0;
-  return STATIONS.slice(0, idx).every((p) => progress.stationDone[p.id]);
+  return stations.slice(0, idx).every((p) => progress.stationDone[p.id]);
+}
+
+export function nextUnlockedIncompleteIn(progress: Progress, stations: ReadonlyArray<Station>): StationId | null {
+  for (const s of stations) {
+    if (!progress.stationDone[s.id] && isStationUnlockedIn(progress, s.id, stations)) return s.id;
+  }
+  return null;
+}
+
+export function isStationUnlocked(progress: Progress, id: StationId): boolean {
+  return isStationUnlockedIn(progress, id, STATIONS);
 }
 
 export function nextUnlockedIncomplete(progress: Progress): StationId | null {
-  for (const s of STATIONS) {
-    if (!progress.stationDone[s.id] && isStationUnlocked(progress, s.id)) return s.id;
-  }
-  return null;
+  return nextUnlockedIncompleteIn(progress, STATIONS);
 }

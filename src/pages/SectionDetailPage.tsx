@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { SECTIONS, type SectionId } from '../lib/sections';
+import { sectionStationList, sectionStations } from '../lib/sectionStations';
 import { MapPage } from './MapPage';
 
 export function SectionDetailPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
@@ -17,9 +18,9 @@ export function SectionDetailPage({ progress, setProgress }: { progress: Progres
     );
   }
 
-  // Temporary bridge:
-  // Today we render the existing station map here.
-  // Next step: section-specific nodes + exams + skip-by-exam.
+  const list = sectionStationList(id);
+  const plan = sectionStations(id);
+
   return (
     <div className="page">
       <div className="rowBetween">
@@ -29,13 +30,15 @@ export function SectionDetailPage({ progress, setProgress }: { progress: Progres
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <Link className="btn" to="/learn">All sections</Link>
-          <button className="btnPrimary" disabled title="Exam page next">Jump to exam</button>
+          <Link className="btnPrimary" to={`/learn/section/${id}/exam`} title={`Exam: ${plan.examId}`}>
+            Jump to exam
+          </Link>
         </div>
       </div>
 
       <div className="sectionRoute" aria-label="route" />
 
-      <MapPage progress={progress} setProgress={setProgress} />
+      <MapPage progress={progress} setProgress={setProgress} stations={list} />
     </div>
   );
 }

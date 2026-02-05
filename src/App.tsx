@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { NavShell } from './components/NavShell';
 import { LearnSectionsPage } from './pages/LearnSectionsPage';
 import { SectionDetailPage } from './pages/SectionDetailPage';
+import { SectionExamPage } from './pages/SectionExamPage';
 import { StationPage } from './pages/StationPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { ReviewPage } from './pages/ReviewPage';
@@ -22,6 +23,7 @@ function App() {
 
         <Route path="/learn" element={<LearnSectionsPage />} />
         <Route path="/learn/section/:sectionId" element={<SectionDetailPage progress={progress} setProgress={setProgress} />} />
+        <Route path="/learn/section/:sectionId/exam" element={<SectionExamPage />} />
 
         <Route path="/lesson/:stationId" element={<StationPage progress={progress} setProgress={setProgress} />} />
 
