@@ -64,6 +64,10 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
       'Learn them as labels (m3, M3, P5…) but also as “how far” you feel.',
     ],
   },
+  T3B_INTERVALS: {
+    primer: ['8 questions. Quick checkpoint (no hearts). Need 6/8 to pass.'],
+    tips: ['Use this to warm up before the real test + section exam.'],
+  },
   T3_INTERVALS: {
     primer: ['10 questions. Name the interval by ear across a wider register. Need 8/10.'],
   },

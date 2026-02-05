@@ -146,6 +146,26 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [combo, setCombo] = useState(0);
   const [highlighted, setHighlighted] = useState<Record<number, 'correct' | 'wrong' | 'active'>>({});
 
+  // Mid-test 3B: interval label checkpoint (no hearts; narrower but still >= G2)
+  const [t3bIndex, setT3bIndex] = useState(0);
+  const [t3bCorrect, setT3bCorrect] = useState(0);
+  const [t3bWrong, setT3bWrong] = useState(0);
+  const T3B_TOTAL = 8;
+  const T3B_PASS = 6;
+  const t3bDone = t3bIndex >= T3B_TOTAL;
+  const t3bQ = useMemo(
+    () =>
+      makeIntervalLabelQuestion({
+        seed: seed * 1000 + 1290 + t3bIndex,
+        rootMinMidi: 43, // G2
+        rootMaxMidi: 55, // G3 (tight range; still “test” register rule)
+        minSemitones: 0,
+        maxSemitones: 12,
+        choiceCount: 6,
+      }),
+    [seed, t3bIndex],
+  );
+
   // Test 3: interval recognition across a wider register (G2 and above).
   const [t3Index, setT3Index] = useState(0);
   const [t3Correct, setT3Correct] = useState(0);
@@ -1363,6 +1383,66 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({});
   }
 
+  async function playPromptT3B() {
+    setResult('idle');
+    setHighlighted({});
+    await playIntervalPrompt(t3bQ.rootMidi, t3bQ.targetMidi, {
+      gapMs: gap(320),
+      rootDurationSec: dur(0.7),
+      targetDurationSec: dur(0.95),
+    });
+  }
+
+  async function chooseT3B(choice: IntervalLabel) {
+    if (t3bIndex >= T3B_TOTAL) return;
+
+    const ok = choice === t3bQ.correct;
+    setResult(ok ? 'correct' : 'wrong');
+
+    if (!ok) {
+      addMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: t3bQ.rootMidi, semitones: t3bQ.semitones });
+      setT3bWrong((n) => n + 1);
+
+      const nextIndex = t3bIndex + 1;
+      if (nextIndex >= T3B_TOTAL) {
+        setT3bIndex(T3B_TOTAL);
+        return;
+      }
+      setT3bIndex(nextIndex);
+      return;
+    }
+
+    setT3bCorrect((n) => n + 1);
+
+    let p2 = applyStudyReward(progress, 3);
+
+    const nextIndex = t3bIndex + 1;
+    if (nextIndex >= T3B_TOTAL) {
+      const correct = t3bCorrect + 1;
+      const pass = correct >= T3B_PASS;
+      if (pass) {
+        p2 = applyStudyReward(p2, 10);
+        p2 = markStationDone(p2, 'T3B_INTERVALS');
+      }
+      commitProgress(p2);
+      setResult(pass ? 'correct' : 'wrong');
+      setT3bIndex(T3B_TOTAL);
+      return;
+    }
+
+    commitProgress(p2);
+    setT3bIndex(nextIndex);
+  }
+
+  function resetT3B() {
+    setT3bIndex(0);
+    setT3bCorrect(0);
+    setT3bWrong(0);
+    setResult('idle');
+    setHighlighted({});
+    setSeed((x) => x + 1);
+  }
+
   async function playPromptT3() {
     setResult('idle');
     setHighlighted({});
@@ -1967,6 +2047,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         if (s2PatternDone) void playPromptS2();
       } else if (id === 'T2_MAJOR_SCALE') void playPromptT2();
       else if (id === 'S3_INTERVALS') void playPromptS3();
+      else if (id === 'T3B_INTERVALS') void playPromptT3B();
       else if (id === 'T3_INTERVALS') void playPromptT3();
       else if (id === 'E3_INTERVALS') void playPromptE3();
       else if (id === 'S4_TRIADS') void playPromptS4();
@@ -1999,6 +2080,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       else if (id === 'S2_MAJOR_SCALE') newKeyS2();
       else if (id === 'T2_MAJOR_SCALE') resetT2();
       else if (id === 'S3_INTERVALS') next();
+      else if (id === 'T3B_INTERVALS') resetT3B();
       else if (id === 'T3_INTERVALS') resetT3();
       else if (id === 'E3_INTERVALS') resetE3();
       else if (id === 'S4_TRIADS') next();
@@ -2071,6 +2153,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       if (id === 'T2_MAJOR_SCALE') {
         const c = t2Q.choices[idx];
         if (c) void chooseT2(c);
+        return;
+      }
+      if (id === 'T3B_INTERVALS') {
+        const c = t3bQ.choices[idx];
+        if (c) void chooseT3B(c);
         return;
       }
       if (id === 'T3_INTERVALS') {
@@ -2793,6 +2880,34 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
             Tip: listen for the degree, but answer with correct spelling.
+          </div>
+        </>
+      ) : id === 'T3B_INTERVALS' ? (
+        <>
+          <TestHeader
+            playLabel="Hear interval"
+            onPlay={playPromptT3B}
+            onRestart={resetT3B}
+            reviewHref={t3bDone && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
+            reviewLabel={`Review mistakes (${stationMistakeCount})`}
+            rightStatus={`Q: ${Math.min(t3bIndex + 1, T3B_TOTAL)}/${T3B_TOTAL} · Correct: ${t3bCorrect}/${T3B_TOTAL} (need ${T3B_PASS}) · Wrong: ${t3bWrong}`}
+          />
+
+          <div className={`result r_${result}`}>
+            {result === 'idle' && 'Mid-test: 8 interval labels. No hearts. Need 6/8 to pass.'}
+            {result === 'correct' &&
+              (progress.stationDone['T3B_INTERVALS']
+                ? 'Passed — warmed up. (+10 bonus XP)'
+                : `Correct — +3 XP. (${intervalLongName(t3bQ.correct)})`)}
+            {result === 'wrong' && (t3bDone ? 'Done — hit Restart to improve your score.' : `Not quite — it was ${t3bQ.correct} (${intervalLongName(t3bQ.correct)}).`)}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            <ChoiceGrid choices={t3bQ.choices} onChoose={chooseT3B} />
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+            Checkpoint vibe: play again anytime — no hearts here.
           </div>
         </>
       ) : id === 'T3_INTERVALS' ? (

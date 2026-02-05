@@ -8,6 +8,7 @@ export type StationId =
   | 'S2_MAJOR_SCALE'
   | 'T2_MAJOR_SCALE'
   | 'S3_INTERVALS'
+  | 'T3B_INTERVALS'
   | 'T3_INTERVALS'
   | 'E3_INTERVALS'
   | 'S4_TRIADS'
@@ -178,6 +179,7 @@ export function defaultProgress(): Progress {
       S2_MAJOR_SCALE: false,
       T2_MAJOR_SCALE: false,
       S3_INTERVALS: false,
+      T3B_INTERVALS: false,
       T3_INTERVALS: false,
       E3_INTERVALS: false,
       S4_TRIADS: false,

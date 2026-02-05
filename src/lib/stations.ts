@@ -63,6 +63,12 @@ export const STATIONS: Station[] = [
     kind: 'lesson',
   },
   {
+    id: 'T3B_INTERVALS',
+    title: 'Mid-test 3B — Interval labels',
+    blurb: 'Quick checkpoint: name intervals by ear (no hearts).',
+    kind: 'test',
+  },
+  {
     id: 'T3_INTERVALS',
     title: 'Test 3 — Interval recognition',
     blurb: 'Name the interval by ear (m3, P5, etc.) across a wider range.',
