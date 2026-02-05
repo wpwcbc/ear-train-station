@@ -2183,6 +2183,12 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             ))}
           </div>
 
+          {result !== 'idle' ? (
+            <div style={{ fontSize: 12, opacity: 0.82, marginTop: 8 }}>
+              Meaning: <span style={{ opacity: 0.95 }}>{degreeMeaning(t4Q.correct)}</span>
+            </div>
+          ) : null}
+
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
             Tip: tests can roam across a bigger register; lessons stay in a stable register.
           </div>

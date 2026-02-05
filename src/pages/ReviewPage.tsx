@@ -11,7 +11,7 @@ import { playIntervalPrompt, playRootThenChordPrompt, playTonicTargetPrompt } fr
 import { makeNoteNameReviewQuestion } from '../exercises/noteName';
 import { makeIntervalLabelReviewQuestion, intervalLongName, type IntervalLabel } from '../exercises/interval';
 import { makeTriadQualityReviewQuestion, triadQualityLabel, type TriadQuality } from '../exercises/triad';
-import { makeScaleDegreeNameReviewQuestion, type ScaleDegreeName } from '../exercises/scaleDegree';
+import { degreeMeaning, makeScaleDegreeNameReviewQuestion, type ScaleDegreeName } from '../exercises/scaleDegree';
 import { makeMajorScaleDegreeReviewQuestion } from '../exercises/majorScale';
 import { makeFunctionFamilyQuestion, type FunctionFamily } from '../exercises/functionFamily';
 import { MAJOR_KEYS } from '../lib/theory/major';
@@ -458,6 +458,12 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               </button>
             ))}
           </div>
+
+          {result !== 'idle' ? (
+            <div style={{ fontSize: 12, opacity: 0.82, marginTop: 8 }}>
+              Meaning: <span style={{ opacity: 0.95 }}>{degreeMeaning(degQ.correct)}</span>
+            </div>
+          ) : null}
 
           <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
             From: {active.sourceStationId} • Streak: {active.correctStreak}/2
