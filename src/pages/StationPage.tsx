@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { StationId, Progress } from '../lib/progress';
 import { applyStudyReward, markStationDone } from '../lib/progress';
-import { addMistake, mistakeCountForStation } from '../lib/mistakes';
+import { addMistake, loadMistakes, mistakeCountForStation } from '../lib/mistakes';
 import { bumpStationCompleted } from '../lib/quests';
 import { STATIONS, nextStationId, isStationUnlocked } from '../lib/stations';
 import { sectionIdByExamId, sectionStationsByExamId } from '../lib/sectionStations';
@@ -23,6 +23,7 @@ import {
   makeIntervalQuestion,
   makeIntervalLabelQuestion,
   makeIntervalDeriveQuestion,
+  intervalLabel,
   intervalLongName,
   type IntervalLabel,
 } from '../exercises/interval';
@@ -73,6 +74,24 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   const stationMistakeCount = mistakeCountForStation(id);
   const stationMistakeDue = mistakeCountForStation(id, { dueOnly: true, now });
+
+  const topIntervalMisses = useMemo(() => {
+    // Show a small “what you missed most” breakdown for interval-label stations.
+    if (id !== 'T3B_INTERVALS' && id !== 'T3_INTERVALS' && id !== 'E3_INTERVALS') return [] as { label: IntervalLabel; count: number }[];
+
+    const all = loadMistakes().filter((m) => m.sourceStationId === id);
+    const counts = new Map<IntervalLabel, number>();
+    for (const m of all) {
+      if (m.kind !== 'intervalLabel') continue;
+      const l = intervalLabel(m.semitones);
+      counts.set(l, (counts.get(l) ?? 0) + 1);
+    }
+
+    return Array.from(counts.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+      .slice(0, 3);
+  }, [id, now]);
 
   const [seed, setSeed] = useState(1);
   // If a station is already completed, default to a “summary” view with an optional practice toggle.
@@ -2955,6 +2974,12 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
               <div style={{ marginTop: 4, opacity: 0.85 }}>
                 Score: {t3Correct}/{T3_TOTAL} (need {T3_PASS}).
               </div>
+
+              {topIntervalMisses.length > 0 ? (
+                <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
+                  Most missed: {topIntervalMisses.map((x) => `${x.label}×${x.count}`).join(' · ')}
+                </div>
+              ) : null}
               <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 {stationMistakeCount > 0 ? (
                   <Link className="linkBtn" to={`/review?station=${id}`}>
@@ -3007,6 +3032,12 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
               <div style={{ marginTop: 4, opacity: 0.85 }}>
                 Score: {e3Correct}/{E3_TOTAL} (need {E3_PASS}).
               </div>
+
+              {topIntervalMisses.length > 0 ? (
+                <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
+                  Most missed: {topIntervalMisses.map((x) => `${x.label}×${x.count}`).join(' · ')}
+                </div>
+              ) : null}
               <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 {stationMistakeCount > 0 ? (
                   <Link className="linkBtn" to={`/review?station=${id}`}>
