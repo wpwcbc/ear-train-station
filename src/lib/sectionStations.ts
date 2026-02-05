@@ -19,8 +19,8 @@ const SECTION_STATIONS: Record<SectionId, SectionStations> = {
     examId: 'T2_MAJOR_SCALE',
   },
   INTERVALS: {
-    stationIds: ['S3_INTERVALS', 'T3_INTERVALS', 'S8_DEGREE_INTERVALS', 'T8_DEGREE_INTERVALS'],
-    examId: 'T8_DEGREE_INTERVALS',
+    stationIds: ['S3_INTERVALS', 'T3_INTERVALS', 'E3_INTERVALS'],
+    examId: 'E3_INTERVALS',
   },
   TRIADS: {
     stationIds: ['S4_TRIADS', 'T5_TRIADS', 'S5_DIATONIC_TRIADS', 'T6_DIATONIC_TRIADS'],

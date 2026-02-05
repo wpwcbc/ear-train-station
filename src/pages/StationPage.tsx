@@ -140,6 +140,25 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     [seed, t3Index],
   );
 
+  // INTERVALS Exam: interval recognition across a wider register (G2 and above).
+  const [e3Index, setE3Index] = useState(0);
+  const [e3Correct, setE3Correct] = useState(0);
+  const [e3Wrong, setE3Wrong] = useState(0);
+  const E3_TOTAL = 10;
+  const E3_PASS = 8;
+  const e3Q = useMemo(
+    () =>
+      makeIntervalLabelQuestion({
+        seed: seed * 1000 + 1313 + e3Index,
+        rootMinMidi: 43, // G2
+        rootMaxMidi: 72, // C5
+        minSemitones: 0,
+        maxSemitones: 12,
+        choiceCount: 7,
+      }),
+    [seed, e3Index],
+  );
+
   // Station 4: triad-quality question (stable register)
   const triadQ = useMemo(() => makeTriadQualityQuestion({ seed: seed * 1000 + 4 }), [seed]);
   const [s4Correct, setS4Correct] = useState(0);
@@ -1330,6 +1349,74 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setSeed((x) => x + 1);
   }
 
+  async function playPromptE3() {
+    setResult('idle');
+    setHighlighted({});
+    await playIntervalPrompt(e3Q.rootMidi, e3Q.targetMidi, {
+      gapMs: gap(320),
+      rootDurationSec: dur(0.7),
+      targetDurationSec: dur(0.95),
+    });
+  }
+
+  async function chooseE3(choice: IntervalLabel) {
+    if (e3Index >= E3_TOTAL) return;
+    if (e3Wrong >= HEARTS) return;
+
+    const ok = choice === e3Q.correct;
+    setResult(ok ? 'correct' : 'wrong');
+
+    if (!ok) {
+      addMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: e3Q.rootMidi, semitones: e3Q.semitones });
+
+      const nextWrong = e3Wrong + 1;
+      setE3Wrong(nextWrong);
+
+      const nextIndex = e3Index + 1;
+      if (nextWrong >= HEARTS) {
+        setE3Index(E3_TOTAL);
+        return;
+      }
+      if (nextIndex >= E3_TOTAL) {
+        setE3Index(E3_TOTAL);
+        return;
+      }
+      setE3Index(nextIndex);
+      return;
+    }
+
+    setE3Correct((n) => n + 1);
+
+    let p2 = applyStudyReward(progress, 3);
+
+    const nextIndex = e3Index + 1;
+    if (nextIndex >= E3_TOTAL) {
+      const correct = e3Correct + 1;
+      const pass = correct >= E3_PASS;
+      if (pass) {
+        p2 = applyStudyReward(p2, 15);
+        p2 = markStationDone(p2, 'E3_INTERVALS');
+        p2 = applySectionExamPass(p2, 'E3_INTERVALS');
+      }
+      commitProgress(p2);
+      setResult(pass ? 'correct' : 'wrong');
+      setE3Index(E3_TOTAL);
+      return;
+    }
+
+    commitProgress(p2);
+    setE3Index(nextIndex);
+  }
+
+  function resetE3() {
+    setE3Index(0);
+    setE3Correct(0);
+    setE3Wrong(0);
+    setResult('idle');
+    setHighlighted({});
+    setSeed((x) => x + 1);
+  }
+
   async function playPromptT5() {
     setResult('idle');
     setHighlighted({});
@@ -1800,6 +1887,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       } else if (id === 'T2_MAJOR_SCALE') void playPromptT2();
       else if (id === 'S3_INTERVALS') void playPromptS3();
       else if (id === 'T3_INTERVALS') void playPromptT3();
+      else if (id === 'E3_INTERVALS') void playPromptE3();
       else if (id === 'S4_TRIADS') void playPromptS4();
       else if (id === 'T5_TRIADS') void playPromptT5();
       else if (id === 'S5_DIATONIC_TRIADS') void playPromptS5();
@@ -1831,6 +1919,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       else if (id === 'T2_MAJOR_SCALE') resetT2();
       else if (id === 'S3_INTERVALS') next();
       else if (id === 'T3_INTERVALS') resetT3();
+      else if (id === 'E3_INTERVALS') resetE3();
       else if (id === 'S4_TRIADS') next();
       else if (id === 'T5_TRIADS') resetT5();
       else if (id === 'S5_DIATONIC_TRIADS') next();
@@ -1906,6 +1995,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       if (id === 'T3_INTERVALS') {
         const c = t3Q.choices[idx];
         if (c) void chooseT3(c);
+        return;
+      }
+      if (id === 'E3_INTERVALS') {
+        const c = e3Q.choices[idx];
+        if (c) void chooseE3(c);
         return;
       }
       if (id === 'S4_TRIADS') {
@@ -2649,6 +2743,39 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
             Tip: tests roam; lessons stay in a stable register.
+          </div>
+        </>
+      ) : id === 'E3_INTERVALS' ? (
+        <>
+          <TestHeader
+            playLabel="Hear interval"
+            onPlay={playPromptE3}
+            onRestart={resetE3}
+            reviewHref={(e3Index >= E3_TOTAL || e3Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
+            reviewLabel={`Review mistakes (${stationMistakeCount})`}
+            rightStatus={`Q: ${Math.min(e3Index + 1, E3_TOTAL)}/${E3_TOTAL} · Correct: ${e3Correct}/${E3_TOTAL} (need ${E3_PASS}) · Lives: ${Math.max(0, HEARTS - e3Wrong)}/${HEARTS}`}
+          />
+
+          <div className={`result r_${result}`}>
+            {result === 'idle' && e3Q.prompt}
+            {result === 'correct' &&
+              (progress.stationDone['E3_INTERVALS']
+                ? 'Passed — section completed. (+15 bonus XP)'
+                : `Correct — +3 XP. (${intervalLongName(e3Q.correct)})`)}
+            {result === 'wrong' &&
+              (e3Wrong >= HEARTS
+                ? `Out of lives. Score so far: ${e3Correct}/${E3_TOTAL}. Hit restart to try again${stationMistakeCount > 0 ? ' — or review your misses.' : '.'}`
+                : e3Index + 1 >= E3_TOTAL
+                  ? `Finished: ${e3Correct}/${E3_TOTAL}. Need ${E3_PASS}. Hit restart to try again.`
+                  : `Not quite — it was ${e3Q.correct} (${intervalLongName(e3Q.correct)}).`)}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            <ChoiceGrid choices={e3Q.choices} onChoose={chooseE3} />
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+            Section exam: hearts on; pass = test out.
           </div>
         </>
       ) : id === 'S2_MAJOR_SCALE' ? (

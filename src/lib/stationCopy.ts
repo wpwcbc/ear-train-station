@@ -67,6 +67,14 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
   T3_INTERVALS: {
     primer: ['10 questions. Name the interval by ear across a wider register. Need 8/10.'],
   },
+  E3_INTERVALS: {
+    primer: [
+      'Section exam: 10 questions mixing what you learned in INTERVALS.',
+      'Wider register (G2 and up). Hearts apply. Need 8/10 to pass.',
+      'Pass = we mark the whole section completed (Duolingo-style “test out”).',
+    ],
+    tips: ['If you fail, hit Restart or Review your misses — then try again.'],
+  },
   S4_TRIADS: {
     primer: [
       'Triads = root + 3rd + 5th.',
