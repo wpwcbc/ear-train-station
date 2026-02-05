@@ -2935,6 +2935,16 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             playLabel="Hear interval"
             onPlay={playPromptT3B}
             onRestart={resetT3B}
+            leftExtras={
+              practice && practiceFocusIntervals?.length ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 12, opacity: 0.85 }}>Focused: {practiceFocusIntervals.join(', ')}</div>
+                  <button className="ghost" onClick={() => setPracticeFocusIntervals(null)} title="Clear focused practice">
+                    Clear focus
+                  </button>
+                </div>
+              ) : null
+            }
             reviewHref={t3bDone && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
             reviewLabel={`Review mistakes (${stationMistakeCount})`}
             rightStatus={`Q: ${Math.min(t3bIndex + 1, T3B_TOTAL)}/${T3B_TOTAL} · Correct: ${t3bCorrect}/${T3B_TOTAL} (need ${T3B_PASS}) · Wrong: ${t3bWrong}`}
@@ -2963,6 +2973,16 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             playLabel="Hear interval"
             onPlay={playPromptT3}
             onRestart={resetT3}
+            leftExtras={
+              practice && practiceFocusIntervals?.length ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 12, opacity: 0.85 }}>Focused: {practiceFocusIntervals.join(', ')}</div>
+                  <button className="ghost" onClick={() => setPracticeFocusIntervals(null)} title="Clear focused practice">
+                    Clear focus
+                  </button>
+                </div>
+              ) : null
+            }
             reviewHref={t3Done && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
             reviewLabel={`Review mistakes (${stationMistakeCount})`}
             rightStatus={`Q: ${Math.min(t3Index + 1, T3_TOTAL)}/${T3_TOTAL} · Correct: ${t3Correct}/${T3_TOTAL} (need ${T3_PASS}) · Lives: ${Math.max(0, HEARTS - t3Wrong)}/${HEARTS}`}
@@ -3056,6 +3076,16 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             playLabel="Hear interval"
             onPlay={playPromptE3}
             onRestart={resetE3}
+            leftExtras={
+              practice && practiceFocusIntervals?.length ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 12, opacity: 0.85 }}>Focused: {practiceFocusIntervals.join(', ')}</div>
+                  <button className="ghost" onClick={() => setPracticeFocusIntervals(null)} title="Clear focused practice">
+                    Clear focus
+                  </button>
+                </div>
+              ) : null
+            }
             reviewHref={e3Done && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
             reviewLabel={`Review mistakes (${stationMistakeCount})`}
             rightStatus={`Q: ${Math.min(e3Index + 1, E3_TOTAL)}/${E3_TOTAL} · Correct: ${e3Correct}/${E3_TOTAL} (need ${E3_PASS}) · Lives: ${Math.max(0, HEARTS - e3Wrong)}/${HEARTS}`}
