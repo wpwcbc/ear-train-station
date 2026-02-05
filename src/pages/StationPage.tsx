@@ -5,7 +5,8 @@ import { applyStudyReward, markStationDone } from '../lib/progress';
 import { addMistake, mistakeCountForStation } from '../lib/mistakes';
 import { bumpStationCompleted } from '../lib/quests';
 import { STATIONS, nextStationId, isStationUnlocked } from '../lib/stations';
-import { sectionStationsByExamId } from '../lib/sectionStations';
+import { sectionIdByExamId, sectionStationsByExamId } from '../lib/sectionStations';
+import { SECTIONS } from '../lib/sections';
 import { stationCopy } from '../lib/stationCopy';
 import { loadSettings } from '../lib/settings';
 import { promptSpeedFactors } from '../lib/promptTiming';
@@ -50,6 +51,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const nextUnlocked = nextId ? isStationUnlocked(progress, nextId) : false;
 
   const copy = stationCopy(id);
+
+  const examSectionId = sectionIdByExamId(id);
+  const examSection = examSectionId ? SECTIONS.find((s) => s.id === examSectionId) ?? null : null;
+  const examSectionIndex = examSectionId ? SECTIONS.findIndex((s) => s.id === examSectionId) : -1;
+  const nextSection = examSectionIndex >= 0 ? (SECTIONS[examSectionIndex + 1] ?? null) : null;
 
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -2973,6 +2979,30 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
             Section exam: hearts on; pass = test out.
           </div>
+
+          {progress.stationDone[id] && examSectionId ? (
+            <div className="callout" style={{ marginTop: 10 }}>
+              <div style={{ fontWeight: 700 }}>Section completed</div>
+              <div style={{ marginTop: 4, opacity: 0.85 }}>
+                {examSection ? `You cleared ${examSection.title}.` : 'Nice work — you cleared this section.'}
+              </div>
+              <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <Link className="linkBtn primaryLink" to={`/learn/section/${examSectionId}`}>
+                  Back to section
+                </Link>
+                <Link className="linkBtn" to={`/learn/section/${examSectionId}/exam`}>
+                  Exam page
+                </Link>
+                {nextSection ? (
+                  <Link className="linkBtn" to={`/learn/section/${nextSection.id}`}>
+                    Next: {nextSection.title}
+                  </Link>
+                ) : (
+                  <Link className="linkBtn" to="/learn">All sections</Link>
+                )}
+              </div>
+            </div>
+          ) : null}
         </>
       ) : id === 'S2_MAJOR_SCALE' ? (
         <>

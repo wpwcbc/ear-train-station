@@ -52,6 +52,13 @@ export function sectionStationsByExamId(examId: StationId): StationId[] | null {
   return null;
 }
 
+export function sectionIdByExamId(examId: StationId): SectionId | null {
+  for (const [sectionId, s] of Object.entries(SECTION_STATIONS) as Array<[SectionId, SectionStations]>) {
+    if (s.examId === examId) return sectionId;
+  }
+  return null;
+}
+
 export function sectionMissingForExam(progress: Progress, sectionId: SectionId): StationId[] {
   const { stationIds, examId } = sectionStations(sectionId);
   const examIdx = stationIds.indexOf(examId);
