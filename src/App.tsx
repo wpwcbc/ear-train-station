@@ -5,7 +5,7 @@ import { LearnSectionsPage } from './pages/LearnSectionsPage';
 import { SectionDetailPage } from './pages/SectionDetailPage';
 import { SectionExamPage } from './pages/SectionExamPage';
 import { StationPage } from './pages/StationPage';
-import { PlaceholderPage } from './pages/PlaceholderPage';
+import { LeaguePage } from './pages/LeaguePage';
 import { PracticePage } from './pages/PracticePage';
 import { ReviewPage } from './pages/ReviewPage';
 import { QuestsPage } from './pages/QuestsPage';
@@ -34,7 +34,7 @@ function App() {
         <Route path="/practice" element={<PracticePage progress={progress} />} />
         <Route path="/review" element={<ReviewPage progress={progress} setProgress={setProgress} />} />
         <Route path="/quests" element={<QuestsPage progress={progress} />} />
-        <Route path="/leaderboard" element={<PlaceholderPage title="League" desc="Weekly XP league (future: friends + global)." />} />
+        <Route path="/leaderboard" element={<LeaguePage progress={progress} />} />
         <Route path="/profile" element={<ProfilePage progress={progress} setProgress={setProgress} />} />
 
         <Route path="*" element={<Navigate to="/learn" replace />} />
