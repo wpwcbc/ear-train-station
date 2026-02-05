@@ -1435,6 +1435,16 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         <div style={{ textAlign: 'right', fontSize: 12, opacity: 0.85 }}>
           <div>XP: {progress.xp}</div>
           <div>Streak: {progress.streakDays} day(s)</div>
+          {stationMistakeCount > 0 ? (
+            <div style={{ marginTop: 6 }}>
+              <Link
+                to={`/review?station=${id}`}
+                style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2, opacity: stationMistakeDue > 0 ? 1 : 0.85 }}
+              >
+                Review: {stationMistakeDue > 0 ? `${stationMistakeDue} due` : `${stationMistakeCount} total`}
+              </Link>
+            </div>
+          ) : null}
         </div>
       </div>
 
