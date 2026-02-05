@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { StationId, Progress } from '../lib/progress';
 import { applyStudyReward, markStationDone } from '../lib/progress';
@@ -46,7 +46,21 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   const copy = stationCopy(id);
 
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    function bump() {
+      setNow(Date.now());
+    }
+    window.addEventListener('focus', bump);
+    window.addEventListener('storage', bump);
+    return () => {
+      window.removeEventListener('focus', bump);
+      window.removeEventListener('storage', bump);
+    };
+  }, []);
+
   const stationMistakeCount = mistakeCountForStation(id);
+  const stationMistakeDue = mistakeCountForStation(id, { dueOnly: true, now });
 
   const [seed, setSeed] = useState(1);
   // If a station is already completed, default to a “summary” view with an optional practice toggle.
@@ -1443,6 +1457,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             <button className={practice ? 'secondary' : 'ghost'} onClick={() => setPractice((p) => !p)}>
               {practice ? 'Hide practice' : 'Practice'}
             </button>
+            {stationMistakeCount > 0 ? (
+              <Link className={stationMistakeDue > 0 ? 'linkBtn primaryLink' : 'linkBtn'} to={`/review?station=${id}`}>
+                Review mistakes{stationMistakeDue > 0 ? ` (${stationMistakeDue} due)` : ` (${stationMistakeCount})`}
+              </Link>
+            ) : null}
             <Link className="linkBtn" to="/">Map</Link>
             {nextId && nextUnlocked ? <Link className="linkBtn" to={`/station/${nextId}`}>Next</Link> : null}
           </div>
