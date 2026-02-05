@@ -11,6 +11,7 @@ import { promptSpeedFactors, promptSpeedLabel } from '../lib/promptTiming';
 import { PianoKeyboard } from '../components/PianoKeyboard';
 import { StaffNote } from '../components/StaffNote';
 import { TestHeader } from '../components/TestHeader';
+import { ChoiceGrid } from '../components/ChoiceGrid';
 import { useHotkeys } from '../lib/hooks/useHotkeys';
 import { piano } from '../audio/piano';
 import { playIntervalPrompt, playNoteSequence, playRootThenChordPrompt, playTonicTargetPrompt } from '../audio/prompts';
@@ -1568,11 +1569,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {noteQ.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseS1(c)}>
-                {c}
-              </button>
-            ))}
+            <ChoiceGrid choices={noteQ.choices} onChoose={chooseS1} />
           </div>
 
           <div className="row" style={{ gap: 14, alignItems: 'center', flexWrap: 'wrap', marginTop: 10 }}>
@@ -1613,11 +1610,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {t1Q.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseT1(c)}>
-                {c}
-              </button>
-            ))}
+            <ChoiceGrid choices={t1Q.choices} onChoose={chooseT1} />
           </div>
 
           <div style={{ marginTop: 10 }}>
@@ -1652,11 +1645,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {t2Q.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseT2(c)}>
-                {c}
-              </button>
-            ))}
+            <ChoiceGrid choices={t2Q.choices} onChoose={chooseT2} />
           </div>
 
           <div style={{ marginTop: 10 }}>
@@ -1696,11 +1685,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {t3Q.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseT3(c)}>
-                {c}
-              </button>
-            ))}
+            <ChoiceGrid choices={t3Q.choices} onChoose={chooseT3} />
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
@@ -1754,11 +1739,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
               </div>
 
               <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
-                {s2PatternQ.choices.map((c) => (
-                  <button key={c} className="secondary" onClick={() => chooseS2Pattern(c)}>
-                    {c}
-                  </button>
-                ))}
+                <ChoiceGrid choices={s2PatternQ.choices} onChoose={chooseS2Pattern} />
               </div>
 
               <div style={{ marginTop: 10 }}>
@@ -1784,11 +1765,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
               </div>
 
               <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
-                {s2Q.choices.map((c) => (
-                  <button key={c} className="secondary" onClick={() => chooseS2(c)}>
-                    {c}
-                  </button>
-                ))}
+                <ChoiceGrid choices={s2Q.choices} onChoose={chooseS2} />
               </div>
 
               <div style={{ marginTop: 10 }}>
@@ -1817,11 +1794,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
               {s3DeriveResult === 'wrong' && `Not quite — it was ${s3DeriveQ.correct}.`}
             </div>
             <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-              {s3DeriveQ.choices.map((c) => (
-                <button key={c} className="secondary" onClick={() => chooseS3Derive(c)}>
-                  {c}
-                </button>
-              ))}
+              <ChoiceGrid choices={s3DeriveQ.choices} onChoose={chooseS3Derive} />
             </div>
             <div style={{ fontSize: 12, opacity: 0.75, marginTop: 6 }}>
               Hint: minor = major − 1 semitone. (Perfect ± 1 is “the weird ones”.)
@@ -1891,11 +1864,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {triadQ.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseS4(c)}>
-                {triadQualityLabel(c)}
-              </button>
-            ))}
+            <ChoiceGrid choices={triadQ.choices} onChoose={chooseS4} renderChoice={triadQualityLabel} />
           </div>
 
           <PianoKeyboard
@@ -1946,11 +1915,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {t5Q.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseT5(c)}>
-                {triadQualityLabel(c)}
-              </button>
-            ))}
+            <ChoiceGrid choices={t5Q.choices} onChoose={chooseT5} renderChoice={triadQualityLabel} />
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
@@ -1989,11 +1954,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {diatonicQ.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseS5(c)}>
-                {triadQualityLabel(c)}
-              </button>
-            ))}
+            <ChoiceGrid choices={diatonicQ.choices} onChoose={chooseS5} renderChoice={triadQualityLabel} />
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
@@ -2052,11 +2013,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>Prompt: {t6Q.prompt}</div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
-            {t6Q.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseT6(c)}>
-                {triadQualityLabel(c)}
-              </button>
-            ))}
+            <ChoiceGrid choices={t6Q.choices} onChoose={chooseT6} renderChoice={triadQualityLabel} />
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
@@ -2095,11 +2052,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {funcQ.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseS6(c)}>
-                {familyLabel(c)}
-              </button>
-            ))}
+            <ChoiceGrid choices={funcQ.choices} onChoose={chooseS6} renderChoice={familyLabel} />
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
@@ -2156,11 +2109,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>Prompt: {t7Q.prompt}</div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
-            {t7Q.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseT7(c)}>
-                {c}
-              </button>
-            ))}
+            <ChoiceGrid choices={t7Q.choices} onChoose={chooseT7} />
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
@@ -2184,11 +2133,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {degreeQ.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseS7(c)}>
-                {c}
-              </button>
-            ))}
+            <ChoiceGrid choices={degreeQ.choices} onChoose={chooseS7} />
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
@@ -2224,11 +2169,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {t4Q.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseT4(c)}>
-                {c}
-              </button>
-            ))}
+            <ChoiceGrid choices={t4Q.choices} onChoose={chooseT4} />
           </div>
 
           {result !== 'idle' ? (
@@ -2258,11 +2199,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {degreeIntervalQ.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseS8(c)}>
-                {c}
-              </button>
-            ))}
+            <ChoiceGrid choices={degreeIntervalQ.choices} onChoose={chooseS8} />
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
@@ -2292,11 +2229,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {t8Q.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseT8(c)}>
-                {c}
-              </button>
-            ))}
+            <ChoiceGrid choices={t8Q.choices} onChoose={chooseT8} />
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
