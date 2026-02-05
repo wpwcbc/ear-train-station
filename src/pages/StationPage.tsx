@@ -178,6 +178,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [t3Wrong, setT3Wrong] = useState(0);
   const T3_TOTAL = 10;
   const T3_PASS = 8;
+  const t3Done = t3Index >= T3_TOTAL || t3Wrong >= HEARTS;
   const t3Q = useMemo(
     () =>
       makeIntervalLabelQuestion({
@@ -197,6 +198,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [e3Wrong, setE3Wrong] = useState(0);
   const E3_TOTAL = 10;
   const E3_PASS = 8;
+  const e3Done = e3Index >= E3_TOTAL || e3Wrong >= HEARTS;
   const e3Q = useMemo(
     () =>
       makeIntervalLabelQuestion({
@@ -2922,7 +2924,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             playLabel="Hear interval"
             onPlay={playPromptT3}
             onRestart={resetT3}
-            reviewHref={(t3Index >= T3_TOTAL || t3Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
+            reviewHref={t3Done && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
             reviewLabel={`Review mistakes (${stationMistakeCount})`}
             rightStatus={`Q: ${Math.min(t3Index + 1, T3_TOTAL)}/${T3_TOTAL} · Correct: ${t3Correct}/${T3_TOTAL} (need ${T3_PASS}) · Lives: ${Math.max(0, HEARTS - t3Wrong)}/${HEARTS}`}
           />
@@ -2933,9 +2935,9 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
               (progress.stationDone['T3_INTERVALS'] ? 'Passed — nice. (+12 bonus XP)' : `Correct — +3 XP. (${intervalLongName(t3Q.correct)})`)}
             {result === 'wrong' &&
               (t3Wrong >= HEARTS
-                ? `Out of lives. Score so far: ${t3Correct}/${T3_TOTAL}. Hit restart to try again${stationMistakeCount > 0 ? ' — or review your misses.' : '.'}`
+                ? `Out of lives. Score so far: ${t3Correct}/${T3_TOTAL}.` + (stationMistakeCount > 0 ? ' Review your misses, then restart.' : ' Hit restart to try again.')
                 : t3Index + 1 >= T3_TOTAL
-                  ? `Finished: ${t3Correct}/${T3_TOTAL}. Need ${T3_PASS}. Hit restart to try again.`
+                  ? `Finished: ${t3Correct}/${T3_TOTAL}. Need ${T3_PASS}.` + (stationMistakeCount > 0 ? ' Review mistakes, then restart.' : ' Hit restart to try again.')
                   : `Not quite — it was ${t3Q.correct} (${intervalLongName(t3Q.correct)}).`)}
           </div>
 
@@ -2946,6 +2948,25 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
             Tip: tests roam; lessons stay in a stable register.
           </div>
+
+          {t3Done ? (
+            <div className="callout" style={{ marginTop: 10 }}>
+              <div style={{ fontWeight: 700 }}>Test complete</div>
+              <div style={{ marginTop: 4, opacity: 0.85 }}>
+                Score: {t3Correct}/{T3_TOTAL} (need {T3_PASS}).
+              </div>
+              <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {stationMistakeCount > 0 ? (
+                  <Link className="linkBtn" to={`/review?station=${id}`}>
+                    Review mistakes ({stationMistakeCount})
+                  </Link>
+                ) : null}
+                <button className="linkBtn" onClick={resetT3}>
+                  Restart
+                </button>
+              </div>
+            </div>
+          ) : null}
         </>
       ) : id === 'E3_INTERVALS' ? (
         <>
@@ -2953,7 +2974,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             playLabel="Hear interval"
             onPlay={playPromptE3}
             onRestart={resetE3}
-            reviewHref={(e3Index >= E3_TOTAL || e3Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
+            reviewHref={e3Done && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
             reviewLabel={`Review mistakes (${stationMistakeCount})`}
             rightStatus={`Q: ${Math.min(e3Index + 1, E3_TOTAL)}/${E3_TOTAL} · Correct: ${e3Correct}/${E3_TOTAL} (need ${E3_PASS}) · Lives: ${Math.max(0, HEARTS - e3Wrong)}/${HEARTS}`}
           />
@@ -2966,9 +2987,9 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                 : `Correct — +3 XP. (${intervalLongName(e3Q.correct)})`)}
             {result === 'wrong' &&
               (e3Wrong >= HEARTS
-                ? `Out of lives. Score so far: ${e3Correct}/${E3_TOTAL}. Hit restart to try again${stationMistakeCount > 0 ? ' — or review your misses.' : '.'}`
+                ? `Out of lives. Score so far: ${e3Correct}/${E3_TOTAL}.` + (stationMistakeCount > 0 ? ' Review your misses, then restart.' : ' Hit restart to try again.')
                 : e3Index + 1 >= E3_TOTAL
-                  ? `Finished: ${e3Correct}/${E3_TOTAL}. Need ${E3_PASS}. Hit restart to try again.`
+                  ? `Finished: ${e3Correct}/${E3_TOTAL}. Need ${E3_PASS}.` + (stationMistakeCount > 0 ? ' Review mistakes, then restart.' : ' Hit restart to try again.')
                   : `Not quite — it was ${e3Q.correct} (${intervalLongName(e3Q.correct)}).`)}
           </div>
 
@@ -2979,6 +3000,25 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
             Section exam: hearts on; pass = test out.
           </div>
+
+          {e3Done && !progress.stationDone['E3_INTERVALS'] ? (
+            <div className="callout" style={{ marginTop: 10 }}>
+              <div style={{ fontWeight: 700 }}>Exam complete</div>
+              <div style={{ marginTop: 4, opacity: 0.85 }}>
+                Score: {e3Correct}/{E3_TOTAL} (need {E3_PASS}).
+              </div>
+              <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {stationMistakeCount > 0 ? (
+                  <Link className="linkBtn" to={`/review?station=${id}`}>
+                    Review mistakes ({stationMistakeCount})
+                  </Link>
+                ) : null}
+                <button className="linkBtn" onClick={resetE3}>
+                  Restart
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           {progress.stationDone[id] && examSectionId ? (
             <div className="callout" style={{ marginTop: 10 }}>
