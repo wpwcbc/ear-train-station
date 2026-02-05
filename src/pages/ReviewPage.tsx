@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useHotkeys } from '../lib/hooks/useHotkeys';
 import type { Progress } from '../lib/progress';
@@ -42,6 +42,21 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const [doneCount, setDoneCount] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [mistakes, setMistakes] = useState<Mistake[]>(() => loadMistakes());
+
+  // Keep the review queue reactive: update on focus/storage, and wake up when the next item becomes due.
+  useEffect(() => {
+    function bump() {
+      setNow(Date.now());
+      setMistakes(loadMistakes());
+    }
+
+    window.addEventListener('focus', bump);
+    window.addEventListener('storage', bump);
+    return () => {
+      window.removeEventListener('focus', bump);
+      window.removeEventListener('storage', bump);
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     if (!stationFilter) return mistakes;
@@ -236,6 +251,18 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     for (const m of filtered) min = Math.min(min, m.dueAt ?? m.addedAt);
     return Number.isFinite(min) ? min : null;
   }, [filtered]);
+
+  useEffect(() => {
+    if (nextDue == null) return;
+    const at = nextDue;
+    const delay = Math.max(0, at - Date.now()) + 25;
+
+    const t = window.setTimeout(() => {
+      setNow(Date.now());
+      setMistakes(loadMistakes());
+    }, delay);
+    return () => window.clearTimeout(t);
+  }, [nextDue]);
 
   // Hotkeys: Space/Enter = Play, Backspace = Skip, 1..9 = choose.
   useHotkeys({
