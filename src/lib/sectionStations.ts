@@ -1,4 +1,4 @@
-import type { StationId } from './progress';
+import type { Progress, StationId } from './progress';
 import { STATIONS, type Station } from './stations';
 import type { SectionId } from './sections';
 
@@ -50,4 +50,15 @@ export function sectionStationsByExamId(examId: StationId): StationId[] | null {
     if (s.examId === examId) return s.stationIds;
   }
   return null;
+}
+
+export function sectionMissingForExam(progress: Progress, sectionId: SectionId): StationId[] {
+  const { stationIds, examId } = sectionStations(sectionId);
+  const examIdx = stationIds.indexOf(examId);
+  const prereqIds = (examIdx >= 0 ? stationIds.slice(0, examIdx) : stationIds).filter((sid) => sid !== examId);
+  return prereqIds.filter((sid) => !progress.stationDone[sid]);
+}
+
+export function isSectionExamUnlocked(progress: Progress, sectionId: SectionId): boolean {
+  return sectionMissingForExam(progress, sectionId).length === 0;
 }

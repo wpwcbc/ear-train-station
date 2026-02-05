@@ -1,8 +1,9 @@
 import { Link, useParams } from 'react-router-dom';
+import type { Progress } from '../lib/progress';
 import { SECTIONS, type SectionId } from '../lib/sections';
-import { sectionStations, sectionStationList } from '../lib/sectionStations';
+import { isSectionExamUnlocked, sectionMissingForExam, sectionStations, sectionStationList } from '../lib/sectionStations';
 
-export function SectionExamPage() {
+export function SectionExamPage({ progress }: { progress: Progress }) {
   const { sectionId } = useParams();
   const id = (sectionId ?? 'NOTES') as SectionId;
   const section = SECTIONS.find((s) => s.id === id);
@@ -19,6 +20,9 @@ export function SectionExamPage() {
   const plan = sectionStations(id);
   const list = sectionStationList(id);
   const examStation = list.find((s) => s.id === plan.examId) ?? null;
+
+  const examUnlocked = isSectionExamUnlocked(progress, id);
+  const missing = sectionMissingForExam(progress, id);
 
   return (
     <div className="page">
@@ -38,8 +42,31 @@ export function SectionExamPage() {
       <div className="card" style={{ marginTop: 12 }}>
         <div style={{ fontSize: 14, fontWeight: 700 }}>Exam station</div>
         <div style={{ marginTop: 6, opacity: 0.85 }}>{examStation ? examStation.title : plan.examId}</div>
+
+        {!examUnlocked ? (
+          <div className="callout" style={{ marginTop: 10 }}>
+            <div style={{ fontWeight: 700 }}>Locked</div>
+            <div style={{ marginTop: 4, opacity: 0.85 }}>
+              Finish the earlier stations in this section to unlock the exam.
+            </div>
+            <ul style={{ marginTop: 8 }}>
+              {missing.map((sid) => (
+                <li key={sid}>
+                  <Link to={`/lesson/${sid}`}>{sid}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
         <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <Link className="linkBtn primaryLink" to={`/lesson/${plan.examId}`}>Start exam</Link>
+          {examUnlocked ? (
+            <Link className="linkBtn primaryLink" to={`/lesson/${plan.examId}`}>Start exam</Link>
+          ) : (
+            <span className="linkBtn primaryLink" style={{ opacity: 0.55, cursor: 'not-allowed' }}>
+              Start exam
+            </span>
+          )}
           <Link className="linkBtn" to={`/review?station=${plan.examId}`}>Review mistakes for this exam</Link>
         </div>
       </div>
