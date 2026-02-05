@@ -265,6 +265,14 @@
   padding: 24px 16px 90px;
 }
 
+@media (max-width: 900px) {
+  /* Leave room for the floating ⚙️ button and bottom tabs */
+  .content {
+    padding-top: 72px;
+    padding-bottom: calc(90px + env(safe-area-inset-bottom));
+  }
+}
+
 .page {
   width: min(1180px, 100%);
   margin: 0 auto;
@@ -383,6 +391,28 @@
   display: block;
 }
 
+@media (max-width: 520px) {
+  .sectionRouteSvg {
+    height: 118px;
+  }
+  .routeLine {
+    stroke-width: 10;
+  }
+  .routeDot {
+    stroke-width: 3;
+  }
+  .routeHalo {
+    stroke-width: 6;
+  }
+  .routeBtn {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+  .routeTitle {
+    font-size: 14px;
+  }
+}
+
 .routeLine {
   stroke: var(--route-blue);
   stroke-width: 14;
@@ -468,7 +498,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 70px;
+  height: calc(70px + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
   border-top: 3px solid var(--ink);
   background: var(--bg);
   display: none;

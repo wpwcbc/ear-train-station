@@ -28,7 +28,7 @@ export function SectionRoute({
         viewBox={`0 0 ${W} ${H}`}
         role="img"
         aria-label="Section route"
-        preserveAspectRatio="none"
+        preserveAspectRatio="xMidYMid meet"
       >
         <path
           d={`M ${P} ${H / 2} L ${W - P} ${H / 2}`}
