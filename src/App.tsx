@@ -8,6 +8,7 @@ import { StationPage } from './pages/StationPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { PracticePage } from './pages/PracticePage';
 import { ReviewPage } from './pages/ReviewPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { loadProgress, saveProgress, type Progress } from './lib/progress';
 
 function App() {
@@ -32,7 +33,7 @@ function App() {
         <Route path="/review" element={<ReviewPage progress={progress} setProgress={setProgress} />} />
         <Route path="/quests" element={<PlaceholderPage title="Quests" desc="Daily quests and streak boosts." />} />
         <Route path="/leaderboard" element={<PlaceholderPage title="League" desc="Weekly XP league (future: friends + global)." />} />
-        <Route path="/profile" element={<PlaceholderPage title="Profile" desc="Personal info, stats, settings." />} />
+        <Route path="/profile" element={<ProfilePage progress={progress} setProgress={setProgress} />} />
 
         <Route path="*" element={<Navigate to="/learn" replace />} />
       </Route>
