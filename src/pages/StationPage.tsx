@@ -1420,7 +1420,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     return (
       <div className="card">
         <h1 className="title">Unknown station</h1>
-        <Link className="linkBtn" to="/">Back</Link>
+        <Link className="linkBtn" to="/learn">Back</Link>
       </div>
     );
   }
@@ -1472,8 +1472,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                 Review mistakes{stationMistakeDue > 0 ? ` (${stationMistakeDue} due)` : ` (${stationMistakeCount})`}
               </Link>
             ) : null}
-            <Link className="linkBtn" to="/">Map</Link>
-            {nextId && nextUnlocked ? <Link className="linkBtn" to={`/station/${nextId}`}>Next</Link> : null}
+            <Link className="linkBtn" to="/learn">Learn</Link>
+            {nextId && nextUnlocked ? <Link className="linkBtn" to={`/lesson/${nextId}`}>Next</Link> : null}
           </div>
         </div>
       ) : null}
@@ -2320,7 +2320,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       ) : null}
 
       <div className="row" style={{ marginTop: 14 }}>
-        <Link className="linkBtn" to="/">Back to line</Link>
+        <Link className="linkBtn" to="/learn">Back</Link>
       </div>
     </div>
   );
