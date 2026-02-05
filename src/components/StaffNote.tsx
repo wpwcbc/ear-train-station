@@ -76,6 +76,7 @@ export function StaffNote({
   midi,
   label,
   spelling,
+  clef = 'auto',
   showLegend = true,
   width = 280,
   height = 120,
@@ -84,6 +85,8 @@ export function StaffNote({
   label?: string;
   /** Optional explicit spelling (e.g. "C#" or "Db") to render correct accidentals on staff. */
   spelling?: string;
+  /** Treble, bass, or auto-select based on register. */
+  clef?: 'auto' | 'treble' | 'bass';
   /** Hide the answer/label for "sight reading" style questions. */
   showLegend?: boolean;
   width?: number;
@@ -96,10 +99,19 @@ export function StaffNote({
   const noteSpelling = parsed ?? pcToDefaultSpelling(pc);
   const noteDia = diatonicNumber(noteSpelling.letter, octave);
 
-  // Treble clef staff reference:
-  // bottom line is E4, top line is F5.
-  const E4 = diatonicNumber('E', 4);
-  const F5 = diatonicNumber('F', 5);
+  const chosenClef: 'treble' | 'bass' =
+    clef === 'treble' || clef === 'bass'
+      ? clef
+      : // Auto: treat middle C (C4=60) and above as treble; below as bass.
+        midi >= 60
+        ? 'treble'
+        : 'bass';
+
+  // Staff reference:
+  // Treble: bottom line E4, top line F5.
+  // Bass: bottom line G2, top line A3.
+  const bottomLineDia = chosenClef === 'treble' ? diatonicNumber('E', 4) : diatonicNumber('G', 2);
+  const topLineDia = chosenClef === 'treble' ? diatonicNumber('F', 5) : diatonicNumber('A', 3);
 
   // Layout
   const padX = 14;
@@ -114,8 +126,8 @@ export function StaffNote({
   // Make the 5 staff lines centered.
   const bottomLineY = staffMidY + 2 * lineGap;
 
-  // Compute y by diatonic distance from E4 bottom line.
-  const y = bottomLineY - (noteDia - E4) * step;
+  // Compute y by diatonic distance from the chosen clef's bottom line.
+  const y = bottomLineY - (noteDia - bottomLineDia) * step;
 
   const noteX = staffLeft + staffWidth * 0.55;
   const headRx = 8;
@@ -123,10 +135,10 @@ export function StaffNote({
 
   // Ledger lines: for notes outside the staff, draw the “line” positions.
   const ledgerLines: number[] = [];
-  for (let d = noteDia; d <= E4 - 2; d += 2) {
+  for (let d = noteDia; d <= bottomLineDia - 2; d += 2) {
     ledgerLines.push(d);
   }
-  for (let d = noteDia; d >= F5 + 2; d -= 2) {
+  for (let d = noteDia; d >= topLineDia + 2; d -= 2) {
     ledgerLines.push(d);
   }
 
@@ -135,7 +147,7 @@ export function StaffNote({
   const legend =
     label ?? `${noteSpelling.letter}${noteSpelling.accidental === 'natural' ? '' : noteSpelling.accidental === 'sharp' ? '#' : 'b'}${octave}`;
 
-  const ariaLabel = showLegend ? `Staff note ${legend}` : 'Staff note';
+  const ariaLabel = showLegend ? `Staff note (${chosenClef} clef) ${legend}` : `Staff note (${chosenClef} clef)`;
 
   return (
     <div style={{ width, maxWidth: '100%' }}>
@@ -148,9 +160,20 @@ export function StaffNote({
           return <line key={i} x1={staffLeft} x2={staffRight} y1={yy} y2={yy} stroke="rgba(255,255,255,0.35)" strokeWidth={1} />;
         })}
 
+        {/* Clef */}
+        <text
+          x={staffLeft + 16}
+          y={bottomLineY - 1.5 * lineGap}
+          fontSize={44}
+          fill="rgba(255,255,255,0.72)"
+          textAnchor="middle"
+        >
+          {chosenClef === 'treble' ? '𝄞' : '𝄢'}
+        </text>
+
         {/* Ledger lines */}
         {Array.from(new Set(ledgerLines)).map((d) => {
-          const yy = bottomLineY - (d - E4) * step;
+          const yy = bottomLineY - (d - bottomLineDia) * step;
           return (
             <line
               key={d}
