@@ -80,6 +80,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const dur = (sec: number) => sec * timing.dur;
   const gap = (ms: number) => Math.round(ms * timing.gap);
 
+  const HEARTS = 3;
+
   // Station 3: interval question (deterministic per seed)
   const intervalQ = useMemo(
     () => makeIntervalQuestion({ seed: seed * 1000 + 3, rootMidi: 60, minSemitones: 0, maxSemitones: 12 }),
@@ -100,6 +102,31 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     [seed, s3DeriveIndex],
   );
 
+  // S3 as a Duolingo-ish lesson: Teach → Test (stable) → Twist (wide, hearts)
+  const [s3TeachDone, setS3TeachDone] = useState(false);
+  const s3TestComplete = s3WarmupDone && s3Correct >= S3_GOAL;
+
+  const [s3TwistIndex, setS3TwistIndex] = useState(0);
+  const [s3TwistCorrect, setS3TwistCorrect] = useState(0);
+  const [s3TwistWrong, setS3TwistWrong] = useState(0);
+  const S3_TWIST_TOTAL = 10;
+  const S3_TWIST_PASS = 8;
+  const s3TwistDone = s3TwistIndex >= S3_TWIST_TOTAL || s3TwistWrong >= HEARTS;
+  const s3TwistPassed = s3TwistDone && s3TwistCorrect >= S3_TWIST_PASS;
+
+  const s3TwistQ = useMemo(
+    () =>
+      makeIntervalLabelQuestion({
+        seed: seed * 1000 + 3030 + s3TwistIndex,
+        rootMinMidi: 43, // G2
+        rootMaxMidi: 72, // C5
+        minSemitones: 0,
+        maxSemitones: 12,
+        choiceCount: 6,
+      }),
+    [seed, s3TwistIndex],
+  );
+
   // Station 1: note-name question (stable register, *white keys only* for beginner clarity)
   const WHITE_MIDIS = [60, 62, 64, 65, 67, 69, 71]; // C D E F G A B (one octave)
 
@@ -118,8 +145,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   // Duolingo-ish “combo” streak for lessons: keep a run of correct answers.
   const [combo, setCombo] = useState(0);
   const [highlighted, setHighlighted] = useState<Record<number, 'correct' | 'wrong' | 'active'>>({});
-
-  const HEARTS = 3;
 
   // Test 3: interval recognition across a wider register (G2 and above).
   const [t3Index, setT3Index] = useState(0);
@@ -513,7 +538,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     // S1 completion is handled by the TTT runner (Teach → Test → Twist), not by the warm-up test loop.
 
-    // S3 completion handled in-station once warm-up + goal are met.
+    // S3 completion is handled by the TTT runner (Twist pass), not by the warm-up/test loop.
 
     if (id === 'S4_TRIADS' && s4Correct + 1 >= S4_GOAL) {
       p2 = markStationDone(p2, id);
@@ -578,8 +603,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     const nextCorrect = s3Correct + 1;
     setS3Correct(nextCorrect);
 
-    const willComplete = nextCorrect >= S3_GOAL && s3WarmupDone;
-    rewardAndMaybeComplete(10, willComplete ? { stationDone: 'S3_INTERVALS', completionBonusXp: 10 } : undefined);
+    // This is the “Test” phase of the lesson; completion happens after the Twist is passed.
+    rewardAndMaybeComplete(10);
   }
 
   function chooseS3Derive(choice: IntervalLabel) {
@@ -598,6 +623,62 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setS3DeriveIndex((i) => i + 1);
     setS3DeriveResult('idle');
   }
+
+  async function playPromptS3Twist() {
+    if (s3TwistDone) return;
+    setResult('idle');
+    setHighlighted({});
+    await playIntervalPrompt(s3TwistQ.rootMidi, s3TwistQ.targetMidi, {
+      gapMs: gap(320),
+      rootDurationSec: dur(0.7),
+      targetDurationSec: dur(0.95),
+    });
+  }
+
+  async function chooseS3Twist(choice: IntervalLabel) {
+    if (s3TwistDone) return;
+
+    const ok = choice === s3TwistQ.correct;
+    setResult(ok ? 'correct' : 'wrong');
+
+    if (!ok) {
+      addMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: s3TwistQ.rootMidi, semitones: s3TwistQ.semitones });
+      setS3TwistWrong((n) => n + 1);
+      setS3TwistIndex((i) => i + 1);
+      return;
+    }
+
+    setS3TwistCorrect((n) => n + 1);
+    commitProgress(applyStudyReward(progress, 3));
+
+    const nextIndex = s3TwistIndex + 1;
+    if (nextIndex >= S3_TWIST_TOTAL) {
+      setS3TwistIndex(S3_TWIST_TOTAL);
+      return;
+    }
+    setS3TwistIndex(nextIndex);
+  }
+
+  function resetS3Twist() {
+    setS3TwistIndex(0);
+    setS3TwistCorrect(0);
+    setS3TwistWrong(0);
+    setResult('idle');
+    setHighlighted({});
+    setSeed((x) => x + 1);
+  }
+
+  // When the Twist is passed, mark the lesson complete.
+  useEffect(() => {
+    if (id !== 'S3_INTERVALS') return;
+    if (!s3TwistPassed) return;
+    if (progress.stationDone[id]) return;
+
+    let p2 = progress;
+    p2 = markStationDone(p2, id);
+    p2 = applyStudyReward(p2, 10);
+    commitProgress(p2);
+  }, [id, s3TwistPassed, progress]);
 
   async function playPromptS1() {
     setResult('idle');
@@ -2867,53 +2948,135 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
         </>
       ) : id === 'S3_INTERVALS' ? (
         <>
-          <div style={{ marginTop: 6, marginBottom: 10 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-              <div style={{ fontWeight: 800 }}>Warm-up: ±1 semitone</div>
-              <div style={{ fontSize: 12, opacity: 0.85 }}>
-                Progress: {Math.min(s3DeriveCorrect, S3_DERIVE_GOAL)}/{S3_DERIVE_GOAL}
-              </div>
-            </div>
-            <div className={`result r_${s3DeriveResult}`} style={{ marginTop: 8 }}>
-              {s3DeriveResult === 'idle' && s3DeriveQ.prompt}
-              {s3DeriveResult === 'correct' && 'Correct — +1 XP.'}
-              {s3DeriveResult === 'wrong' && `Not quite — it was ${s3DeriveQ.correct}.`}
-            </div>
-            <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-              <ChoiceGrid choices={s3DeriveQ.choices} onChoose={chooseS3Derive} />
-            </div>
-            <div style={{ fontSize: 12, opacity: 0.75, marginTop: 6 }}>
-              Hint: minor = major − 1 semitone. (Perfect ± 1 is “the weird ones”.)
-            </div>
-          </div>
+          <TTTRunner
+            teachComplete={s3TeachDone}
+            testComplete={s3TestComplete}
+            twistComplete={s3TwistPassed}
+            onComplete={() => {
+              // No-op: completion is handled by the effect that marks the station done.
+            }}
+            teach={
+              <InfoCardPager
+                pages={[
+                  {
+                    title: 'Intervals by ear',
+                    body:
+                      'Goal: hear the distance between two notes and name it.\n\nLesson rules: stable register. No gotchas — just clean recognition.',
+                    footnote: 'Tip: don\'t guess fast. Listen twice is normal.',
+                  },
+                  {
+                    title: 'Warm-up: ±1 semitone',
+                    body:
+                      'Quick shortcut:\n\nminor = major − 1 semitone\nAugmented = perfect + 1\nDiminished = perfect − 1\n\n(Some “perfect ± 1” names feel weird — that\'s fine.)',
+                  },
+                  {
+                    title: 'Then: find the target note',
+                    body:
+                      'We\'ll play root → target. Tap the target key.\n\nAfter you clear the stable lesson, we\'ll do a short Twist test (hearts on) across a wider register (G2+).',
+                  },
+                ]}
+                doneLabel="Start"
+                onDone={() => {
+                  setS3TeachDone(true);
+                  setResult('idle');
+                  setHighlighted({});
+                }}
+              />
+            }
+            test={
+              <>
+                <div style={{ marginTop: 6, marginBottom: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+                    <div style={{ fontWeight: 800 }}>Warm-up: ±1 semitone</div>
+                    <div style={{ fontSize: 12, opacity: 0.85 }}>
+                      Progress: {Math.min(s3DeriveCorrect, S3_DERIVE_GOAL)}/{S3_DERIVE_GOAL}
+                    </div>
+                  </div>
+                  <div className={`result r_${s3DeriveResult}`} style={{ marginTop: 8 }}>
+                    {s3DeriveResult === 'idle' && s3DeriveQ.prompt}
+                    {s3DeriveResult === 'correct' && 'Correct — +1 XP.'}
+                    {s3DeriveResult === 'wrong' && `Not quite — it was ${s3DeriveQ.correct}.`}
+                  </div>
+                  <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                    <ChoiceGrid choices={s3DeriveQ.choices} onChoose={chooseS3Derive} renderChoice={intervalLongName} />
+                  </div>
+                  <div style={{ fontSize: 12, opacity: 0.75, marginTop: 6 }}>
+                    Hint: minor = major − 1 semitone. (Perfect ± 1 is “the weird ones”.)
+                  </div>
+                </div>
 
-          <div className="row">
-            <button className="primary" onClick={playPromptS3} disabled={!s3WarmupDone}>
-              Play prompt
-            </button>
-            <button
-              className="secondary"
-              disabled={!s3WarmupDone}
-              onClick={() => piano.playMidi(intervalQ.rootMidi, { durationSec: dur(0.9) })}
-            >
-              Root
-            </button>
-            <button className="ghost" onClick={next}>Next</button>
-            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
-              Progress: {Math.min(s3Correct, S3_GOAL)}/{S3_GOAL}
-            </div>
-          </div>
+                <div className="row">
+                  <button className="primary" onClick={playPromptS3} disabled={!s3WarmupDone}>
+                    Play prompt
+                  </button>
+                  <button
+                    className="secondary"
+                    disabled={!s3WarmupDone}
+                    onClick={() => piano.playMidi(intervalQ.rootMidi, { durationSec: dur(0.9) })}
+                  >
+                    Root
+                  </button>
+                  <button className="ghost" onClick={next}>
+                    Next
+                  </button>
+                  <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+                    Progress: {Math.min(s3Correct, S3_GOAL)}/{S3_GOAL}
+                  </div>
+                </div>
 
-          <div className={`result r_${result}`}>
-            {result === 'idle' &&
-              (s3WarmupDone
-                ? 'Tap the target note.'
-                : `Finish the warm-up first (${Math.min(s3DeriveCorrect, S3_DERIVE_GOAL)}/${S3_DERIVE_GOAL}).`)}
-            {result === 'correct' && (s3Correct + 1 >= S3_GOAL ? 'Nice — station complete. (+10 bonus XP)' : 'Correct — +10 XP.')}
-            {result === 'wrong' && 'Not quite. Listen again.'}
-          </div>
+                <div className={`result r_${result}`}>
+                  {result === 'idle' &&
+                    (s3WarmupDone
+                      ? 'Tap the target note.'
+                      : `Finish the warm-up first (${Math.min(s3DeriveCorrect, S3_DERIVE_GOAL)}/${S3_DERIVE_GOAL}).`)}
+                  {result === 'correct' && (s3TestComplete ? 'Nice — lesson test cleared.' : 'Correct — +10 XP.')}
+                  {result === 'wrong' && 'Not quite. Listen again.'}
+                </div>
 
-          <PianoKeyboard startMidi={48} octaves={2} onPress={onPressS3} highlighted={highlighted} />
+                <PianoKeyboard startMidi={48} octaves={2} onPress={onPressS3} highlighted={highlighted} />
+
+                {s3TestComplete ? (
+                  <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
+                    Nice — now we do a short <b>Twist</b> (scored, hearts apply, wider register).
+                  </div>
+                ) : null}
+              </>
+            }
+            twist={
+              <>
+                <div className="row" style={{ gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <button className="primary" onClick={playPromptS3Twist}>
+                    Hear interval
+                  </button>
+                  <button className="ghost" onClick={resetS3Twist}>
+                    Restart
+                  </button>
+                  <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+                    Q: {Math.min(s3TwistIndex + 1, S3_TWIST_TOTAL)}/{S3_TWIST_TOTAL} · Correct: {s3TwistCorrect}/{S3_TWIST_TOTAL} (need {S3_TWIST_PASS}) · Lives: {Math.max(0, HEARTS - s3TwistWrong)}/{HEARTS}
+                  </div>
+                </div>
+
+                <div className={`result r_${result}`}>
+                  {result === 'idle' &&
+                    (s3TwistDone
+                      ? s3TwistPassed
+                        ? 'Passed — lesson complete. (+10 bonus XP)'
+                        : `Failed twist — hit Restart to try again. Score: ${s3TwistCorrect}/${S3_TWIST_TOTAL}.`
+                      : 'Twist: 10 questions. Need 8/10 to pass.')}
+                  {result === 'correct' && `Correct — +3 XP. (${intervalLongName(s3TwistQ.correct)})`}
+                  {result === 'wrong' && `Not quite — it was ${s3TwistQ.correct} (${intervalLongName(s3TwistQ.correct)}).`}
+                </div>
+
+                <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                  <ChoiceGrid choices={s3TwistQ.choices} onChoose={chooseS3Twist} renderChoice={intervalLongName} />
+                </div>
+
+                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+                  Lessons stay in a stable register; tests roam wider (G2+).
+                </div>
+              </>
+            }
+          />
         </>
       ) : id === 'S4_TRIADS' ? (
         <>
