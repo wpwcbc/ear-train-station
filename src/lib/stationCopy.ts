@@ -24,6 +24,14 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
     ],
     tips: ['Middle C is the anchor. From there, step up/down by letters.'],
   },
+  S1C_ACCIDENTALS: {
+    primer: [
+      'Goal: instantly name black keys (accidentals) in one stable register.',
+      'Black keys have two names: sharp or flat (C# = Db). Both are correct.',
+      'We’ll practice *recognition* first; context (key signatures) comes later.',
+    ],
+    tips: ['Tip: think in groups — 2 black keys (C#/D#) then 3 (F#/G#/A#).'],
+  },
   T1_NOTES: {
     primer: ['10 questions. Wider register (G2 and up). Need 8/10 to pass.'],
   },

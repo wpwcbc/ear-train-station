@@ -24,7 +24,7 @@ import {
   intervalLongName,
   type IntervalLabel,
 } from '../exercises/interval';
-import { makeNoteNameQuestion } from '../exercises/noteName';
+import { makeNoteNameQuestion, makeNoteNameQuestionFromMidis } from '../exercises/noteName';
 import {
   makeMajorScaleSession,
   makeMajorScaleStepQuestion,
@@ -342,6 +342,43 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     [seed, s1bTwistIndex],
   );
 
+  // S1C: Accidentals (black keys) — stable register, curated note set.
+  const BLACK_MIDIS = [61, 63, 66, 68, 70]; // C# D# F# G# A# (one octave)
+
+  const [s1cCorrect, setS1cCorrect] = useState(0);
+  const S1C_GOAL = 7;
+  const s1cTestComplete = s1cCorrect >= S1C_GOAL;
+  const [s1cTeachDone, setS1cTeachDone] = useState(false);
+  const [s1cHintOpen, setS1cHintOpen] = useState(false);
+
+  const s1cQ = useMemo(
+    () =>
+      makeNoteNameQuestionFromMidis({
+        seed: seed * 1000 + 1130,
+        midis: BLACK_MIDIS,
+        choiceCount: 6,
+      }),
+    [seed],
+  );
+
+  const S1C_TWIST_TOTAL = 10;
+  const S1C_TWIST_PASS = 8;
+  const [s1cTwistIndex, setS1cTwistIndex] = useState(0);
+  const [s1cTwistCorrect, setS1cTwistCorrect] = useState(0);
+  const [s1cTwistWrong, setS1cTwistWrong] = useState(0);
+  const s1cTwistDone = s1cTwistIndex >= S1C_TWIST_TOTAL || s1cTwistWrong >= HEARTS;
+  const s1cTwistPassed = s1cTwistDone && s1cTwistCorrect >= S1C_TWIST_PASS;
+
+  const s1cTwistQ = useMemo(
+    () =>
+      makeNoteNameQuestionFromMidis({
+        seed: seed * 1000 + 1131 + s1cTwistIndex,
+        midis: BLACK_MIDIS,
+        choiceCount: 6,
+      }),
+    [seed, s1cTwistIndex],
+  );
+
   // S2 micro-goal: internalize WWHWWWH, then spell major scales in order (letters ascend; correct accidentals).
   const [s2PatternIndex, setS2PatternIndex] = useState(0); // 0..6 (7→8 ends the pattern)
   const [s2PatternDone, setS2PatternDone] = useState(false);
@@ -655,6 +692,82 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     p2 = applyStudyReward(p2, 10); // completion bonus
     commitProgress(p2);
   }, [id, s1TwistPassed, progress]);
+
+  async function playPromptS1C() {
+    setResult('idle');
+    setHighlighted({ [s1cQ.midi]: 'active' });
+    await piano.playMidi(s1cQ.midi, { durationSec: dur(0.9), velocity: 0.95 });
+    setHighlighted({});
+  }
+
+  function chooseS1C(choice: string) {
+    const ok = s1cQ.acceptedAnswers.includes(choice);
+    setResult(ok ? 'correct' : 'wrong');
+    setHighlighted({ [s1cQ.midi]: ok ? 'correct' : 'wrong' });
+
+    if (!ok) {
+      setCombo(0);
+      setLastComboBonus(0);
+      addMistake({ kind: 'noteName', sourceStationId: id, midi: s1cQ.midi });
+      return;
+    }
+
+    setS1cCorrect((x) => x + 1);
+    rewardAndMaybeComplete(2);
+  }
+
+  async function playPromptS1CTwist() {
+    setResult('idle');
+    setHighlighted({ [s1cTwistQ.midi]: 'active' });
+    await piano.playMidi(s1cTwistQ.midi, { durationSec: dur(0.9), velocity: 0.95 });
+    setHighlighted({});
+  }
+
+  async function chooseS1CTwist(choice: string) {
+    if (s1cTwistDone) return;
+
+    const ok = s1cTwistQ.acceptedAnswers.includes(choice);
+    setResult(ok ? 'correct' : 'wrong');
+    setHighlighted({ [s1cTwistQ.midi]: ok ? 'correct' : 'wrong' });
+
+    if (!ok) {
+      addMistake({ kind: 'noteName', sourceStationId: id, midi: s1cTwistQ.midi });
+      setS1cTwistWrong((n) => n + 1);
+      setS1cTwistIndex((i) => i + 1);
+      return;
+    }
+
+    setS1cTwistCorrect((n) => n + 1);
+    commitProgress(applyStudyReward(progress, 3));
+
+    const nextIndex = s1cTwistIndex + 1;
+    if (nextIndex >= S1C_TWIST_TOTAL) {
+      setS1cTwistIndex(S1C_TWIST_TOTAL);
+      return;
+    }
+    setS1cTwistIndex(nextIndex);
+  }
+
+  function resetS1CTwist() {
+    setS1cTwistIndex(0);
+    setS1cTwistCorrect(0);
+    setS1cTwistWrong(0);
+    setResult('idle');
+    setHighlighted({});
+    setSeed((x) => x + 1);
+  }
+
+  // When the Twist is passed, mark the lesson complete.
+  useEffect(() => {
+    if (id !== 'S1C_ACCIDENTALS') return;
+    if (!s1cTwistPassed) return;
+    if (progress.stationDone[id]) return;
+
+    let p2 = progress;
+    p2 = markStationDone(p2, id);
+    p2 = applyStudyReward(p2, 10);
+    commitProgress(p2);
+  }, [id, s1cTwistPassed, progress]);
 
   async function playS2Scale(kind: 'soFar' | 'full' | 'fullOctave') {
     setResult('idle');
@@ -1524,6 +1637,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         if (s1TestComplete) void playPromptS1Twist();
         else void playPromptS1();
       }
+      else if (id === 'S1B_STAFF') {
+        if (s1bTestComplete) void playPromptS1BTwist();
+        else void playPromptS1B();
+      }
+      else if (id === 'S1C_ACCIDENTALS') {
+        if (s1cTestComplete) void playPromptS1CTwist();
+        else void playPromptS1C();
+      }
       else if (id === 'T1_NOTES') void playPromptT1();
       else if (id === 'S2_MAJOR_SCALE') {
         if (s2PatternDone) void playPromptS2();
@@ -1545,6 +1666,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       if (id === 'S1_NOTES') {
         if (s1TestComplete) resetS1Twist();
         else next();
+      }
+      else if (id === 'S1B_STAFF') {
+        if (s1bTestComplete) resetS1BTwist();
+        else setSeed((x) => x + 1);
+      }
+      else if (id === 'S1C_ACCIDENTALS') {
+        if (s1cTestComplete) resetS1CTwist();
+        else setSeed((x) => x + 1);
       }
       else if (id === 'T1_NOTES') resetT1();
       else if (id === 'S2_MAJOR_SCALE') newKeyS2();
@@ -1571,6 +1700,26 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         }
         const c = noteQ.choices[idx];
         if (c) void chooseS1(c);
+        return;
+      }
+      if (id === 'S1B_STAFF') {
+        if (s1bTestComplete) {
+          const c = s1bTwistQ.choices[idx];
+          if (c) void chooseS1BTwist(c);
+          return;
+        }
+        const c = s1bQ.choices[idx];
+        if (c) chooseS1B(c);
+        return;
+      }
+      if (id === 'S1C_ACCIDENTALS') {
+        if (s1cTestComplete) {
+          const c = s1cTwistQ.choices[idx];
+          if (c) void chooseS1CTwist(c);
+          return;
+        }
+        const c = s1cQ.choices[idx];
+        if (c) chooseS1C(c);
         return;
       }
       if (id === 'T1_NOTES') {
@@ -2027,6 +2176,142 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
                 <div style={{ marginTop: 10 }}>
                   <StaffNote midi={s1bTwistQ.midi} spelling={s1bTwistQ.displaySpelling} showLegend={false} />
+                </div>
+
+                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+                  Lessons stable register; tests roam wider (G2+).
+                </div>
+              </>
+            }
+          />
+        </>
+      ) : id === 'S1C_ACCIDENTALS' ? (
+        <>
+          <TTTRunner
+            teachComplete={s1cTeachDone}
+            testComplete={s1cTestComplete}
+            twistComplete={s1cTwistPassed}
+            onComplete={() => {
+              // No-op: completion is handled by the effect that marks the station done.
+            }}
+            teach={
+              <InfoCardPager
+                pages={[
+                  {
+                    title: 'Black keys = accidentals',
+                    body: `The black keys are the “in-between” notes.
+
+Each black key has *two* names:
+C# = Db, D# = Eb, F# = Gb, G# = Ab, A# = Bb.`,
+                  },
+                  {
+                    title: 'Two groups: 2 + 3',
+                    body: `Look at the keyboard shape:
+
+• Group of 2 black keys = C# and D#
+• Group of 3 black keys = F# G# A#
+
+This “geometry” is faster than memorizing randomly.`,
+                  },
+                  {
+                    title: 'Stable register',
+                    body: `Lesson stays in one octave so your ear locks in.
+
+Context (sharp vs flat) depends on the key — we’ll cover that later. For now, both spellings are accepted.`,
+                  },
+                ]}
+                doneLabel="Start test"
+                onDone={() => {
+                  setS1cTeachDone(true);
+                  setResult('idle');
+                  setHighlighted({});
+                }}
+              />
+            }
+            test={
+              <>
+                <HintOverlay open={s1cHintOpen} onClose={() => setS1cHintOpen(false)} title="Accidentals hint">
+                  <ul style={{ margin: 0, paddingLeft: 18 }}>
+                    <li>In the 2-black-keys group: left is <b>C# / Db</b>, right is <b>D# / Eb</b>.</li>
+                    <li>In the 3-black-keys group: left→right is <b>F# / Gb</b>, <b>G# / Ab</b>, <b>A# / Bb</b>.</li>
+                    <li>Both names are correct. Don’t overthink — recognize fast.</li>
+                  </ul>
+                </HintOverlay>
+
+                <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                  <button className="primary" onClick={playPromptS1C}>Play note</button>
+                  <button className="ghost" onClick={() => setSeed((x) => x + 1)}>Next</button>
+                  <button className="secondary" onClick={() => setS1cHintOpen(true)}>Hint</button>
+                  <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+                    Test: {Math.min(s1cCorrect, S1C_GOAL)}/{S1C_GOAL}
+                  </div>
+                </div>
+
+                <div className={`result r_${result}`}>
+                  {result === 'idle' && 'Name the black key.'}
+                  {result === 'correct' && `Correct — +2 XP. (${s1cQ.promptLabel})`}
+                  {result === 'wrong' && `Not quite — it was ${s1cQ.promptLabel}.`}
+                </div>
+
+                <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                  <ChoiceGrid choices={s1cQ.choices} onChoose={chooseS1C} />
+                </div>
+
+                <div className="row" style={{ gap: 14, alignItems: 'center', flexWrap: 'wrap', marginTop: 10 }}>
+                  <StaffNote midi={s1cQ.midi} spelling={s1cQ.displaySpelling} showLegend={false} />
+                  <div style={{ flex: 1, minWidth: 240 }}>
+                    <PianoKeyboard
+                      startMidi={60}
+                      octaves={1}
+                      onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
+                      highlighted={highlighted}
+                    />
+                  </div>
+                </div>
+
+                {s1cTestComplete ? (
+                  <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
+                    Nice — now a short <b>Twist</b> (scored, hearts apply).
+                  </div>
+                ) : null}
+              </>
+            }
+            twist={
+              <>
+                <HintOverlay open={s1cHintOpen} onClose={() => setS1cHintOpen(false)} title="Accidentals hint">
+                  <ul style={{ margin: 0, paddingLeft: 18 }}>
+                    <li>2-black group: <b>C#</b>, <b>D#</b>.</li>
+                    <li>3-black group: <b>F#</b>, <b>G#</b>, <b>A#</b>.</li>
+                    <li>Also valid: Db Eb Gb Ab Bb.</li>
+                  </ul>
+                </HintOverlay>
+
+                <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                  <button className="primary" onClick={playPromptS1CTwist}>Play note</button>
+                  <button className="ghost" onClick={resetS1CTwist}>Restart</button>
+                  <button className="secondary" onClick={() => setS1cHintOpen(true)}>Hint</button>
+                  <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+                    Q: {Math.min(s1cTwistIndex + 1, S1C_TWIST_TOTAL)}/{S1C_TWIST_TOTAL} · Correct: {s1cTwistCorrect}/{S1C_TWIST_TOTAL} (need {S1C_TWIST_PASS}) · Lives: {Math.max(0, HEARTS - s1cTwistWrong)}/{HEARTS}
+                  </div>
+                </div>
+
+                <div className={`result r_${result}`}>
+                  {result === 'idle' &&
+                    (s1cTwistDone
+                      ? s1cTwistPassed
+                        ? 'Passed — lesson complete. (+10 bonus XP)'
+                        : 'Failed twist — hit Restart to try again.'
+                      : 'Twist: 10 questions. Need 8/10 to pass.')}
+                  {result === 'correct' && `Correct — +3 XP. (${s1cTwistQ.promptLabel})`}
+                  {result === 'wrong' && `Not quite — it was ${s1cTwistQ.promptLabel}.`}
+                </div>
+
+                <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                  <ChoiceGrid choices={s1cTwistQ.choices} onChoose={chooseS1CTwist} />
+                </div>
+
+                <div style={{ marginTop: 10 }}>
+                  <StaffNote midi={s1cTwistQ.midi} spelling={s1cTwistQ.displaySpelling} showLegend={false} />
                 </div>
 
                 <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>

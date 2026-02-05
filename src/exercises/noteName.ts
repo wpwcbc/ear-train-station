@@ -85,3 +85,18 @@ export function makeNoteNameReviewQuestion(opts: { seed: number; midi: number; c
   const built = buildChoicesForPitchClass({ seed: opts.seed, pc, choiceCount });
   return { midi, ...built };
 }
+
+/**
+ * Utility for lessons that want a *fixed register* but a curated note set (e.g. only black keys).
+ * `midis` should be a stable, small list (one octave, etc.).
+ */
+export function makeNoteNameQuestionFromMidis(opts: { seed: number; midis: number[]; choiceCount?: number }): NoteNameQuestion {
+  const choiceCount = opts.choiceCount ?? 4;
+  const rng = mulberry32(opts.seed);
+  const midis = opts.midis.length > 0 ? opts.midis : [60];
+  const midi = midis[Math.floor(rng() * midis.length)];
+  const pc = ((midi % 12) + 12) % 12;
+
+  const built = buildChoicesForPitchClass({ seed: opts.seed, pc, choiceCount });
+  return { midi, ...built };
+}

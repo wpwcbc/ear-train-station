@@ -21,6 +21,12 @@ export const STATIONS: Station[] = [
     kind: 'lesson',
   },
   {
+    id: 'S1C_ACCIDENTALS',
+    title: 'Station 1C — Accidentals (black keys)',
+    blurb: 'Learn black-key names + enharmonics (C# = Db) in a stable register.',
+    kind: 'lesson',
+  },
+  {
     id: 'T1_NOTES',
     title: 'Test 1 — Notes & accidentals',
     blurb: 'Mixed-register check: name notes across a wider range.',
