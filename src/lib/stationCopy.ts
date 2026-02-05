@@ -32,6 +32,10 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
     ],
     tips: ['Tip: think in groups — 2 black keys (C#/D#) then 3 (F#/G#/A#).'],
   },
+  T1B_NOTES: {
+    primer: ['8 questions. Stable register (white keys only). Need 6/8 to pass.'],
+    tips: ['This is a “checkpoint”: play as much as you want — no hearts here.'],
+  },
   T1_NOTES: {
     primer: ['10 questions. Wider register (G2 and up). Need 8/10 to pass.'],
   },

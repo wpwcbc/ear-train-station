@@ -2,6 +2,7 @@ export type StationId =
   | 'S1_NOTES'
   | 'S1B_STAFF'
   | 'S1C_ACCIDENTALS'
+  | 'T1B_NOTES'
   | 'T1_NOTES'
   | 'S2_MAJOR_SCALE'
   | 'T2_MAJOR_SCALE'
@@ -169,6 +170,7 @@ export function defaultProgress(): Progress {
       S1_NOTES: false,
       S1B_STAFF: false,
       S1C_ACCIDENTALS: false,
+      T1B_NOTES: false,
       T1_NOTES: false,
       S2_MAJOR_SCALE: false,
       T2_MAJOR_SCALE: false,

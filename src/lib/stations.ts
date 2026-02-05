@@ -21,6 +21,12 @@ export const STATIONS: Station[] = [
     kind: 'lesson',
   },
   {
+    id: 'T1B_NOTES',
+    title: 'Mid-test 1B — White keys + staff anchor',
+    blurb: 'Quick check in a stable register (no hearts).',
+    kind: 'test',
+  },
+  {
     id: 'S1C_ACCIDENTALS',
     title: 'Station 1C — Accidentals (black keys)',
     blurb: 'Learn black-key names + enharmonics (C# = Db) in a stable register.',

@@ -97,9 +97,16 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     [seed, s3DeriveIndex],
   );
 
-  // Station 1: note-name question (stable register)
+  // Station 1: note-name question (stable register, *white keys only* for beginner clarity)
+  const WHITE_MIDIS = [60, 62, 64, 65, 67, 69, 71]; // C D E F G A B (one octave)
+
   const noteQ = useMemo(
-    () => makeNoteNameQuestion({ seed, minMidi: 60, maxMidi: 71, choiceCount: 4 }),
+    () =>
+      makeNoteNameQuestionFromMidis({
+        seed,
+        midis: WHITE_MIDIS,
+        choiceCount: 4,
+      }),
     [seed],
   );
 
@@ -262,6 +269,24 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     [seed, t1Index],
   );
 
+  // Mid-test 1B: notes & staff anchor (stable register, no hearts penalty; hints allowed)
+  const [t1bIndex, setT1bIndex] = useState(0);
+  const [t1bCorrect, setT1bCorrect] = useState(0);
+  const [t1bWrong, setT1bWrong] = useState(0);
+  const [t1bHintOpen, setT1bHintOpen] = useState(false);
+  const T1B_TOTAL = 8;
+  const T1B_PASS = 6;
+  const t1bDone = t1bIndex >= T1B_TOTAL;
+  const t1bQ = useMemo(
+    () =>
+      makeNoteNameQuestionFromMidis({
+        seed: seed * 1000 + 1115 + t1bIndex,
+        midis: WHITE_MIDIS,
+        choiceCount: 6,
+      }),
+    [seed, t1bIndex],
+  );
+
   // Test 2: major scale spelling (degrees) across a broader register.
   const [t2Index, setT2Index] = useState(0);
   const [t2Correct, setT2Correct] = useState(0);
@@ -295,10 +320,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   const s1TwistQ = useMemo(
     () =>
-      makeNoteNameQuestion({
+      makeNoteNameQuestionFromMidis({
         seed: seed * 1000 + 1110 + s1TwistIndex,
-        minMidi: 60,
-        maxMidi: 71,
+        midis: WHITE_MIDIS,
         choiceCount: 6,
       }),
     [seed, s1TwistIndex],
@@ -1038,6 +1062,58 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     await piano.playMidi(t1Q.midi, { durationSec: dur(0.9), velocity: 0.95 });
   }
 
+  async function playPromptT1B() {
+    setResult('idle');
+    setHighlighted({ [t1bQ.midi]: 'active' });
+    await piano.playMidi(t1bQ.midi, { durationSec: dur(0.9), velocity: 0.95 });
+    setHighlighted({});
+  }
+
+  async function chooseT1B(choice: string) {
+    if (t1bDone) return;
+
+    const ok = t1bQ.acceptedAnswers.includes(choice);
+    setResult(ok ? 'correct' : 'wrong');
+    setHighlighted({ [t1bQ.midi]: ok ? 'correct' : 'wrong' });
+
+    if (!ok) {
+      addMistake({ kind: 'noteName', sourceStationId: id, midi: t1bQ.midi });
+      setT1bWrong((n) => n + 1);
+      setT1bIndex((i) => Math.min(T1B_TOTAL, i + 1));
+      return;
+    }
+
+    setT1bCorrect((n) => n + 1);
+
+    let p2 = applyStudyReward(progress, 3);
+
+    const nextIndex = t1bIndex + 1;
+    if (nextIndex >= T1B_TOTAL) {
+      const correct = t1bCorrect + 1;
+      const pass = correct >= T1B_PASS;
+      if (pass) {
+        p2 = applyStudyReward(p2, 10);
+        p2 = markStationDone(p2, 'T1B_NOTES');
+      }
+      commitProgress(p2);
+      setResult(pass ? 'correct' : 'wrong');
+      setT1bIndex(T1B_TOTAL);
+      return;
+    }
+
+    commitProgress(p2);
+    setT1bIndex(nextIndex);
+  }
+
+  function resetT1B() {
+    setT1bIndex(0);
+    setT1bCorrect(0);
+    setT1bWrong(0);
+    setResult('idle');
+    setHighlighted({});
+    setSeed((x) => x + 1);
+  }
+
   async function chooseT1(choice: string) {
     if (t1Index >= T1_TOTAL) return;
     if (t1Wrong >= HEARTS) return;
@@ -1645,6 +1721,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         if (s1cTestComplete) void playPromptS1CTwist();
         else void playPromptS1C();
       }
+      else if (id === 'T1B_NOTES') void playPromptT1B();
       else if (id === 'T1_NOTES') void playPromptT1();
       else if (id === 'S2_MAJOR_SCALE') {
         if (s2PatternDone) void playPromptS2();
@@ -1675,6 +1752,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         if (s1cTestComplete) resetS1CTwist();
         else setSeed((x) => x + 1);
       }
+      else if (id === 'T1B_NOTES') resetT1B();
       else if (id === 'T1_NOTES') resetT1();
       else if (id === 'S2_MAJOR_SCALE') newKeyS2();
       else if (id === 'T2_MAJOR_SCALE') resetT2();
@@ -1720,6 +1798,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         }
         const c = s1cQ.choices[idx];
         if (c) chooseS1C(c);
+        return;
+      }
+      if (id === 'T1B_NOTES') {
+        const c = t1bQ.choices[idx];
+        if (c) void chooseT1B(c);
         return;
       }
       if (id === 'T1_NOTES') {
@@ -2320,6 +2403,50 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
               </>
             }
           />
+        </>
+      ) : id === 'T1B_NOTES' ? (
+        <>
+          <HintOverlay open={t1bHintOpen} onClose={() => setT1bHintOpen(false)} title="Hint">
+            <ul style={{ margin: 0, paddingLeft: 18 }}>
+              <li>Find <b>Middle C</b> first. On piano: just left of the 2-black-keys group.</li>
+              <li>Then it’s just alphabet order on white keys: <b>C D E F G A B</b>.</li>
+              <li>This mid-test has <b>no hearts</b> — play again as needed.</li>
+            </ul>
+          </HintOverlay>
+
+          <TestHeader
+            playLabel="Play note"
+            onPlay={playPromptT1B}
+            onRestart={resetT1B}
+            rightStatus={`Q: ${Math.min(t1bIndex + 1, T1B_TOTAL)}/${T1B_TOTAL} · Correct: ${t1bCorrect}/${T1B_TOTAL} (need ${T1B_PASS}) · Wrong: ${t1bWrong}`}
+          />
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+            <button className="secondary" onClick={() => setT1bHintOpen(true)}>Hint</button>
+          </div>
+
+          <div className={`result r_${result}`}>
+            {result === 'idle' && 'Mid-test: stable register. Need 6/8 to pass.'}
+            {result === 'correct' &&
+              (progress.stationDone['T1B_NOTES'] ? 'Passed — nice. (+10 bonus XP)' : `Correct — +3 XP. (${t1bQ.promptLabel})`)}
+            {result === 'wrong' && (t1bDone ? 'Done — try Restart to improve your score.' : `Not quite — it was ${t1bQ.promptLabel}.`)}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            <ChoiceGrid choices={t1bQ.choices} onChoose={chooseT1B} />
+          </div>
+
+          <div className="row" style={{ gap: 14, alignItems: 'center', flexWrap: 'wrap', marginTop: 10 }}>
+            <StaffNote midi={t1bQ.midi} spelling={t1bQ.displaySpelling} showLegend={false} />
+            <div style={{ flex: 1, minWidth: 240 }}>
+              <PianoKeyboard
+                startMidi={60}
+                octaves={1}
+                onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
+                highlighted={highlighted}
+              />
+            </div>
+          </div>
         </>
       ) : id === 'T1_NOTES' ? (
         <>
