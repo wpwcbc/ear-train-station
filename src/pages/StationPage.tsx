@@ -12,7 +12,7 @@ import { StaffNote } from '../components/StaffNote';
 import { TestHeader } from '../components/TestHeader';
 import { useHotkeys } from '../lib/hooks/useHotkeys';
 import { piano } from '../audio/piano';
-import { playIntervalPrompt, playRootThenChordPrompt, playTonicTargetPrompt } from '../audio/prompts';
+import { playIntervalPrompt, playNoteSequence, playRootThenChordPrompt, playTonicTargetPrompt } from '../audio/prompts';
 import {
   makeIntervalQuestion,
   makeIntervalLabelQuestion,
@@ -28,6 +28,7 @@ import {
   makeMajorScaleStepTypeQuestion,
   type StepType,
 } from '../exercises/majorScale';
+import { MAJOR_OFFSETS } from '../lib/theory/major';
 import { makeTriadQualityQuestion, triadQualityIntervals, triadQualityLabel } from '../exercises/triad';
 import { makeDiatonicTriadQualityQuestion } from '../exercises/diatonicTriad';
 import { makeFunctionFamilyQuestion, type FunctionFamily } from '../exercises/functionFamily';
@@ -288,6 +289,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     [seed, s2Session, s2Step, s2ShownSoFar],
   );
 
+  const s2ScaleMidis = useMemo(() => MAJOR_OFFSETS.map((o) => s2Session.tonicMidi + o), [s2Session]);
+  const s2ScaleSoFarMidis = useMemo(() => s2ScaleMidis.slice(0, s2Step), [s2ScaleMidis, s2Step]);
+
   function rewardAndMaybeComplete(
     xpGain: number,
     extra?: { stationDone?: StationId; completionBonusXp?: number },
@@ -423,6 +427,15 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     rewardAndMaybeComplete(2);
   }
 
+  async function playS2Scale(kind: 'soFar' | 'full' | 'fullOctave') {
+    setResult('idle');
+    const base = kind === 'soFar' ? s2ScaleSoFarMidis : s2ScaleMidis;
+    const seq = kind === 'fullOctave' ? [...base, base[0] + 12] : base;
+    setHighlighted(Object.fromEntries(seq.map((m) => [m, 'active'])) as Record<number, 'active'>);
+    await playNoteSequence(seq, { durationSec: dur(0.45), velocity: 0.9, gapMs: gap(90) });
+    setHighlighted({});
+  }
+
   async function playPromptS2() {
     setResult('idle');
     setHighlighted({ [s2Q.tonicMidi]: 'active' });
@@ -466,6 +479,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     if (!ok) {
       setCombo(0);
       setLastComboBonus(0);
+      setHighlighted({ [s2Q.targetMidi]: 'correct' });
       addMistake({
         kind: 'majorScaleDegree',
         sourceStationId: id,
@@ -747,8 +761,12 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   async function playPromptT2() {
     setResult('idle');
+    setHighlighted({ [t2Q.tonicMidi]: 'active' });
+    await piano.playMidi(t2Q.tonicMidi, { durationSec: dur(0.65), velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, gap(300)));
+    setHighlighted({ [t2Q.targetMidi]: 'active' });
+    await piano.playMidi(t2Q.targetMidi, { durationSec: dur(0.85), velocity: 0.9 });
     setHighlighted({});
-    await playTonicTargetPrompt(t2Q.tonicMidi, t2Q.targetMidi, { gapMs: gap(300) });
   }
 
   async function playPromptT3() {
@@ -1117,6 +1135,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult(ok ? 'correct' : 'wrong');
 
     if (!ok) {
+      setHighlighted({ [t2Q.targetMidi]: 'correct' });
       // Feed the review queue: “degree → correct spelling” is a perfect spaced-review item.
       addMistake({
         kind: 'majorScaleDegree',
@@ -1139,6 +1158,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         return;
       }
 
+      setHighlighted({});
       setT2Index(nextIndex);
       return;
     }
@@ -1163,6 +1183,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     }
 
     setProgress(p2);
+    setHighlighted({});
     setT2Index(nextIndex);
   }
 
@@ -1590,6 +1611,15 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             ))}
           </div>
 
+          <div style={{ marginTop: 10 }}>
+            <PianoKeyboard
+              startMidi={36}
+              octaves={4}
+              onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
+              highlighted={highlighted}
+            />
+          </div>
+
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
             Tip: listen for the degree, but answer with correct spelling.
           </div>
@@ -1641,6 +1671,12 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             >
               Tonic
             </button>
+            <button className="secondary" onClick={() => void playS2Scale('soFar')} disabled={!s2PatternDone}>
+              Scale so far
+            </button>
+            <button className="ghost" onClick={() => void playS2Scale('fullOctave')}>
+              Full scale
+            </button>
             <button
               className="ghost"
               onClick={() => {
@@ -1676,6 +1712,15 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                   </button>
                 ))}
               </div>
+
+              <div style={{ marginTop: 10 }}>
+                <PianoKeyboard
+                  startMidi={48}
+                  octaves={3}
+                  onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
+                  highlighted={highlighted}
+                />
+              </div>
             </>
           ) : (
             <>
@@ -1698,12 +1743,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                 ))}
               </div>
 
-              <PianoKeyboard
-                startMidi={60}
-                octaves={1}
-                onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
-                highlighted={highlighted}
-              />
+              <div style={{ marginTop: 10 }}>
+                <PianoKeyboard
+                  startMidi={48}
+                  octaves={3}
+                  onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
+                  highlighted={highlighted}
+                />
+              </div>
             </>
           )}
         </>

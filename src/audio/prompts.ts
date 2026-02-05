@@ -1,5 +1,26 @@
 import { piano } from './piano';
 
+export async function playNoteSequence(
+  midis: number[],
+  opts?: {
+    durationSec?: number;
+    velocity?: number;
+    gapMs?: number;
+  },
+) {
+  const durationSec = opts?.durationSec ?? 0.55;
+  const velocity = opts?.velocity ?? 0.9;
+  const gapMs = opts?.gapMs ?? 120;
+
+  for (let i = 0; i < midis.length; i++) {
+    const m = midis[i];
+    if (m == null) continue;
+    await piano.playMidi(m, { durationSec, velocity });
+    if (i !== midis.length - 1) await new Promise((r) => setTimeout(r, gapMs));
+  }
+}
+
+
 export async function playIntervalPrompt(
   rootMidi: number,
   targetMidi: number,
