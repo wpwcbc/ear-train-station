@@ -40,3 +40,14 @@ export function sectionStationList(sectionId: SectionId): Station[] {
   const ids = new Set(sectionStations(sectionId).stationIds);
   return STATIONS.filter((s) => ids.has(s.id));
 }
+
+/**
+ * If a station id is a section exam (usually the last test), return all station ids in that section.
+ * Used for “test out” style flow: passing an exam can auto-complete the section.
+ */
+export function sectionStationsByExamId(examId: StationId): StationId[] | null {
+  for (const s of Object.values(SECTION_STATIONS)) {
+    if (s.examId === examId) return s.stationIds;
+  }
+  return null;
+}

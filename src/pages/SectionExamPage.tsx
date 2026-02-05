@@ -26,7 +26,7 @@ export function SectionExamPage() {
         <div>
           <h1 className="h1">{section.title} — Exam</h1>
           <p className="sub">
-            A quick, focused test to check you can move on. (Passing doesn’t auto-skip stations yet — that’s next.)
+            A quick, focused test to check you can move on. If you pass, we’ll mark this section as completed (Duolingo-style “test out”).
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>

@@ -4,6 +4,7 @@ import type { StationId, Progress } from '../lib/progress';
 import { applyStudyReward, markStationDone } from '../lib/progress';
 import { addMistake, mistakeCountForStation } from '../lib/mistakes';
 import { STATIONS, nextStationId, isStationUnlocked } from '../lib/stations';
+import { sectionStationsByExamId } from '../lib/sectionStations';
 import { stationCopy } from '../lib/stationCopy';
 import { loadSettings, saveSettings } from '../lib/settings';
 import { promptSpeedFactors, promptSpeedLabel } from '../lib/promptTiming';
@@ -305,6 +306,16 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   const s2ScaleMidis = useMemo(() => MAJOR_OFFSETS.map((o) => s2Session.tonicMidi + o), [s2Session]);
   const s2ScaleSoFarMidis = useMemo(() => s2ScaleMidis.slice(0, s2Step), [s2ScaleMidis, s2Step]);
+
+  function applySectionExamPass(p: Progress, passedStationId: StationId): Progress {
+    const ids = sectionStationsByExamId(passedStationId);
+    if (!ids) return p;
+    let p2 = p;
+    for (const sid of ids) {
+      p2 = markStationDone(p2, sid);
+    }
+    return p2;
+  }
 
   function rewardAndMaybeComplete(
     xpGain: number,
@@ -683,6 +694,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       if (pass) {
         p2 = applyStudyReward(p2, 12);
         p2 = markStationDone(p2, 'T4_DEGREES');
+        p2 = applySectionExamPass(p2, 'T4_DEGREES');
       }
       setProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
@@ -753,6 +765,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       if (pass) {
         p2 = applyStudyReward(p2, 12);
         p2 = markStationDone(p2, 'T1_NOTES');
+        p2 = applySectionExamPass(p2, 'T1_NOTES');
       }
       setProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
@@ -829,6 +842,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       if (pass) {
         p2 = applyStudyReward(p2, 12);
         p2 = markStationDone(p2, 'T3_INTERVALS');
+        p2 = applySectionExamPass(p2, 'T3_INTERVALS');
       }
       setProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
@@ -936,6 +950,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       if (pass) {
         p2 = applyStudyReward(p2, 12);
         p2 = markStationDone(p2, 'T5_TRIADS');
+        p2 = applySectionExamPass(p2, 'T5_TRIADS');
       }
       setProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
@@ -996,6 +1011,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       if (pass) {
         p2 = applyStudyReward(p2, 12);
         p2 = markStationDone(p2, 'T6_DIATONIC_TRIADS');
+        p2 = applySectionExamPass(p2, 'T6_DIATONIC_TRIADS');
       }
       setProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
@@ -1061,6 +1077,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       if (pass) {
         p2 = applyStudyReward(p2, 12);
         p2 = markStationDone(p2, 'T7_FUNCTIONS');
+        p2 = applySectionExamPass(p2, 'T7_FUNCTIONS');
       }
       setProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
@@ -1121,6 +1138,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       if (pass) {
         p2 = applyStudyReward(p2, 12);
         p2 = markStationDone(p2, 'T8_DEGREE_INTERVALS');
+        p2 = applySectionExamPass(p2, 'T8_DEGREE_INTERVALS');
       }
       setProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
@@ -1189,6 +1207,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       if (pass) {
         p2 = applyStudyReward(p2, 12);
         p2 = markStationDone(p2, 'T2_MAJOR_SCALE');
+        p2 = applySectionExamPass(p2, 'T2_MAJOR_SCALE');
       }
       setProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
