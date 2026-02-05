@@ -10,6 +10,7 @@ import { PracticePage } from './pages/PracticePage';
 import { ReviewPage } from './pages/ReviewPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { loadProgress, saveProgress, type Progress } from './lib/progress';
+import './App.css';
 
 function App() {
   const [progress, setProgress] = useState<Progress>(() => loadProgress());
