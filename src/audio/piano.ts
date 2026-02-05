@@ -1,4 +1,5 @@
 import Soundfont from 'soundfont-player';
+import { loadSettings } from '../lib/settings';
 
 // Minimal piano wrapper.
 // Uses Soundfont (WebAudio) so we can swap to Tone.Sampler later if desired.
@@ -41,6 +42,7 @@ export const piano: Piano = {
     const p = await getPianoPlayer();
     const durationSec = opts?.durationSec ?? 1.0;
     const velocity = opts?.velocity ?? 0.9;
+    const volume = loadSettings().volume;
     // Ensure context is started (some browsers require a user gesture; our UI uses clicks).
     try {
       const ctx = (p as unknown as { context?: AudioContext }).context;
@@ -51,7 +53,7 @@ export const piano: Piano = {
     (p as unknown as { play: (midi: number, when: number, opts: { gain: number; duration: number }) => void }).play(
       midi,
       0,
-      { gain: velocity, duration: durationSec },
+      { gain: Math.max(0, Math.min(1, velocity * volume)), duration: durationSec },
     );
   },
 
@@ -59,6 +61,7 @@ export const piano: Piano = {
     const p = await getPianoPlayer();
     const durationSec = opts?.durationSec ?? 1.2;
     const velocity = opts?.velocity ?? 0.9;
+    const volume = loadSettings().volume;
     const mode = opts?.mode ?? 'block';
     const gapMs = opts?.gapMs ?? 120;
 
@@ -73,14 +76,16 @@ export const piano: Piano = {
       play: (midi: number, when: number, opts: { gain: number; duration: number }) => void;
     }).play;
 
+    const gain = (v: number) => Math.max(0, Math.min(1, v * volume));
+
     if (mode === 'block') {
-      for (const m of midis) play(m, 0, { gain: velocity, duration: durationSec });
+      for (const m of midis) play(m, 0, { gain: gain(velocity), duration: durationSec });
       return;
     }
 
     // Arpeggiate (root->3rd->5th) with a small gap.
     for (let i = 0; i < midis.length; i++) {
-      play(midis[i], 0, { gain: velocity, duration: Math.max(0.2, durationSec - i * 0.1) });
+      play(midis[i], 0, { gain: gain(velocity), duration: Math.max(0.2, durationSec - i * 0.1) });
       await new Promise((r) => setTimeout(r, gapMs));
     }
   },

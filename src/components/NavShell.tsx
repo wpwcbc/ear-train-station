@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import { ConfigDrawer } from './ConfigDrawer';
 
 type Tab = { to: string; label: string; icon: string };
 
@@ -11,12 +13,21 @@ const TABS: Tab[] = [
 ];
 
 export function NavShell() {
+  const [configOpen, setConfigOpen] = useState(false);
+
   return (
     <div className="shell">
       <aside className="sideNav" aria-label="primary">
         <div className="brandBlock">
-          <div className="brandName">Ear Train Station</div>
-          <div className="brandSub">scales • intervals • chords</div>
+          <div className="brandRow">
+            <div>
+              <div className="brandName">Ear Train Station</div>
+              <div className="brandSub">scales • intervals • chords</div>
+            </div>
+            <button className="configBtn" onClick={() => setConfigOpen(true)} aria-label="Open settings">
+              ⚙
+            </button>
+          </div>
         </div>
         <nav className="navList">
           {TABS.map((t) => (
@@ -31,6 +42,10 @@ export function NavShell() {
       </aside>
 
       <div className="mainCol">
+        <button className="configBtnFloating" onClick={() => setConfigOpen(true)} aria-label="Open settings">
+          ⚙
+        </button>
+
         <div className="content">
           <Outlet />
         </div>
@@ -46,6 +61,8 @@ export function NavShell() {
           ))}
         </nav>
       </div>
+
+      <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} />
     </div>
   );
 }
