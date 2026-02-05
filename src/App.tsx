@@ -6,6 +6,7 @@ import { SectionDetailPage } from './pages/SectionDetailPage';
 import { SectionExamPage } from './pages/SectionExamPage';
 import { StationPage } from './pages/StationPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
+import { PracticePage } from './pages/PracticePage';
 import { ReviewPage } from './pages/ReviewPage';
 import { loadProgress, saveProgress, type Progress } from './lib/progress';
 
@@ -27,7 +28,7 @@ function App() {
 
         <Route path="/lesson/:stationId" element={<StationPage progress={progress} setProgress={setProgress} />} />
 
-        <Route path="/practice" element={<PlaceholderPage title="Practice" desc="Targeted practice, due reviews, and daily workout." />} />
+        <Route path="/practice" element={<PracticePage progress={progress} />} />
         <Route path="/review" element={<ReviewPage progress={progress} setProgress={setProgress} />} />
         <Route path="/quests" element={<PlaceholderPage title="Quests" desc="Daily quests and streak boosts." />} />
         <Route path="/leaderboard" element={<PlaceholderPage title="League" desc="Weekly XP league (future: friends + global)." />} />
