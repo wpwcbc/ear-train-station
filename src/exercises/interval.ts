@@ -140,6 +140,8 @@ export function makeIntervalLabelQuestion(opts: {
   rootMaxMidi?: number;
   minSemitones?: number;
   maxSemitones?: number;
+  /** If provided, the question will sample semitones from this allowlist (still respecting min/max if set). */
+  allowedSemitones?: number[];
   choiceCount?: number;
 }): IntervalLabelQuestion {
   const rng = mulberry32(opts.seed);
@@ -151,8 +153,18 @@ export function makeIntervalLabelQuestion(opts: {
 
   const min = opts.minSemitones ?? 0;
   const max = opts.maxSemitones ?? 12;
-  const span = Math.max(1, max - min + 1);
-  const semitones = min + Math.floor(rng() * span);
+
+  const allowed = (opts.allowedSemitones ?? [])
+    .map((s) => Math.round(s))
+    .filter((s) => s >= min && s <= max);
+
+  const semitones =
+    allowed.length > 0
+      ? allowed[Math.floor(rng() * allowed.length)]
+      : (() => {
+          const span = Math.max(1, max - min + 1);
+          return min + Math.floor(rng() * span);
+        })();
 
   const targetMidi = rootMidi + semitones;
   const correct = intervalLabel(semitones);

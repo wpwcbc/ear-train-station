@@ -581,6 +581,16 @@ button.ghost { background: transparent; }
   font-weight: 750;
 }
 
+.pillBtn {
+  border-radius: 999px;
+  border: 3px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 750;
+}
+
 .footer {
   border-top: 3px solid var(--ink);
   padding: 10px 16px;

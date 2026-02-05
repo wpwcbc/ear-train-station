@@ -25,6 +25,7 @@ import {
   makeIntervalDeriveQuestion,
   intervalLabel,
   intervalLongName,
+  LABEL_TO_SEMITONE,
   type IntervalLabel,
 } from '../exercises/interval';
 import { makeNoteNameQuestion, makeNoteNameQuestionFromMidis } from '../exercises/noteName';
@@ -96,6 +97,13 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [seed, setSeed] = useState(1);
   // If a station is already completed, default to a “summary” view with an optional practice toggle.
   const [practice, setPractice] = useState(false);
+  // Optional “focused practice” (e.g. practice only your most-missed intervals).
+  const [practiceFocusIntervals, setPracticeFocusIntervals] = useState<IntervalLabel[] | null>(null);
+
+  const practiceAllowedSemitones = useMemo(() => {
+    if (!practiceFocusIntervals?.length) return undefined;
+    return practiceFocusIntervals.map((l) => LABEL_TO_SEMITONE[l]);
+  }, [practiceFocusIntervals]);
 
   const [settings, setSettings] = useState(() => loadSettings());
   const [configOpen, setConfigOpen] = useState(false);
@@ -186,6 +194,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         rootMaxMidi: 55, // G3 (tight range; still “test” register rule)
         minSemitones: 0,
         maxSemitones: 12,
+        allowedSemitones: practice ? practiceAllowedSemitones : undefined,
         choiceCount: 6,
       }),
     [seed, t3bIndex],
@@ -206,6 +215,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         rootMaxMidi: 72, // C5 (keeps target <= C6 when +12)
         minSemitones: 0,
         maxSemitones: 12,
+        allowedSemitones: practice ? practiceAllowedSemitones : undefined,
         choiceCount: 6,
       }),
     [seed, t3Index],
@@ -226,6 +236,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         rootMaxMidi: 72, // C5
         minSemitones: 0,
         maxSemitones: 12,
+        allowedSemitones: practice ? practiceAllowedSemitones : undefined,
         choiceCount: 7,
       }),
     [seed, e3Index],
@@ -2305,7 +2316,16 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             <div style={{ fontSize: 12, opacity: 0.9 }}>Nice — keep the chain going.</div>
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-            <button className={practice ? 'secondary' : 'ghost'} onClick={() => setPractice((p) => !p)}>
+            <button
+              className={practice ? 'secondary' : 'ghost'}
+              onClick={() => {
+                setPractice((p) => {
+                  const next = !p;
+                  if (!next) setPracticeFocusIntervals(null);
+                  return next;
+                });
+              }}
+            >
               {practice ? 'Hide practice' : 'Practice'}
             </button>
             {stationMistakeCount > 0 ? (
@@ -2980,13 +3000,50 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                   Most missed: {topIntervalMisses.map((x) => `${x.label}×${x.count}`).join(' · ')}
                 </div>
               ) : null}
+
+              {topIntervalMisses.length > 0 ? (
+                <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {topIntervalMisses.map((x) => (
+                    <button
+                      key={x.label}
+                      className="pillBtn"
+                      onClick={() => {
+                        setPractice(true);
+                        setPracticeFocusIntervals([x.label]);
+                        resetT3();
+                      }}
+                      title={`Practice ${x.label} only`}
+                    >
+                      Practice {x.label}
+                    </button>
+                  ))}
+                  <button
+                    className="pillBtn"
+                    onClick={() => {
+                      setPractice(true);
+                      setPracticeFocusIntervals(topIntervalMisses.map((x) => x.label));
+                      resetT3();
+                    }}
+                    title="Practice your top misses"
+                  >
+                    Practice top misses
+                  </button>
+                </div>
+              ) : null}
+
               <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 {stationMistakeCount > 0 ? (
                   <Link className="linkBtn" to={`/review?station=${id}`}>
                     Review mistakes ({stationMistakeCount})
                   </Link>
                 ) : null}
-                <button className="linkBtn" onClick={resetT3}>
+                <button
+                  className="linkBtn"
+                  onClick={() => {
+                    setPracticeFocusIntervals(null);
+                    resetT3();
+                  }}
+                >
                   Restart
                 </button>
               </div>
@@ -3038,13 +3095,50 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                   Most missed: {topIntervalMisses.map((x) => `${x.label}×${x.count}`).join(' · ')}
                 </div>
               ) : null}
+
+              {topIntervalMisses.length > 0 ? (
+                <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {topIntervalMisses.map((x) => (
+                    <button
+                      key={x.label}
+                      className="pillBtn"
+                      onClick={() => {
+                        setPractice(true);
+                        setPracticeFocusIntervals([x.label]);
+                        resetE3();
+                      }}
+                      title={`Practice ${x.label} only`}
+                    >
+                      Practice {x.label}
+                    </button>
+                  ))}
+                  <button
+                    className="pillBtn"
+                    onClick={() => {
+                      setPractice(true);
+                      setPracticeFocusIntervals(topIntervalMisses.map((x) => x.label));
+                      resetE3();
+                    }}
+                    title="Practice your top misses"
+                  >
+                    Practice top misses
+                  </button>
+                </div>
+              ) : null}
+
               <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 {stationMistakeCount > 0 ? (
                   <Link className="linkBtn" to={`/review?station=${id}`}>
                     Review mistakes ({stationMistakeCount})
                   </Link>
                 ) : null}
-                <button className="linkBtn" onClick={resetE3}>
+                <button
+                  className="linkBtn"
+                  onClick={() => {
+                    setPracticeFocusIntervals(null);
+                    resetE3();
+                  }}
+                >
                   Restart
                 </button>
               </div>
