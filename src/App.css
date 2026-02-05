@@ -183,11 +183,85 @@
 }
 
 .sectionRoute {
+  /* legacy placeholder bar (kept so older markup doesn’t break) */
   height: 10px;
   border-radius: 999px;
   background: linear-gradient(90deg, var(--route-red), var(--route-blue), var(--route-green), var(--route-yellow), var(--route-purple));
   border: 3px solid var(--ink);
   margin: 14px 0;
+}
+
+.sectionRouteWrap {
+  margin: 12px 0 16px;
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  padding: 8px 10px;
+  overflow: hidden;
+}
+
+.sectionRouteSvg {
+  width: 100%;
+  height: 96px;
+  display: block;
+}
+
+.routeLine {
+  stroke: var(--route-blue);
+  stroke-width: 14;
+  stroke-linecap: round;
+}
+
+.routeDot {
+  fill: var(--bg);
+  stroke: var(--ink);
+  stroke-width: 4;
+}
+
+.routeDot.done {
+  fill: #c9f7d5;
+}
+
+.routeDot.locked {
+  fill: #efefef;
+  opacity: 0.55;
+}
+
+.routeHalo {
+  fill: none;
+  stroke: var(--route-yellow);
+  stroke-width: 8;
+  opacity: 0.9;
+}
+
+.routeTitle {
+  font-size: 16px;
+  font-weight: 800;
+  fill: var(--ink);
+  opacity: 0.75;
+}
+
+.routeBtnWrap {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.routeBtn {
+  display: inline-block;
+  padding: 4px 10px;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  background: var(--card);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.routeBtnLocked {
+  opacity: 0.65;
 }
 
 .btn, .btnPrimary {

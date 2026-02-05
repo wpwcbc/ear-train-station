@@ -1,7 +1,9 @@
 import { Link, useParams } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { SECTIONS, type SectionId } from '../lib/sections';
+import { sectionNodes } from '../lib/sectionNodes';
 import { sectionStationList, sectionStations } from '../lib/sectionStations';
+import { SectionRoute } from '../components/SectionRoute';
 import { MapPage } from './MapPage';
 
 export function SectionDetailPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
@@ -20,6 +22,7 @@ export function SectionDetailPage({ progress, setProgress }: { progress: Progres
 
   const list = sectionStationList(id);
   const plan = sectionStations(id);
+  const nodes = sectionNodes(id);
 
   return (
     <div className="page">
@@ -36,7 +39,7 @@ export function SectionDetailPage({ progress, setProgress }: { progress: Progres
         </div>
       </div>
 
-      <div className="sectionRoute" aria-label="route" />
+      <SectionRoute nodes={nodes} progress={progress} />
 
       <MapPage progress={progress} setProgress={setProgress} stations={list} />
     </div>
