@@ -16,6 +16,14 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
     ],
     tips: ['If you miss one, it goes into Review so you can clear it later.'],
   },
+  S1B_STAFF: {
+    primer: [
+      'Goal: connect note names to staff positions (Middle C anchor).',
+      'Same stable register + white keys first (C D E F G A B).',
+      'You can still press Play — but try to read before you hear.',
+    ],
+    tips: ['Middle C is the anchor. From there, step up/down by letters.'],
+  },
   T1_NOTES: {
     primer: ['10 questions. Wider register (G2 and up). Need 8/10 to pass.'],
   },

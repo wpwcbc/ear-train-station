@@ -15,6 +15,12 @@ export const STATIONS: Station[] = [
     kind: 'lesson',
   },
   {
+    id: 'S1B_STAFF',
+    title: 'Station 1B — Notes on the staff',
+    blurb: 'Connect note names to staff positions (Middle C anchor).',
+    kind: 'lesson',
+  },
+  {
     id: 'T1_NOTES',
     title: 'Test 1 — Notes & accidentals',
     blurb: 'Mixed-register check: name notes across a wider range.',

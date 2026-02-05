@@ -1,5 +1,6 @@
 export type StationId =
   | 'S1_NOTES'
+  | 'S1B_STAFF'
   | 'T1_NOTES'
   | 'S2_MAJOR_SCALE'
   | 'T2_MAJOR_SCALE'
@@ -165,6 +166,7 @@ export function defaultProgress(): Progress {
     dailyYmd: null,
     stationDone: {
       S1_NOTES: false,
+      S1B_STAFF: false,
       T1_NOTES: false,
       S2_MAJOR_SCALE: false,
       T2_MAJOR_SCALE: false,

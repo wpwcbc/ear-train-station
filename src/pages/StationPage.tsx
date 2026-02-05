@@ -304,6 +304,44 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     [seed, s1TwistIndex],
   );
 
+  // S1B: Notes on staff (TTT runner)
+  const [s1bCorrect, setS1bCorrect] = useState(0);
+  const S1B_GOAL = 7;
+  const s1bTestComplete = s1bCorrect >= S1B_GOAL;
+  const [s1bTeachDone, setS1bTeachDone] = useState(false);
+  const [s1bHintOpen, setS1bHintOpen] = useState(false);
+
+  const s1bQ = useMemo(
+    () =>
+      makeNoteNameQuestion({
+        seed: seed * 1000 + 1120,
+        minMidi: 60,
+        maxMidi: 71,
+        choiceCount: 6,
+      }),
+    [seed],
+  );
+
+  // S1B Twist
+  const S1B_TWIST_TOTAL = 10;
+  const S1B_TWIST_PASS = 8;
+  const [s1bTwistIndex, setS1bTwistIndex] = useState(0);
+  const [s1bTwistCorrect, setS1bTwistCorrect] = useState(0);
+  const [s1bTwistWrong, setS1bTwistWrong] = useState(0);
+  const s1bTwistDone = s1bTwistIndex >= S1B_TWIST_TOTAL || s1bTwistWrong >= HEARTS;
+  const s1bTwistPassed = s1bTwistDone && s1bTwistCorrect >= S1B_TWIST_PASS;
+
+  const s1bTwistQ = useMemo(
+    () =>
+      makeNoteNameQuestion({
+        seed: seed * 1000 + 1121 + s1bTwistIndex,
+        minMidi: 60,
+        maxMidi: 71,
+        choiceCount: 6,
+      }),
+    [seed, s1bTwistIndex],
+  );
+
   // S2 micro-goal: internalize WWHWWWH, then spell major scales in order (letters ascend; correct accidentals).
   const [s2PatternIndex, setS2PatternIndex] = useState(0); // 0..6 (7→8 ends the pattern)
   const [s2PatternDone, setS2PatternDone] = useState(false);
@@ -529,6 +567,82 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({});
     setSeed((x) => x + 1);
   }
+
+  async function playPromptS1B() {
+    setResult('idle');
+    setHighlighted({ [s1bQ.midi]: 'active' });
+    await piano.playMidi(s1bQ.midi, { durationSec: dur(0.9), velocity: 0.95 });
+    setHighlighted({});
+  }
+
+  function chooseS1B(choice: string) {
+    const ok = s1bQ.acceptedAnswers.includes(choice);
+    setResult(ok ? 'correct' : 'wrong');
+    setHighlighted({ [s1bQ.midi]: ok ? 'correct' : 'wrong' });
+
+    if (!ok) {
+      setCombo(0);
+      setLastComboBonus(0);
+      addMistake({ kind: 'noteName', sourceStationId: id, midi: s1bQ.midi });
+      return;
+    }
+
+    setS1bCorrect((x) => x + 1);
+    rewardAndMaybeComplete(2);
+  }
+
+  async function playPromptS1BTwist() {
+    setResult('idle');
+    setHighlighted({ [s1bTwistQ.midi]: 'active' });
+    await piano.playMidi(s1bTwistQ.midi, { durationSec: dur(0.9), velocity: 0.95 });
+    setHighlighted({});
+  }
+
+  async function chooseS1BTwist(choice: string) {
+    if (s1bTwistDone) return;
+
+    const ok = s1bTwistQ.acceptedAnswers.includes(choice);
+    setResult(ok ? 'correct' : 'wrong');
+    setHighlighted({ [s1bTwistQ.midi]: ok ? 'correct' : 'wrong' });
+
+    if (!ok) {
+      addMistake({ kind: 'noteName', sourceStationId: id, midi: s1bTwistQ.midi });
+      setS1bTwistWrong((n) => n + 1);
+      setS1bTwistIndex((i) => i + 1);
+      return;
+    }
+
+    setS1bTwistCorrect((n) => n + 1);
+    commitProgress(applyStudyReward(progress, 3));
+
+    const nextIndex = s1bTwistIndex + 1;
+    if (nextIndex >= S1B_TWIST_TOTAL) {
+      setS1bTwistIndex(S1B_TWIST_TOTAL);
+      return;
+    }
+    setS1bTwistIndex(nextIndex);
+  }
+
+  function resetS1BTwist() {
+    setS1bTwistIndex(0);
+    setS1bTwistCorrect(0);
+    setS1bTwistWrong(0);
+    setResult('idle');
+    setHighlighted({});
+    setSeed((x) => x + 1);
+  }
+
+  // When the Twist is passed, mark the lesson complete.
+  useEffect(() => {
+    if (id !== 'S1B_STAFF') return;
+    if (!s1bTwistPassed) return;
+    if (progress.stationDone[id]) return;
+
+    let p2 = progress;
+    p2 = markStationDone(p2, id);
+    p2 = applyStudyReward(p2, 10);
+    commitProgress(p2);
+  }, [id, s1bTwistPassed, progress]);
 
   // When the Twist is passed, mark the lesson complete (Duolingo-ish “earned it” moment).
   useEffect(() => {
@@ -1772,6 +1886,151 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
                 <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
                   Lessons stay in a stable register; tests can roam wider (G2+).
+                </div>
+              </>
+            }
+          />
+        </>
+      ) : id === 'S1B_STAFF' ? (
+        <>
+          <TTTRunner
+            teachComplete={s1bTeachDone}
+            testComplete={s1bTestComplete}
+            twistComplete={s1bTwistPassed}
+            onComplete={() => {
+              // No-op: completion is handled by the effect that marks the station done.
+            }}
+            teach={
+              <InfoCardPager
+                pages={[
+                  {
+                    title: 'Notes on the staff',
+                    body:
+                      'Now we connect note names to staff positions.\n\nMiddle C is the anchor. From there, move by steps: C D E F G A B.',
+                    footnote: 'Try to read first, then press Play to confirm.',
+                  },
+                  {
+                    title: 'Two quick anchors',
+                    body:
+                      "Treble clef: the swirl wraps around G (2nd line).\nBass clef: the dots surround F (4th line).\n\nBut for this station, we stay near Middle C so it doesn't get confusing.",
+                  },
+                  {
+                    title: 'Stable register',
+                    body: "Same stable register (1 octave). We're training mapping + recognition — not range.",
+                  },
+                ]}
+                doneLabel="Start test"
+                onDone={() => {
+                  setS1bTeachDone(true);
+                  setResult('idle');
+                  setHighlighted({});
+                }}
+              />
+            }
+            test={
+              <>
+                <HintOverlay open={s1bHintOpen} onClose={() => setS1bHintOpen(false)} title="Staff hint">
+                  <ul style={{ margin: 0, paddingLeft: 18 }}>
+                    <li>
+                      <b>Middle C</b> is your anchor. Step up/down by letters.
+                    </li>
+                    <li>If you see a note on a line, the next space up is the next letter.</li>
+                    <li>Press Play to confirm — but try reading first.</li>
+                  </ul>
+                </HintOverlay>
+
+                <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                  <button className="primary" onClick={playPromptS1B}>
+                    Play note
+                  </button>
+                  <button className="ghost" onClick={() => setSeed((x) => x + 1)}>
+                    Next
+                  </button>
+                  <button className="secondary" onClick={() => setS1bHintOpen(true)}>
+                    Hint
+                  </button>
+                  <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+                    Test: {Math.min(s1bCorrect, S1B_GOAL)}/{S1B_GOAL}
+                  </div>
+                </div>
+
+                <div className={`result r_${result}`}>
+                  {result === 'idle' && 'Name the note (read the staff).'}
+                  {result === 'correct' && `Correct — +2 XP. (${s1bQ.promptLabel})`}
+                  {result === 'wrong' && `Not quite — it was ${s1bQ.promptLabel}.`}
+                </div>
+
+                <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                  <ChoiceGrid choices={s1bQ.choices} onChoose={chooseS1B} />
+                </div>
+
+                <div className="row" style={{ gap: 14, alignItems: 'center', flexWrap: 'wrap', marginTop: 10 }}>
+                  <StaffNote midi={s1bQ.midi} spelling={s1bQ.displaySpelling} showLegend={false} />
+                  <div style={{ flex: 1, minWidth: 240 }}>
+                    <PianoKeyboard
+                      startMidi={60}
+                      octaves={1}
+                      onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
+                      highlighted={highlighted}
+                    />
+                  </div>
+                </div>
+
+                {s1bTestComplete ? (
+                  <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
+                    Nice — now a short <b>Twist</b> (scored, hearts apply).
+                  </div>
+                ) : null}
+              </>
+            }
+            twist={
+              <>
+                <HintOverlay open={s1bHintOpen} onClose={() => setS1bHintOpen(false)} title="Staff hint">
+                  <ul style={{ margin: 0, paddingLeft: 18 }}>
+                    <li>
+                      <b>Middle C</b> is your anchor. Step up/down by letters.
+                    </li>
+                    <li>Line → space → line is always the next letter.</li>
+                    <li>Press Play to confirm if needed.</li>
+                  </ul>
+                </HintOverlay>
+
+                <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                  <button className="primary" onClick={playPromptS1BTwist}>
+                    Play note
+                  </button>
+                  <button className="ghost" onClick={resetS1BTwist}>
+                    Restart
+                  </button>
+                  <button className="secondary" onClick={() => setS1bHintOpen(true)}>
+                    Hint
+                  </button>
+                  <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
+                    Q: {Math.min(s1bTwistIndex + 1, S1B_TWIST_TOTAL)}/{S1B_TWIST_TOTAL} · Correct: {s1bTwistCorrect}/{S1B_TWIST_TOTAL} (need {S1B_TWIST_PASS}) · Lives: {Math.max(0, HEARTS - s1bTwistWrong)}/{HEARTS}
+                  </div>
+                </div>
+
+                <div className={`result r_${result}`}>
+                  {result === 'idle' &&
+                    (s1bTwistDone
+                      ? s1bTwistPassed
+                        ? 'Passed — lesson complete. (+10 bonus XP)'
+                        : 'Failed twist — hit Restart to try again.'
+                      : 'Twist: 10 questions. Need 8/10 to pass.')}
+                  {result === 'correct' && `Correct — +3 XP. (${s1bTwistQ.promptLabel})`}
+                  {result === 'wrong' && `Not quite — it was ${s1bTwistQ.promptLabel}.`}
+                </div>
+
+                <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                  <ChoiceGrid choices={s1bTwistQ.choices} onChoose={chooseS1BTwist} />
+                </div>
+
+                <div style={{ marginTop: 10 }}>
+                  <StaffNote midi={s1bTwistQ.midi} spelling={s1bTwistQ.displaySpelling} showLegend={false} />
+                </div>
+
+                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+                  Lessons stable register; tests roam wider (G2+).
                 </div>
               </>
             }
