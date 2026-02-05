@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { nextUnlockedIncomplete } from '../lib/stations';
@@ -17,6 +18,19 @@ function msToHuman(ms: number): string {
 }
 
 export function PracticePage({ progress }: { progress: Progress }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    function bump() {
+      setNow(Date.now());
+    }
+    window.addEventListener('focus', bump);
+    window.addEventListener('storage', bump);
+    return () => {
+      window.removeEventListener('focus', bump);
+      window.removeEventListener('storage', bump);
+    };
+  }, []);
+
   const due = dueMistakeCount();
   const total = mistakeCount();
   const nextDue = nextDueAt();
@@ -87,7 +101,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
             Review now
           </Link>
           {due === 0 && nextDue ? (
-            <span style={{ fontSize: 12, opacity: 0.75 }}>Next due in {msToHuman(nextDue - Date.now())}</span>
+            <span style={{ fontSize: 12, opacity: 0.75 }}>Next due in {msToHuman(nextDue - now)}</span>
           ) : null}
         </div>
 

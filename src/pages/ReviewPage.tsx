@@ -4,6 +4,7 @@ import { useHotkeys } from '../lib/hooks/useHotkeys';
 import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
 import { applyReviewResult, loadMistakes, snoozeMistake, updateMistake, type Mistake } from '../lib/mistakes';
+import { bumpReviewAttempt, bumpReviewClear } from '../lib/quests';
 import { loadSettings, saveSettings } from '../lib/settings';
 import { promptSpeedFactors, promptSpeedLabel } from '../lib/promptTiming';
 import { piano } from '../audio/piano';
@@ -188,6 +189,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   function applyOutcome(outcome: 'correct' | 'wrong') {
     if (!active) return;
 
+    // Quests: count the attempt regardless of correctness.
+    bumpReviewAttempt(1);
+
     let cleared = false;
     updateMistake(active.id, (m) => {
       const next = applyReviewResult(m, outcome, Date.now());
@@ -196,6 +200,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     });
 
     if (outcome === 'correct' && cleared) {
+      bumpReviewClear(1);
       setProgress(applyStudyReward(progress, 4));
       setResult('correct');
       setDoneCount((n) => n + 1);

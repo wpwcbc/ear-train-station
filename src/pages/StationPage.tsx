@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import type { StationId, Progress } from '../lib/progress';
 import { applyStudyReward, markStationDone } from '../lib/progress';
 import { addMistake, mistakeCountForStation } from '../lib/mistakes';
+import { bumpStationCompleted } from '../lib/quests';
 import { STATIONS, nextStationId, isStationUnlocked } from '../lib/stations';
 import { sectionStationsByExamId } from '../lib/sectionStations';
 import { stationCopy } from '../lib/stationCopy';
@@ -318,6 +319,18 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     return p2;
   }
 
+  function commitProgress(next: Progress) {
+    // Quests: count any newly-completed station(s) today.
+    // (Exam “test out” can complete multiple stations at once.)
+    let delta = 0;
+    for (const [sid, doneNext] of Object.entries(next.stationDone)) {
+      if (doneNext && !progress.stationDone[sid as StationId]) delta += 1;
+    }
+    if (delta > 0) bumpStationCompleted(delta);
+
+    setProgress(next);
+  }
+
   function rewardAndMaybeComplete(
     xpGain: number,
     extra?: { stationDone?: StationId; completionBonusXp?: number },
@@ -376,7 +389,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       }
     }
 
-    setProgress(p2);
+    commitProgress(p2);
   }
 
   async function playPromptS3() {
@@ -697,13 +710,13 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         p2 = markStationDone(p2, 'T4_DEGREES');
         p2 = applySectionExamPass(p2, 'T4_DEGREES');
       }
-      setProgress(p2);
+      commitProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
       setT4Index(T4_TOTAL);
       return;
     }
 
-    setProgress(p2);
+    commitProgress(p2);
     setT4Index(nextIndex);
   }
 
@@ -768,13 +781,13 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         p2 = markStationDone(p2, 'T1_NOTES');
         p2 = applySectionExamPass(p2, 'T1_NOTES');
       }
-      setProgress(p2);
+      commitProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
       setT1Index(T1_TOTAL);
       return;
     }
 
-    setProgress(p2);
+    commitProgress(p2);
     setT1Index(nextIndex);
   }
 
@@ -845,13 +858,13 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         p2 = markStationDone(p2, 'T3_INTERVALS');
         p2 = applySectionExamPass(p2, 'T3_INTERVALS');
       }
-      setProgress(p2);
+      commitProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
       setT3Index(T3_TOTAL);
       return;
     }
 
-    setProgress(p2);
+    commitProgress(p2);
     setT3Index(nextIndex);
   }
 
@@ -953,13 +966,13 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         p2 = markStationDone(p2, 'T5_TRIADS');
         p2 = applySectionExamPass(p2, 'T5_TRIADS');
       }
-      setProgress(p2);
+      commitProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
       setT5Index(T5_TOTAL);
       return;
     }
 
-    setProgress(p2);
+    commitProgress(p2);
     setT5Index(nextIndex);
   }
 
@@ -1014,13 +1027,13 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         p2 = markStationDone(p2, 'T6_DIATONIC_TRIADS');
         p2 = applySectionExamPass(p2, 'T6_DIATONIC_TRIADS');
       }
-      setProgress(p2);
+      commitProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
       setT6Index(T6_TOTAL);
       return;
     }
 
-    setProgress(p2);
+    commitProgress(p2);
     setT6Index(nextIndex);
   }
 
@@ -1080,13 +1093,13 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         p2 = markStationDone(p2, 'T7_FUNCTIONS');
         p2 = applySectionExamPass(p2, 'T7_FUNCTIONS');
       }
-      setProgress(p2);
+      commitProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
       setT7Index(T7_TOTAL);
       return;
     }
 
-    setProgress(p2);
+    commitProgress(p2);
     setT7Index(nextIndex);
   }
 
@@ -1141,13 +1154,13 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         p2 = markStationDone(p2, 'T8_DEGREE_INTERVALS');
         p2 = applySectionExamPass(p2, 'T8_DEGREE_INTERVALS');
       }
-      setProgress(p2);
+      commitProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
       setT8Index(T8_TOTAL);
       return;
     }
 
-    setProgress(p2);
+    commitProgress(p2);
     setT8Index(nextIndex);
   }
 
@@ -1210,13 +1223,13 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         p2 = markStationDone(p2, 'T2_MAJOR_SCALE');
         p2 = applySectionExamPass(p2, 'T2_MAJOR_SCALE');
       }
-      setProgress(p2);
+      commitProgress(p2);
       setResult(pass ? 'correct' : 'wrong');
       setT2Index(T2_TOTAL);
       return;
     }
 
-    setProgress(p2);
+    commitProgress(p2);
     setHighlighted({});
     setT2Index(nextIndex);
   }
