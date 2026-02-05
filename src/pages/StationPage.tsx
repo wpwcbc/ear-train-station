@@ -7,13 +7,14 @@ import { bumpStationCompleted } from '../lib/quests';
 import { STATIONS, nextStationId, isStationUnlocked } from '../lib/stations';
 import { sectionStationsByExamId } from '../lib/sectionStations';
 import { stationCopy } from '../lib/stationCopy';
-import { loadSettings, saveSettings } from '../lib/settings';
-import { promptSpeedFactors, promptSpeedLabel } from '../lib/promptTiming';
+import { loadSettings } from '../lib/settings';
+import { promptSpeedFactors } from '../lib/promptTiming';
 import { PianoKeyboard } from '../components/PianoKeyboard';
 import { StaffNote } from '../components/StaffNote';
 import { TestHeader } from '../components/TestHeader';
 import { ChoiceGrid } from '../components/ChoiceGrid';
 import { HintOverlay, InfoCardPager, TTTRunner } from '../components/ttt';
+import { ConfigDrawer } from '../components/ConfigDrawer';
 import { useHotkeys } from '../lib/hooks/useHotkeys';
 import { piano } from '../audio/piano';
 import { playIntervalPrompt, playNoteSequence, playRootThenChordPrompt, playTonicTargetPrompt } from '../audio/prompts';
@@ -54,6 +55,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   useEffect(() => {
     function bump() {
       setNow(Date.now());
+      setSettings(loadSettings());
     }
     window.addEventListener('focus', bump);
     window.addEventListener('storage', bump);
@@ -71,6 +73,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [practice, setPractice] = useState(false);
 
   const [settings, setSettings] = useState(() => loadSettings());
+  const [configOpen, setConfigOpen] = useState(false);
   const chordMode = settings.chordPlayback;
   const speed = settings.promptSpeed;
   const timing = useMemo(() => promptSpeedFactors(speed), [speed]);
@@ -114,7 +117,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [result, setResult] = useState<'idle' | 'correct' | 'wrong'>('idle');
   // Duolingo-ish “combo” streak for lessons: keep a run of correct answers.
   const [combo, setCombo] = useState(0);
-  const [lastComboBonus, setLastComboBonus] = useState(0);
   const [highlighted, setHighlighted] = useState<Record<number, 'correct' | 'wrong' | 'active'>>({});
 
   const HEARTS = 3;
@@ -487,7 +489,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       bonus = nextCombo >= 3 ? 1 : 0;
       setCombo(nextCombo);
     }
-    setLastComboBonus(bonus);
 
     let p2 = applyStudyReward(progress, xpGain + bonus);
 
@@ -552,7 +553,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      setLastComboBonus(0);
       return;
     }
 
@@ -569,7 +569,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      setLastComboBonus(0);
       return;
     }
 
@@ -595,7 +594,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      setLastComboBonus(0);
       addMistake({ kind: 'noteName', sourceStationId: id, midi: noteQ.midi });
       return;
     }
@@ -660,7 +658,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      setLastComboBonus(0);
       addMistake({ kind: 'noteName', sourceStationId: id, midi: s1bQ.midi });
       return;
     }
@@ -748,7 +745,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      setLastComboBonus(0);
       addMistake({ kind: 'noteName', sourceStationId: id, midi: s1cQ.midi });
       return;
     }
@@ -837,7 +833,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      setLastComboBonus(0);
       return;
     }
 
@@ -861,7 +856,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      setLastComboBonus(0);
       setHighlighted({ [s2Q.targetMidi]: 'correct' });
       addMistake({
         kind: 'majorScaleDegree',
@@ -964,7 +958,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      setLastComboBonus(0);
       addMistake({ kind: 'scaleDegreeName', sourceStationId: id, key: degreeQ.key, degree: degreeQ.degree });
       return;
     }
@@ -989,7 +982,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      setLastComboBonus(0);
       addMistake({
         kind: 'intervalLabel',
         sourceStationId: id,
@@ -1715,7 +1707,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      setLastComboBonus(0);
       addMistake({ kind: 'triadQuality', sourceStationId: id, rootMidi: triadQ.rootMidi, quality: triadQ.quality });
       setHighlighted({
         ...correctHi,
@@ -1740,7 +1731,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      setLastComboBonus(0);
       // Feed spaced review: diatonic triad quality is reviewable as a triad-quality item.
       addMistake({ kind: 'triadQuality', sourceStationId: id, rootMidi: diatonicQ.chordMidis[0], quality: diatonicQ.quality });
       setHighlighted(correctHi);
@@ -1769,7 +1759,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      setLastComboBonus(0);
       addMistake({ kind: 'functionFamily', sourceStationId: id, key: funcQ.key, degree: funcQ.degree, tonicMidi: funcQ.tonicMidi });
       setHighlighted(correctHi);
       return;
@@ -1987,21 +1976,29 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           <h1 className="title">{station.title}</h1>
           <p className="sub">{station.blurb}</p>
         </div>
-        <div style={{ textAlign: 'right', fontSize: 12, opacity: 0.85 }}>
-          <div>XP: {progress.xp}</div>
-          <div>Streak: {progress.streakDays} day(s)</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {stationMistakeCount > 0 ? (
-            <div style={{ marginTop: 6 }}>
-              <Link
-                to={`/review?station=${id}`}
-                style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2, opacity: stationMistakeDue > 0 ? 1 : 0.85 }}
-              >
-                Review: {stationMistakeDue > 0 ? `${stationMistakeDue} due` : `${stationMistakeCount} total`}
-              </Link>
-            </div>
+            <Link
+              to={`/review?station=${id}`}
+              className={stationMistakeDue > 0 ? 'linkBtn primaryLink' : 'linkBtn'}
+              style={{ fontSize: 12, padding: '6px 10px' }}
+            >
+              Review{stationMistakeDue > 0 ? ` (${stationMistakeDue} due)` : ` (${stationMistakeCount})`}
+            </Link>
           ) : null}
+          <button className="ghost" onClick={() => setConfigOpen(true)} aria-label="Open settings">
+            ⚙️
+          </button>
         </div>
       </div>
+
+      <ConfigDrawer
+        open={configOpen}
+        onClose={() => {
+          setConfigOpen(false);
+          setSettings(loadSettings());
+        }}
+      />
 
       {done ? (
         <div
@@ -2034,8 +2031,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       ) : null}
 
       {copy ? (
-        <details style={{ marginTop: 10 }} open>
-          <summary style={{ cursor: 'pointer', fontWeight: 700 }}>Lesson notes</summary>
+        <details style={{ marginTop: 10 }}>
+          <summary style={{ cursor: 'pointer', fontWeight: 700 }}>Guidebook</summary>
           <div style={{ marginTop: 8, fontSize: 12, opacity: 0.9, lineHeight: 1.5 }}>
             <ul style={{ margin: 0, paddingLeft: 18 }}>
               {copy.primer.map((t, i) => (
@@ -2057,34 +2054,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         </details>
       ) : null}
 
-      <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-        <span>Hotkeys: Space/Enter = Play/Hear • 1–9 = Answer • Backspace = Next/Restart</span>
-        <span style={{ opacity: 0.55 }}>•</span>
-        <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-          <span>Speed</span>
-          <select
-            value={speed}
-            onChange={(e) => {
-              const v = e.target.value === 'slow' ? 'slow' : e.target.value === 'fast' ? 'fast' : 'normal';
-              const next = { ...settings, promptSpeed: v } as typeof settings;
-              setSettings(next);
-              saveSettings(next);
-            }}
-          >
-            {(['slow', 'normal', 'fast'] as const).map((s) => (
-              <option key={s} value={s}>
-                {promptSpeedLabel(s)}
-              </option>
-            ))}
-          </select>
-        </label>
-        {station?.kind === 'lesson' && combo >= 2 ? (
-          <span style={{ opacity: 0.9 }}>
-            Combo: x{combo}
-            {lastComboBonus > 0 ? <span style={{ opacity: 0.95 }}> (+{lastComboBonus} XP)</span> : null}
-          </span>
-        ) : null}
-      </div>
 
       {!done || practice ? (
         id === 'S1_NOTES' ? (
@@ -2826,21 +2795,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             <button className="secondary" onClick={() => piano.playMidi(triadQ.rootMidi, { durationSec: dur(0.8), velocity: 0.9 })}>
               Root
             </button>
-            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
-              <span>Playback</span>
-              <select
-                value={chordMode}
-                onChange={(e) => {
-                  const v = e.target.value === 'block' ? 'block' : 'arp';
-                  const next = { ...settings, chordPlayback: v } as typeof settings;
-                  setSettings(next);
-                  saveSettings(next);
-                }}
-              >
-                <option value="arp">Arp</option>
-                <option value="block">Block</option>
-              </select>
-            </label>
+            
             <button className="ghost" onClick={next}>Next</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Progress: {Math.min(s4Correct, S4_GOAL)}/{S4_GOAL}
@@ -2870,24 +2825,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             playLabel="Hear chord"
             onPlay={playPromptT5}
             onRestart={resetT5}
-            leftExtras={
-              <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
-                <span>Playback</span>
-                <select
-                  value={chordMode}
-                  onChange={(e) => {
-                    const v = e.target.value === 'block' ? 'block' : 'arp';
-                    const next = { ...settings, chordPlayback: v } as typeof settings;
-                    setSettings(next);
-                    saveSettings(next);
-                  }}
-                >
-                  <option value="arp">Arp</option>
-                  <option value="block">Block</option>
-                </select>
-              </label>
-            }
-            reviewHref={(t5Index >= T5_TOTAL || t5Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
+reviewHref={(t5Index >= T5_TOTAL || t5Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
             reviewLabel={`Review mistakes (${stationMistakeCount})`}
             rightStatus={`Q: ${Math.min(t5Index + 1, T5_TOTAL)}/${T5_TOTAL} · Correct: ${t5Correct}/${T5_TOTAL} (need ${T5_PASS}) · Lives: ${Math.max(0, HEARTS - t5Wrong)}/${HEARTS}`}
           />
@@ -2916,21 +2854,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
         <>
           <div className="row">
             <button className="primary" onClick={playPromptS5}>Hear triad</button>
-            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
-              <span>Playback</span>
-              <select
-                value={chordMode}
-                onChange={(e) => {
-                  const v = e.target.value === 'block' ? 'block' : 'arp';
-                  const next = { ...settings, chordPlayback: v } as typeof settings;
-                  setSettings(next);
-                  saveSettings(next);
-                }}
-              >
-                <option value="arp">Arp</option>
-                <option value="block">Block</option>
-              </select>
-            </label>
+            
             <button className="ghost" onClick={next}>Next</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Progress: {Math.min(s5Correct, S5_GOAL)}/{S5_GOAL}
@@ -2964,24 +2888,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             playLabel="Hear triad"
             onPlay={playPromptT6}
             onRestart={resetT6}
-            leftExtras={
-              <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
-                <span>Playback</span>
-                <select
-                  value={chordMode}
-                  onChange={(e) => {
-                    const v = e.target.value === 'block' ? 'block' : 'arp';
-                    const next = { ...settings, chordPlayback: v } as typeof settings;
-                    setSettings(next);
-                    saveSettings(next);
-                  }}
-                >
-                  <option value="arp">Arp</option>
-                  <option value="block">Block</option>
-                </select>
-              </label>
-            }
-            reviewHref={(t6Index >= T6_TOTAL || t6Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
+reviewHref={(t6Index >= T6_TOTAL || t6Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
             reviewLabel={`Review mistakes (${stationMistakeCount})`}
             rightStatus={`Q: ${Math.min(t6Index + 1, T6_TOTAL)}/${T6_TOTAL} · Correct: ${t6Correct}/${T6_TOTAL} (need ${T6_PASS}) · Lives: ${Math.max(0, HEARTS - t6Wrong)}/${HEARTS}`}
           />
@@ -3014,21 +2921,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
         <>
           <div className="row">
             <button className="primary" onClick={playPromptS6}>Hear chord</button>
-            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
-              <span>Playback</span>
-              <select
-                value={chordMode}
-                onChange={(e) => {
-                  const v = e.target.value === 'block' ? 'block' : 'arp';
-                  const next = { ...settings, chordPlayback: v } as typeof settings;
-                  setSettings(next);
-                  saveSettings(next);
-                }}
-              >
-                <option value="arp">Arp</option>
-                <option value="block">Block</option>
-              </select>
-            </label>
+            
             <button className="ghost" onClick={next}>Next</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Progress: {Math.min(s6Correct, S6_GOAL)}/{S6_GOAL}
@@ -3062,24 +2955,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             playLabel="Hear chord"
             onPlay={playPromptT7}
             onRestart={resetT7}
-            leftExtras={
-              <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
-                <span>Playback</span>
-                <select
-                  value={chordMode}
-                  onChange={(e) => {
-                    const v = e.target.value === 'block' ? 'block' : 'arp';
-                    const next = { ...settings, chordPlayback: v } as typeof settings;
-                    setSettings(next);
-                    saveSettings(next);
-                  }}
-                >
-                  <option value="arp">Arp</option>
-                  <option value="block">Block</option>
-                </select>
-              </label>
-            }
-            reviewHref={(t7Index >= T7_TOTAL || t7Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
+reviewHref={(t7Index >= T7_TOTAL || t7Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
             reviewLabel={`Review mistakes (${stationMistakeCount})`}
             rightStatus={`Q: ${Math.min(t7Index + 1, T7_TOTAL)}/${T7_TOTAL} · Correct: ${t7Correct}/${T7_TOTAL} (need ${T7_PASS}) · Lives: ${Math.max(0, HEARTS - t7Wrong)}/${HEARTS}`}
           />
