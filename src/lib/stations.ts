@@ -39,6 +39,12 @@ export const STATIONS: Station[] = [
     kind: 'test',
   },
   {
+    id: 'E1_NOTES',
+    title: 'NOTES Exam — Mixed note reading',
+    blurb: 'Section exam: staff + accidentals across a wider range (Duolingo-style test out).',
+    kind: 'test',
+  },
+  {
     id: 'S2_MAJOR_SCALE',
     title: 'Station 2 — Major scale by sound',
     blurb: 'WWHWWWH + build scale notes with correct spelling rules.',

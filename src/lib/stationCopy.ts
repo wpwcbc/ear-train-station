@@ -39,6 +39,14 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
   T1_NOTES: {
     primer: ['10 questions. Wider register (G2 and up). Need 8/10 to pass.'],
   },
+  E1_NOTES: {
+    primer: [
+      'Section exam: 10 questions mixing what you learned in NOTES.',
+      'Wider register (G2 and up). Hearts apply. Need 8/10 to pass.',
+      'Pass = we mark the whole section completed (Duolingo-style “test out”).',
+    ],
+    tips: ['If you fail, hit Restart or Review your misses — then try again.'],
+  },
   S2_MAJOR_SCALE: {
     primer: [
       'Major scale formula: W W H W W W H.',

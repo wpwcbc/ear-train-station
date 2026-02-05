@@ -269,6 +269,23 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     [seed, t1Index],
   );
 
+  // NOTES Exam: mixed note reading across a wider range (G2 and above).
+  const [e1Index, setE1Index] = useState(0);
+  const [e1Correct, setE1Correct] = useState(0);
+  const [e1Wrong, setE1Wrong] = useState(0);
+  const E1_TOTAL = 10;
+  const E1_PASS = 8;
+  const e1Q = useMemo(
+    () =>
+      makeNoteNameQuestion({
+        seed: seed * 1000 + 1112 + e1Index,
+        minMidi: 43, // G2
+        maxMidi: 88, // E6
+        choiceCount: 7,
+      }),
+    [seed, e1Index],
+  );
+
   // Mid-test 1B: notes & staff anchor (stable register, no hearts penalty; hints allowed)
   const [t1bIndex, setT1bIndex] = useState(0);
   const [t1bCorrect, setT1bCorrect] = useState(0);
@@ -1062,6 +1079,12 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     await piano.playMidi(t1Q.midi, { durationSec: dur(0.9), velocity: 0.95 });
   }
 
+  async function playPromptE1() {
+    setResult('idle');
+    setHighlighted({});
+    await piano.playMidi(e1Q.midi, { durationSec: dur(0.9), velocity: 0.95 });
+  }
+
   async function playPromptT1B() {
     setResult('idle');
     setHighlighted({ [t1bQ.midi]: 'active' });
@@ -1174,6 +1197,65 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setT1Index(0);
     setT1Correct(0);
     setT1Wrong(0);
+    setResult('idle');
+    setHighlighted({});
+    setSeed((x) => x + 1);
+  }
+
+  async function chooseE1(choice: string) {
+    if (e1Index >= E1_TOTAL) return;
+    if (e1Wrong >= HEARTS) return;
+
+    const ok = e1Q.acceptedAnswers.includes(choice);
+    setResult(ok ? 'correct' : 'wrong');
+    setHighlighted({ [e1Q.midi]: ok ? 'correct' : 'wrong' });
+
+    if (!ok) {
+      addMistake({ kind: 'noteName', sourceStationId: id, midi: e1Q.midi });
+
+      const nextWrong = e1Wrong + 1;
+      setE1Wrong(nextWrong);
+
+      const nextIndex = e1Index + 1;
+      if (nextWrong >= HEARTS) {
+        setE1Index(E1_TOTAL);
+        return;
+      }
+      if (nextIndex >= E1_TOTAL) {
+        setE1Index(E1_TOTAL);
+        return;
+      }
+      setE1Index(nextIndex);
+      return;
+    }
+
+    setE1Correct((n) => n + 1);
+
+    let p2 = applyStudyReward(progress, 3);
+
+    const nextIndex = e1Index + 1;
+    if (nextIndex >= E1_TOTAL) {
+      const correct = e1Correct + 1;
+      const pass = correct >= E1_PASS;
+      if (pass) {
+        p2 = applyStudyReward(p2, 15);
+        p2 = markStationDone(p2, 'E1_NOTES');
+        p2 = applySectionExamPass(p2, 'E1_NOTES');
+      }
+      commitProgress(p2);
+      setResult(pass ? 'correct' : 'wrong');
+      setE1Index(E1_TOTAL);
+      return;
+    }
+
+    commitProgress(p2);
+    setE1Index(nextIndex);
+  }
+
+  function resetE1() {
+    setE1Index(0);
+    setE1Correct(0);
+    setE1Wrong(0);
     setResult('idle');
     setHighlighted({});
     setSeed((x) => x + 1);
@@ -1723,7 +1805,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       }
       else if (id === 'T1B_NOTES') void playPromptT1B();
       else if (id === 'T1_NOTES') void playPromptT1();
-      else if (id === 'S2_MAJOR_SCALE') {
+      else if (id === 'E1_NOTES') void playPromptE1();
+      else if (id === 'S2_MAJOR_SCALE') { 
         if (s2PatternDone) void playPromptS2();
       } else if (id === 'T2_MAJOR_SCALE') void playPromptT2();
       else if (id === 'S3_INTERVALS') void playPromptS3();
@@ -1754,6 +1837,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       }
       else if (id === 'T1B_NOTES') resetT1B();
       else if (id === 'T1_NOTES') resetT1();
+      else if (id === 'E1_NOTES') resetE1();
       else if (id === 'S2_MAJOR_SCALE') newKeyS2();
       else if (id === 'T2_MAJOR_SCALE') resetT2();
       else if (id === 'S3_INTERVALS') next();
@@ -1808,6 +1892,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       if (id === 'T1_NOTES') {
         const c = t1Q.choices[idx];
         if (c) void chooseT1(c);
+        return;
+      }
+      if (id === 'E1_NOTES') {
+        const c = e1Q.choices[idx];
+        if (c) void chooseE1(c);
         return;
       }
       if (id === 'S2_MAJOR_SCALE') {
@@ -2483,6 +2572,43 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
             Tip: tests can roam across a bigger register; lessons stay in a stable register.
+          </div>
+        </>
+      ) : id === 'E1_NOTES' ? (
+        <>
+          <TestHeader
+            playLabel="Play note"
+            onPlay={playPromptE1}
+            onRestart={resetE1}
+            reviewHref={(e1Index >= E1_TOTAL || e1Wrong >= HEARTS) && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
+            reviewLabel={`Review mistakes (${stationMistakeCount})`}
+            rightStatus={`Q: ${Math.min(e1Index + 1, E1_TOTAL)}/${E1_TOTAL} · Correct: ${e1Correct}/${E1_TOTAL} (need ${E1_PASS}) · Lives: ${Math.max(0, HEARTS - e1Wrong)}/${HEARTS}`}
+          />
+
+          <div className={`result r_${result}`}>
+            {result === 'idle' && 'Section exam: 10 mixed notes (staff + accidentals, wider range). Need 8/10 to pass.'}
+            {result === 'correct' &&
+              (progress.stationDone['E1_NOTES']
+                ? 'Passed — section completed. (+15 bonus XP)'
+                : `Correct — +3 XP. (${e1Q.promptLabel})`)}
+            {result === 'wrong' &&
+              (e1Wrong >= HEARTS
+                ? `Out of lives. Score so far: ${e1Correct}/${E1_TOTAL}. Hit restart to try again${stationMistakeCount > 0 ? ' — or review your misses.' : '.'}`
+                : e1Index + 1 >= E1_TOTAL
+                  ? `Finished: ${e1Correct}/${E1_TOTAL}. Need ${E1_PASS}. Hit restart to try again.`
+                  : `Not quite — it was ${e1Q.promptLabel}.`)}
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            <ChoiceGrid choices={e1Q.choices} onChoose={chooseE1} />
+          </div>
+
+          <div style={{ marginTop: 10 }}>
+            <StaffNote midi={e1Q.midi} spelling={e1Q.displaySpelling} showLegend={false} />
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+            Duolingo-ish: pass the exam to "test out" and mark the whole section complete.
           </div>
         </>
       ) : id === 'T2_MAJOR_SCALE' ? (

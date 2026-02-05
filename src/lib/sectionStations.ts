@@ -11,8 +11,8 @@ export type SectionStations = {
 
 const SECTION_STATIONS: Record<SectionId, SectionStations> = {
   NOTES: {
-    stationIds: ['S1_NOTES', 'S1B_STAFF', 'T1B_NOTES', 'S1C_ACCIDENTALS', 'T1_NOTES'],
-    examId: 'T1_NOTES',
+    stationIds: ['S1_NOTES', 'S1B_STAFF', 'T1B_NOTES', 'S1C_ACCIDENTALS', 'T1_NOTES', 'E1_NOTES'],
+    examId: 'E1_NOTES',
   },
   MAJOR_SCALE: {
     stationIds: ['S2_MAJOR_SCALE', 'T2_MAJOR_SCALE'],
