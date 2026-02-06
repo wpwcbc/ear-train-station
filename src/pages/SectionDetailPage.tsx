@@ -33,7 +33,12 @@ export function SectionDetailPage({ progress, setProgress: _setProgress }: { pro
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <Link className="btn" to="/learn">All sections</Link>
           {examUnlocked ? (
-            <Link className="btnPrimary" to={`/learn/section/${id}/exam`} title={`Exam: ${plan.examId}`}>
+            <Link
+              className="btnPrimary"
+              to={`/learn/section/${id}/exam`}
+              state={{ exitTo: `/learn/section/${id}` }}
+              title={`Exam: ${plan.examId}`}
+            >
               Jump to exam
             </Link>
           ) : (
@@ -48,7 +53,7 @@ export function SectionDetailPage({ progress, setProgress: _setProgress }: { pro
         </div>
       </div>
 
-      <SectionRoute nodes={nodes} progress={progress} />
+      <SectionRoute sectionId={id} nodes={nodes} progress={progress} />
 
       <div className="sub" style={{ marginTop: 10 }}>
         Tip: tap a station on the line to see details. Lessons stay in a stable register; tests/exams go wider (≥ G2).

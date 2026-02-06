@@ -28,9 +28,11 @@ function useIsMobile(breakpointPx: number): boolean {
 }
 
 export function SectionRoute({
+  sectionId,
   nodes,
   progress,
 }: {
+  sectionId: string;
   nodes: ReadonlyArray<SectionNode>;
   progress: Progress;
 }) {
@@ -89,12 +91,16 @@ export function SectionRoute({
 
         <div className="routeCardActions">
           {selectedUnlocked ? (
-            <Link className="btnPrimary" to={`/lesson/${selectedNode.stationId}`}>
+            <Link className="btnPrimary" to={`/lesson/${selectedNode.stationId}`} state={{ exitTo: `/learn/section/${sectionId}` }}>
               {selectedDone ? 'Redo' : 'Start'}
             </Link>
           ) : (
             <div className="sub" style={{ margin: 0 }}>
-              Finish the previous station(s) to unlock.
+              {(() => {
+                const idx = stations.findIndex((s) => s.id === selectedNode.stationId);
+                const prev = idx > 0 ? stations[idx - 1] : null;
+                return prev ? `Complete “${shortTitle(prev.title)}” first to unlock.` : 'Finish the previous station(s) to unlock.';
+              })()}
             </div>
           )}
 

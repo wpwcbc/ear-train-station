@@ -40,6 +40,15 @@ export function FocusShell(props: { children?: ReactNode }) {
   const progressPct = topBar.progress == null ? null : Math.round(clamp01(topBar.progress) * 100);
 
   function onExit() {
+    const s = loc.state as unknown as { exitTo?: string } | null;
+    const exitTo = s?.exitTo;
+
+    // If caller provided an explicit exit target (e.g. back to section), honor it.
+    if (exitTo && typeof exitTo === 'string') {
+      navigate(exitTo, { replace: true, state: { from: loc.pathname } });
+      return;
+    }
+
     // Prefer going back (like Duolingo), but fall back to Learn if direct-open.
     if (window.history.length > 1) navigate(-1);
     else navigate('/learn', { replace: true, state: { from: loc.pathname } });

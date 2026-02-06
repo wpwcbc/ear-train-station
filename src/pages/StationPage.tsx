@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useFocusUI } from '../components/FocusShell';
 import type { StationId, Progress } from '../lib/progress';
 import { applyStudyReward, markStationDone } from '../lib/progress';
 import { addMistake, loadMistakes, mistakeCountForStation } from '../lib/mistakes';
@@ -15,7 +16,7 @@ import { StaffNote } from '../components/StaffNote';
 import { TestHeader } from '../components/TestHeader';
 import { ChoiceGrid } from '../components/ChoiceGrid';
 import { HintOverlay, InfoCardPager, TTTRunner } from '../components/ttt';
-import { ConfigDrawer } from '../components/ConfigDrawer';
+// ConfigDrawer is handled by FocusShell in Focus Mode.
 import { useHotkeys } from '../lib/hooks/useHotkeys';
 import { piano } from '../audio/piano';
 import { playIntervalPrompt, playNoteSequence, playRootThenChordPrompt, playTonicTargetPrompt } from '../audio/prompts';
@@ -46,6 +47,7 @@ import { makeDegreeIntervalQuestion } from '../exercises/degreeInterval';
 export function StationPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
   const { stationId } = useParams();
   const id = (stationId ?? 'S3_INTERVALS') as StationId;
+  const focus = useFocusUI();
 
   const station = STATIONS.find((s) => s.id === id);
   const done = progress.stationDone[id];
@@ -106,7 +108,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   }, [practiceFocusIntervals]);
 
   const [settings, setSettings] = useState(() => loadSettings());
-  const [configOpen, setConfigOpen] = useState(false);
+  // Settings UI lives in <FocusShell> (⚙️ in the top bar).
   const chordMode = settings.chordPlayback;
   const speed = settings.promptSpeed;
   const timing = useMemo(() => promptSpeedFactors(speed), [speed]);
@@ -2260,6 +2262,103 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     },
   });
 
+  useEffect(() => {
+    // Focus top bar (Duolingo-ish): progress + hearts where applicable.
+    const title = station ? station.title : '';
+    const short = (title.split('—')[0] ?? title).trim();
+
+    let progress01: number | undefined = undefined;
+    let hearts: { current: number; max: number } | undefined = undefined;
+
+    switch (id) {
+      case 'T1_NOTES':
+        progress01 = T1_TOTAL ? t1Index / T1_TOTAL : undefined;
+        hearts = { current: Math.max(0, HEARTS - t1Wrong), max: HEARTS };
+        break;
+      case 'E1_NOTES':
+        progress01 = E1_TOTAL ? e1Index / E1_TOTAL : undefined;
+        hearts = { current: Math.max(0, HEARTS - e1Wrong), max: HEARTS };
+        break;
+      case 'T3_INTERVALS':
+        progress01 = T3_TOTAL ? t3Index / T3_TOTAL : undefined;
+        hearts = { current: Math.max(0, HEARTS - t3Wrong), max: HEARTS };
+        break;
+      case 'E3_INTERVALS':
+        progress01 = E3_TOTAL ? e3Index / E3_TOTAL : undefined;
+        hearts = { current: Math.max(0, HEARTS - e3Wrong), max: HEARTS };
+        break;
+      case 'T5_TRIADS':
+        progress01 = T5_TOTAL ? t5Index / T5_TOTAL : undefined;
+        hearts = { current: Math.max(0, HEARTS - t5Wrong), max: HEARTS };
+        break;
+      case 'T6_DIATONIC_TRIADS':
+        progress01 = T6_TOTAL ? t6Index / T6_TOTAL : undefined;
+        hearts = { current: Math.max(0, HEARTS - t6Wrong), max: HEARTS };
+        break;
+      case 'T7_FUNCTIONS':
+        progress01 = T7_TOTAL ? t7Index / T7_TOTAL : undefined;
+        hearts = { current: Math.max(0, HEARTS - t7Wrong), max: HEARTS };
+        break;
+      case 'T4_DEGREES':
+        progress01 = T4_TOTAL ? t4Index / T4_TOTAL : undefined;
+        hearts = { current: Math.max(0, HEARTS - t4Wrong), max: HEARTS };
+        break;
+      case 'T8_DEGREE_INTERVALS':
+        progress01 = T8_TOTAL ? t8Index / T8_TOTAL : undefined;
+        hearts = { current: Math.max(0, HEARTS - t8Wrong), max: HEARTS };
+        break;
+      case 'T2_MAJOR_SCALE':
+        progress01 = T2_TOTAL ? t2Index / T2_TOTAL : undefined;
+        break;
+      case 'T1B_NOTES':
+        progress01 = T1B_TOTAL ? t1bIndex / T1B_TOTAL : undefined;
+        break;
+      case 'T3B_INTERVALS':
+        progress01 = T3B_TOTAL ? t3bIndex / T3B_TOTAL : undefined;
+        break;
+      default:
+        // Lessons: we keep a subtle progress bar, but don’t try to over-fit every internal phase.
+        progress01 = done ? 1 : undefined;
+        break;
+    }
+
+    focus.setTopBar({
+      statusText: short || undefined,
+      progress: progress01,
+      hearts,
+    });
+
+    return () => {
+      focus.setTopBar({});
+    };
+  }, [
+    focus,
+    id,
+    station,
+    done,
+    t1Index,
+    t1Wrong,
+    e1Index,
+    e1Wrong,
+    t3Index,
+    t3Wrong,
+    e3Index,
+    e3Wrong,
+    t5Index,
+    t5Wrong,
+    t6Index,
+    t6Wrong,
+    t7Index,
+    t7Wrong,
+    t4Index,
+    t4Wrong,
+    t8Index,
+    t8Wrong,
+    t2Index,
+    t1bIndex,
+    t3bIndex,
+  ]);
+
   if (!station) {
     return (
       <div className="card">
@@ -2286,19 +2385,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
               Review{stationMistakeDue > 0 ? ` (${stationMistakeDue} due)` : ` (${stationMistakeCount})`}
             </Link>
           ) : null}
-          <button className="ghost" onClick={() => setConfigOpen(true)} aria-label="Open settings">
-            ⚙️
-          </button>
         </div>
       </div>
-
-      <ConfigDrawer
-        open={configOpen}
-        onClose={() => {
-          setConfigOpen(false);
-          setSettings(loadSettings());
-        }}
-      />
 
       {done ? (
         <div
