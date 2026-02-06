@@ -236,8 +236,12 @@
 }
 
 .navItem.active {
-  border-color: var(--ink);
-  background: #e9f0ff;
+  border-color: var(--item-accent, var(--ink));
+  background: color-mix(in srgb, var(--item-accent, #e9f0ff) 14%, #ffffff 86%);
+}
+
+.navItem.active .navIcon {
+  background: color-mix(in srgb, var(--item-accent, #e9f0ff) 18%, #ffffff 82%);
 }
 
 .navIcon {
@@ -282,6 +286,19 @@
   margin: 0;
   font-size: 28px;
   letter-spacing: -0.2px;
+  position: relative;
+  padding-left: 14px;
+}
+
+.h1::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.18em;
+  bottom: 0.18em;
+  width: 6px;
+  border-radius: 999px;
+  background: var(--tab-accent, var(--route-blue));
 }
 
 .h2 {
@@ -709,8 +726,12 @@
 }
 
 .bottomItem.active {
-  border-top-color: var(--ink);
-  background: #e9f0ff;
+  border-top-color: var(--item-accent, var(--ink));
+  background: color-mix(in srgb, var(--item-accent, #e9f0ff) 14%, #ffffff 86%);
+}
+
+.bottomItem.active .bottomIcon {
+  background: color-mix(in srgb, var(--item-accent, #e9f0ff) 18%, #ffffff 82%);
 }
 
 .bottomIcon {

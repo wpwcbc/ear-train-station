@@ -1,22 +1,28 @@
-import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { ConfigDrawer } from './ConfigDrawer';
 
-type Tab = { to: string; label: string; icon: string };
+type Tab = { to: string; label: string; icon: string; accent: string };
 
 const TABS: Tab[] = [
-  { to: '/learn', label: 'Learn', icon: '●' },
-  { to: '/practice', label: 'Practice', icon: '▶' },
-  { to: '/quests', label: 'Quests', icon: '◆' },
-  { to: '/leaderboard', label: 'League', icon: '▦' },
-  { to: '/profile', label: 'Profile', icon: '◉' },
+  { to: '/learn', label: 'Learn', icon: '●', accent: 'var(--route-blue)' },
+  { to: '/practice', label: 'Practice', icon: '▶', accent: 'var(--route-green)' },
+  { to: '/quests', label: 'Quests', icon: '◆', accent: 'var(--route-purple)' },
+  { to: '/leaderboard', label: 'League', icon: '▦', accent: 'var(--route-yellow)' },
+  { to: '/profile', label: 'Profile', icon: '◉', accent: 'var(--route-red)' },
 ];
 
 export function NavShell() {
   const [configOpen, setConfigOpen] = useState(false);
+  const loc = useLocation();
+
+  const activeTab = useMemo(() => {
+    // Match by prefix, so /learn/section/* still maps to Learn.
+    return TABS.find((t) => loc.pathname === t.to || loc.pathname.startsWith(`${t.to}/`)) ?? TABS[0];
+  }, [loc.pathname]);
 
   return (
-    <div className="shell">
+    <div className="shell" style={{ ['--tab-accent' as any]: activeTab.accent }}>
       <aside className="sideNav" aria-label="primary">
         <div className="brandBlock">
           <div className="brandRow">
@@ -31,7 +37,12 @@ export function NavShell() {
         </div>
         <nav className="navList">
           {TABS.map((t) => (
-            <NavLink key={t.to} to={t.to} className={({ isActive }) => `navItem ${isActive ? 'active' : ''}`}>
+            <NavLink
+              key={t.to}
+              to={t.to}
+              style={{ ['--item-accent' as any]: t.accent }}
+              className={({ isActive }) => `navItem ${isActive ? 'active' : ''}`}
+            >
               <span className="navIcon" aria-hidden>
                 {t.icon}
               </span>
@@ -52,7 +63,12 @@ export function NavShell() {
 
         <nav className="bottomNav" aria-label="primary">
           {TABS.map((t) => (
-            <NavLink key={t.to} to={t.to} className={({ isActive }) => `bottomItem ${isActive ? 'active' : ''}`}>
+            <NavLink
+              key={t.to}
+              to={t.to}
+              style={{ ['--item-accent' as any]: t.accent }}
+              className={({ isActive }) => `bottomItem ${isActive ? 'active' : ''}`}
+            >
               <span className="bottomIcon" aria-hidden>
                 {t.icon}
               </span>
