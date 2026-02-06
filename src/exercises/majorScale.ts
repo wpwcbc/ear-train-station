@@ -172,7 +172,8 @@ export function makeMajorScaleDegreeReviewQuestion(opts: {
 
   const k = MAJOR_KEYS.find((x) => x.key === opts.key) ?? MAJOR_KEYS[0];
   const tonicPc = PC[k.key];
-  const tonicMidi = 60 + tonicPc; // stable: C4..B4
+  // REVIEW is a drill surface — keep it aligned with tests/exams: wide register (>= G2).
+  const tonicMidi = pickTestTonicMidi(tonicPc, rng);
 
   const degree = Math.min(7, Math.max(2, opts.degree));
   const stepIndex = degree - 1;

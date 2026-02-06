@@ -98,7 +98,8 @@ export function makeScaleDegreeNameReviewQuestion(opts: {
   const correct = degreeNameFor(degree);
 
   const tonicPc = PC[opts.key];
-  const tonicMidi = 60 + tonicPc; // keep review in a stable register
+  // REVIEW is a drill surface — keep it aligned with tests/exams: wide register (>= G2).
+  const tonicMidi = pickTestTonicMidi(tonicPc, rng);
   const targetMidi = tonicMidi + MAJOR_OFFSETS[degree - 1];
 
   const wrongPool = DEGREE_NAMES.filter((x) => x !== correct);
