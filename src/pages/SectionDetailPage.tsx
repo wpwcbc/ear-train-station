@@ -2,11 +2,10 @@ import { Link, useParams } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { SECTIONS, type SectionId } from '../lib/sections';
 import { sectionNodes } from '../lib/sectionNodes';
-import { isSectionExamUnlocked, sectionStationList, sectionStations } from '../lib/sectionStations';
+import { isSectionExamUnlocked, sectionStations } from '../lib/sectionStations';
 import { SectionRoute } from '../components/SectionRoute';
-import { MapPage } from './MapPage';
 
-export function SectionDetailPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
+export function SectionDetailPage({ progress, setProgress: _setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
   const { sectionId } = useParams();
   const id = (sectionId ?? 'NOTES') as SectionId;
   const section = SECTIONS.find((s) => s.id === id);
@@ -20,7 +19,6 @@ export function SectionDetailPage({ progress, setProgress }: { progress: Progres
     );
   }
 
-  const list = sectionStationList(id);
   const plan = sectionStations(id);
   const nodes = sectionNodes(id);
   const examUnlocked = isSectionExamUnlocked(progress, id);
@@ -52,7 +50,9 @@ export function SectionDetailPage({ progress, setProgress }: { progress: Progres
 
       <SectionRoute nodes={nodes} progress={progress} />
 
-      <MapPage progress={progress} setProgress={setProgress} stations={list} />
+      <div className="sub" style={{ marginTop: 10 }}>
+        Tip: tap a station on the line to see details. Lessons stay in a stable register; tests/exams go wider (≥ G2).
+      </div>
     </div>
   );
 }

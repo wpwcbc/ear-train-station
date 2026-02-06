@@ -1,10 +1,30 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
-import { isStationUnlockedIn, type Station } from '../lib/stations';
+import { isStationUnlockedIn, nextUnlockedIncompleteIn, type Station } from '../lib/stations';
 import type { SectionNode } from '../lib/sectionNodes';
 
-function clamp(n: number, a: number, b: number): number {
-  return Math.max(a, Math.min(b, n));
+function shortTitle(full: string): string {
+  // Keep the “station-sign” header compact: take the prefix before the em dash.
+  const parts = full.split('—');
+  return (parts[0] ?? full).trim();
+}
+
+function useIsMobile(breakpointPx: number): boolean {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth <= breakpointPx;
+  });
+
+  useEffect(() => {
+    function onResize() {
+      setIsMobile(window.innerWidth <= breakpointPx);
+    }
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [breakpointPx]);
+
+  return isMobile;
 }
 
 export function SectionRoute({
@@ -14,12 +34,79 @@ export function SectionRoute({
   nodes: ReadonlyArray<SectionNode>;
   progress: Progress;
 }) {
-  const stations: Station[] = nodes.map((n) => n.station);
+  const stations: Station[] = useMemo(() => nodes.map((n) => n.station), [nodes]);
+  const isMobile = useIsMobile(640);
+
+  const defaultSelected = useMemo(() => {
+    const next = nextUnlockedIncompleteIn(progress, stations);
+    return next ?? nodes[0]?.stationId ?? null;
+  }, [nodes, progress, stations]);
+
+  const [selectedId, setSelectedId] = useState<string | null>(defaultSelected);
+
+  // If progress changes (e.g. after completing a station), gently move selection to the next target.
+  useEffect(() => {
+    setSelectedId((cur) => cur ?? defaultSelected);
+  }, [defaultSelected]);
+
+  const selectedNode = nodes.find((n) => n.stationId === selectedId) ?? null;
+  const selectedUnlocked = selectedNode ? isStationUnlockedIn(progress, selectedNode.stationId, stations) : false;
+  const selectedDone = selectedNode ? !!progress.stationDone[selectedNode.stationId] : false;
 
   const W = 900;
-  const H = 86;
+  const H = 90;
   const P = 34;
   const n = Math.max(nodes.length, 1);
+
+  function selectStation(id: string) {
+    setSelectedId(id);
+  }
+
+  function onDotKeyDown(e: React.KeyboardEvent, id: string) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      selectStation(id);
+    }
+  }
+
+  const card = selectedNode ? (
+    <div className={isMobile ? 'routeSheet' : 'routeCard'} role={isMobile ? 'dialog' : undefined} aria-modal={isMobile ? true : undefined}>
+      <div className="routeCardHeader">
+        <div className="routeCardKicker">{shortTitle(selectedNode.station.title)}</div>
+        <div className="routeCardTitle">{selectedNode.station.title}</div>
+      </div>
+
+      <div className="routeCardBody">
+        <div className="routeCardBlurb">{selectedNode.station.blurb}</div>
+
+        <div className="routeCardMeta">
+          <span className={selectedNode.kind === 'lesson' ? 'pill' : selectedNode.kind === 'exam' ? 'pill warn' : 'pill strong'}>
+            {selectedNode.kind === 'exam' ? 'Exam' : selectedNode.kind === 'test' ? 'Test' : 'Lesson'}
+          </span>
+          {selectedDone ? <span className="pill ok">Done</span> : null}
+          {!selectedUnlocked ? <span className="pill muted">Locked</span> : null}
+        </div>
+
+        <div className="routeCardActions">
+          {selectedUnlocked ? (
+            <Link className="btnPrimary" to={`/lesson/${selectedNode.stationId}`}>
+              {selectedDone ? 'Redo' : 'Start'}
+            </Link>
+          ) : (
+            <div className="sub" style={{ margin: 0 }}>
+              Finish the previous station(s) to unlock.
+            </div>
+          )}
+
+          {isMobile ? (
+            <button className="btn" onClick={() => setSelectedId(null)}>
+              Close
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div className="sectionRouteWrap">
@@ -30,10 +117,7 @@ export function SectionRoute({
         aria-label="Section route"
         preserveAspectRatio="xMidYMid meet"
       >
-        <path
-          d={`M ${P} ${H / 2} L ${W - P} ${H / 2}`}
-          className="routeLine"
-        />
+        <path d={`M ${P} ${H / 2} L ${W - P} ${H / 2}`} className="routeLine" />
 
         {nodes.map((node, idx) => {
           const t = n === 1 ? 0.5 : idx / (n - 1);
@@ -42,51 +126,43 @@ export function SectionRoute({
 
           const done = !!progress.stationDone[node.stationId];
           const unlocked = isStationUnlockedIn(progress, node.stationId, stations);
+          const selected = node.stationId === selectedId;
 
           const r = 16;
-          const dotClass = [
-            'routeDot',
-            done ? 'done' : '',
-            unlocked ? '' : 'locked',
-            node.kind === 'exam' ? 'exam' : '',
-          ]
+          const dotClass = ['routeDot', done ? 'done' : '', unlocked ? '' : 'locked', node.kind === 'exam' ? 'exam' : '', selected ? 'selected' : '']
             .filter(Boolean)
             .join(' ');
 
-          const label = node.kind === 'exam' ? 'Exam' : node.kind === 'test' ? 'Test' : 'Lesson';
-
-          // Click target: a small pill button below the dot.
-          const btnW = clamp(110, 90, 130);
-          const btnH = 28;
-          const btnX = x - btnW / 2;
-          const btnY = y + 22;
+          const label = shortTitle(node.station.title);
 
           return (
-            <g key={node.stationId}>
+            <g
+              key={node.stationId}
+              className={unlocked ? 'routeDotGroup' : 'routeDotGroup locked'}
+              role="button"
+              tabIndex={0}
+              aria-label={node.station.title}
+              onClick={() => selectStation(node.stationId)}
+              onKeyDown={(e) => onDotKeyDown(e, node.stationId)}
+            >
               <circle cx={x} cy={y} r={r} className={dotClass} />
-              {node.kind === 'exam' ? (
-                <circle cx={x} cy={y} r={r + 6} className="routeHalo" />
-              ) : null}
+              {node.kind === 'exam' ? <circle cx={x} cy={y} r={r + 6} className="routeHalo" /> : null}
+              {/* Larger invisible hit target */}
+              <circle cx={x} cy={y} r={r + 10} className="routeHit" />
 
-              <foreignObject x={btnX} y={btnY} width={btnW} height={btnH}>
-                <div className="routeBtnWrap">
-                  {unlocked ? (
-                    <Link className="routeBtn" to={`/lesson/${node.stationId}`}>
-                      {label}
-                    </Link>
-                  ) : (
-                    <span className="routeBtn routeBtnLocked">Locked</span>
-                  )}
-                </div>
-              </foreignObject>
-
-              <text x={x} y={y - 26} textAnchor="middle" className="routeTitle">
-                {idx + 1}
+              <text x={x} y={y - 28} textAnchor="middle" className="routeTitle">
+                {label}
               </text>
             </g>
           );
         })}
       </svg>
+
+      {isMobile && selectedNode ? (
+        <div className="routeSheetOverlay" onClick={() => setSelectedId(null)} aria-hidden="true" />
+      ) : null}
+
+      {card}
     </div>
   );
 }
