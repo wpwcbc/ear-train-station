@@ -10,7 +10,7 @@ import { promptSpeedFactors, promptSpeedLabel } from '../lib/promptTiming';
 import { piano } from '../audio/piano';
 import { playIntervalPrompt, playRootThenChordPrompt, playTonicTargetPrompt } from '../audio/prompts';
 import { makeNoteNameReviewQuestion } from '../exercises/noteName';
-import { makeIntervalLabelReviewQuestion, intervalLongName, type IntervalLabel } from '../exercises/interval';
+import { SEMITONE_TO_LABEL, makeIntervalLabelQuestion, makeIntervalLabelReviewQuestion, intervalLongName, type IntervalLabel } from '../exercises/interval';
 import { makeTriadQualityReviewQuestion, triadQualityLabel, type TriadQuality } from '../exercises/triad';
 import { degreeMeaning, makeScaleDegreeNameReviewQuestion, type ScaleDegreeName } from '../exercises/scaleDegree';
 import { makeMajorScaleDegreeReviewQuestion } from '../exercises/majorScale';
@@ -33,6 +33,15 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const [seed, setSeed] = useState(1);
   const [searchParams] = useSearchParams();
   const stationFilter = (searchParams.get('station') || '').trim();
+  const drill = (searchParams.get('drill') || '').trim();
+  const drillMode = drill === '1' || drill === 'true' || drill === 'yes';
+  const drillSemisRaw = (searchParams.get('semitones') || '').trim();
+  const drillSemitones = drillSemisRaw
+    ? drillSemisRaw
+        .split(',')
+        .map((s) => parseInt(s.trim(), 10))
+        .filter((n) => Number.isFinite(n) && n >= 0 && n <= 24)
+    : [];
   const [settings, setSettings] = useState(() => loadSettings());
   const chordMode = settings.chordPlayback;
   const speed = settings.promptSpeed;
@@ -69,7 +78,55 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       .filter((m) => (m.dueAt ?? 0) <= now)
       .sort((a, b) => (a.dueAt ?? a.addedAt) - (b.dueAt ?? b.addedAt) || b.addedAt - a.addedAt);
   }, [filtered, now]);
-  const active = due[0] as Mistake | undefined;
+
+  const intervalStats = useMemo(() => {
+    const map = new Map<number, { semitones: number; count: number; weight: number }>();
+    for (const m of filtered) {
+      if (m.kind !== 'intervalLabel') continue;
+      const w = 1 + (m.wrongCount ?? 0) * 2;
+      const cur = map.get(m.semitones) ?? { semitones: m.semitones, count: 0, weight: 0 };
+      cur.count += 1;
+      cur.weight += w;
+      map.set(m.semitones, cur);
+    }
+    return [...map.values()].sort((a, b) => b.weight - a.weight || b.count - a.count || a.semitones - b.semitones);
+  }, [filtered]);
+
+  const drillFocusSemitones = useMemo(() => {
+    if (!drillMode) return [] as number[];
+    if (drillSemitones.length > 0) return drillSemitones;
+    return intervalStats.slice(0, 3).map((x) => x.semitones);
+  }, [drillMode, drillSemitones, intervalStats]);
+
+  const DRILL_TOTAL = 10;
+  const [drillIndex, setDrillIndex] = useState(0);
+  const [drillCorrect, setDrillCorrect] = useState(0);
+  const [drillWrong, setDrillWrong] = useState(0);
+
+  useEffect(() => {
+    if (!drillMode) return;
+    setResult('idle');
+    setDrillIndex(0);
+    setDrillCorrect(0);
+    setDrillWrong(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drillMode, drillSemisRaw, stationFilter]);
+
+  const drillIlQ = useMemo(() => {
+    if (!drillMode) return null;
+    if (drillFocusSemitones.length === 0) return null;
+    if (drillIndex >= DRILL_TOTAL) return null;
+    // Tests/exams: wide register (>= G2). Keep drills aligned with that.
+    return makeIntervalLabelQuestion({
+      seed: seed * 10_000 + 7000 + drillIndex,
+      rootMinMidi: 43, // G2
+      rootMaxMidi: 72, // C5-ish
+      allowedSemitones: drillFocusSemitones,
+      choiceCount: 6,
+    });
+  }, [drillMode, drillFocusSemitones, drillIndex, seed]);
+
+  const active = (drillMode ? undefined : (due[0] as Mistake | undefined)) as Mistake | undefined;
 
   const noteQ = useMemo(() => {
     if (!active || active.kind !== 'noteName') return null;
@@ -130,6 +187,17 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
   async function playPrompt() {
     setResult('idle');
+
+    if (drillMode) {
+      if (!drillIlQ) return;
+      await playIntervalPrompt(drillIlQ.rootMidi, drillIlQ.targetMidi, {
+        gapMs: gap(320),
+        rootDurationSec: dur(0.7),
+        targetDurationSec: dur(0.95),
+      });
+      return;
+    }
+
     if (!active) return;
 
     if (active.kind === 'noteName') {
@@ -212,6 +280,26 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     refresh();
   }
 
+  function applyDrillOutcome(outcome: 'correct' | 'wrong') {
+    if (!drillMode) return;
+    if (!drillIlQ) return;
+
+    if (outcome === 'correct') {
+      setDrillCorrect((n) => n + 1);
+      setResult('correct');
+    } else {
+      setDrillWrong((n) => n + 1);
+      setResult('wrong');
+    }
+
+    // Advance immediately; drills are fast + continuous.
+    setTimeout(() => {
+      setResult('idle');
+      setSeed((x) => x + 1);
+      setDrillIndex((i) => i + 1);
+    }, 80);
+  }
+
   async function chooseNote(choice: string) {
     if (!noteQ || !active || active.kind !== 'noteName') return;
     const ok = noteQ.acceptedAnswers.includes(choice);
@@ -219,6 +307,13 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   }
 
   async function chooseInterval(choice: IntervalLabel) {
+    if (drillMode) {
+      if (!drillIlQ) return;
+      const ok = choice === drillIlQ.correct;
+      applyDrillOutcome(ok ? 'correct' : 'wrong');
+      return;
+    }
+
     if (!ilQ || !active || active.kind !== 'intervalLabel') return;
     const ok = choice === ilQ.correct;
     applyOutcome(ok ? 'correct' : 'wrong');
@@ -276,11 +371,26 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       void playPrompt();
     },
     onSecondary: () => {
+      if (drillMode) {
+        if (!drillIlQ) return;
+        setResult('idle');
+        setSeed((x) => x + 1);
+        setDrillIndex((i) => i + 1);
+        return;
+      }
+
       if (!active) return;
       snoozeMistake(active.id, 5 * 60_000);
       refresh();
     },
     onChoiceIndex: (idx) => {
+      if (drillMode) {
+        if (!drillIlQ) return;
+        const c = drillIlQ.choices[idx];
+        if (c) void chooseInterval(c);
+        return;
+      }
+
       if (!active) return;
       if (active.kind === 'noteName' && noteQ) {
         const c = noteQ.choices[idx];
@@ -318,8 +428,12 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     <div className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
         <div>
-          <h1 className="title">Review</h1>
-          <p className="sub">Spaced review of missed items. Clear an item with 2 correct reviews in a row.</p>
+          <h1 className="title">{drillMode ? 'Review Drill' : 'Review'}</h1>
+          <p className="sub">
+            {drillMode
+              ? 'Targeted interval drills from your mistakes (wide register).'
+              : 'Spaced review of missed items. Clear an item with 2 correct reviews in a row.'}
+          </p>
           {stationFilter ? (
             <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
               Filter: <b>{stationFilter}</b> · <Link to="/review">Show all</Link>
@@ -327,16 +441,29 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           ) : null}
         </div>
         <div style={{ textAlign: 'right', fontSize: 12, opacity: 0.85 }}>
-          <div>
-            Due: {dueCount} / {totalCount}
-          </div>
-          <div>Cleared: {doneCount}</div>
+          {drillMode ? (
+            <>
+              <div>
+                Progress: {Math.min(drillIndex, DRILL_TOTAL)} / {DRILL_TOTAL}
+              </div>
+              <div>
+                Score: {drillCorrect} ✓ · {drillWrong} ✗
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                Due: {dueCount} / {totalCount}
+              </div>
+              <div>Cleared: {doneCount}</div>
+            </>
+          )}
         </div>
       </div>
 
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button className="primary" disabled={!active} onClick={playPrompt}>
+          <button className="primary" disabled={drillMode ? !drillIlQ : !active} onClick={playPrompt}>
             Play
           </button>
           {active?.kind === 'triadQuality' || active?.kind === 'functionFamily' ? (
@@ -374,19 +501,39 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               ))}
             </select>
           </label>
-          <button className="ghost" onClick={refresh}>
+          <button
+            className="ghost"
+            onClick={() => {
+              if (drillMode) {
+                setResult('idle');
+                setSeed((x) => x + 1);
+                setDrillIndex(0);
+                setDrillCorrect(0);
+                setDrillWrong(0);
+                return;
+              }
+              refresh();
+            }}
+          >
             Refresh
           </button>
           <button
             className="ghost"
             onClick={() => {
+              if (drillMode) {
+                if (!drillIlQ) return;
+                setResult('idle');
+                setSeed((x) => x + 1);
+                setDrillIndex((i) => i + 1);
+                return;
+              }
               if (!active) return;
               // Push it back a bit so the next due item can surface.
               snoozeMistake(active.id, 5 * 60_000);
               refresh();
             }}
-            disabled={!active}
-            title="Skip this item for now (snooze 5 minutes)"
+            disabled={drillMode ? !drillIlQ : !active}
+            title={drillMode ? 'Skip (next drill question)' : 'Skip this item for now (snooze 5 minutes)'}
           >
             Skip
           </button>
@@ -400,7 +547,60 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
         Hotkeys: Space/Enter = Play • 1–9 = Answer • Backspace = Skip
       </div>
 
-      {!active ? (
+      {!drillMode && intervalStats.length > 0 ? (
+        <div style={{ marginTop: 10, fontSize: 12, opacity: 0.85, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ opacity: 0.9 }}>Quick drills:</span>
+          <Link className="pill" to={`/review?drill=1&semitones=${intervalStats.slice(0, 3).map((x) => x.semitones).join(',')}${stationFilter ? `&station=${stationFilter}` : ''}`}>
+            Top misses ({intervalStats
+              .slice(0, 3)
+              .map((x) => SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`)
+              .join(', ')})
+          </Link>
+          {intervalStats.slice(0, 3).map((x) => (
+            <Link
+              key={x.semitones}
+              className="pill"
+              to={`/review?drill=1&semitones=${x.semitones}${stationFilter ? `&station=${stationFilter}` : ''}`}
+            >
+              {SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`} ×{x.count}
+            </Link>
+          ))}
+        </div>
+      ) : null}
+
+      {drillMode ? (
+        drillIlQ ? (
+          <>
+            <div className={`result r_${result}`}>
+              {result === 'idle' && drillIlQ.prompt}
+              {result === 'correct' && `Nice — ${drillIlQ.correct} (${intervalLongName(drillIlQ.correct)})`}
+              {result === 'wrong' && `Not quite — it was ${drillIlQ.correct} (${intervalLongName(drillIlQ.correct)}).`}
+            </div>
+
+            <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+              {drillIlQ.choices.map((c) => (
+                <button key={c} className="secondary" onClick={() => chooseInterval(c)}>
+                  {c}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
+              Focus: {drillFocusSemitones.map((s) => SEMITONE_TO_LABEL[s] ?? `${s}st`).join(', ')}
+            </div>
+          </>
+        ) : drillFocusSemitones.length === 0 ? (
+          <div className="result r_idle">No interval mistakes yet. Do a test/exam, miss something, then come back for a drill.</div>
+        ) : (
+          <div className="result r_correct">
+            Drill complete — {drillCorrect}/{DRILL_TOTAL} correct.
+            <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <Link className="linkBtn" to={`/review?drill=1&semitones=${drillFocusSemitones.join(',')}${stationFilter ? `&station=${stationFilter}` : ''}`}>Restart drill</Link>
+              <Link className="linkBtn" to={stationFilter ? `/review?station=${stationFilter}` : '/review'}>Back to review</Link>
+            </div>
+          </div>
+        )
+      ) : !active ? (
         <div className="result r_idle">
           {totalCount === 0
             ? 'No mistakes queued. Go do a station and come back if you miss something.'
