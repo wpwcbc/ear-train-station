@@ -728,6 +728,104 @@
   font-weight: 650;
 }
 
+/* Focus Mode shell (lesson/test/exam/review) */
+.focusShell {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.focusTop {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 3px solid var(--ink);
+  background: rgba(250, 250, 250, 0.92);
+  backdrop-filter: blur(6px);
+}
+
+.focusExit {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 14px;
+  border: 3px solid var(--ink);
+  background: var(--card);
+  font-weight: 950;
+}
+
+.focusProgress {
+  display: grid;
+  gap: 6px;
+  align-items: center;
+}
+
+.focusProgressTrack {
+  height: 10px;
+  border-radius: 999px;
+  border: 3px solid var(--ink);
+  background: rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.focusProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--route-green), var(--route-blue));
+}
+
+.focusStatus {
+  font-size: 12px;
+  font-weight: 850;
+  opacity: 0.75;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+}
+
+.focusRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.focusHearts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 3px solid var(--ink);
+  background: var(--card);
+}
+
+.focusHeartsText {
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.focusConfig {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 14px;
+  border: 3px solid var(--ink);
+  background: var(--card);
+  font-weight: 950;
+}
+
+.focusContent {
+  padding: 18px 12px 22px;
+}
+
+@media (min-width: 901px) {
+  .focusContent {
+    padding: 24px 16px 30px;
+  }
+}
+
 /* Existing legacy components */
 .card {
   width: 100%;
