@@ -25,7 +25,7 @@ function App() {
       <Route element={<NavShell />}>
         <Route index element={<Navigate to="/learn" replace />} />
 
-        <Route path="/learn" element={<LearnSectionsPage />} />
+        <Route path="/learn" element={<LearnSectionsPage progress={progress} />} />
         <Route path="/learn/section/:sectionId" element={<SectionDetailPage progress={progress} setProgress={setProgress} />} />
         <Route path="/learn/section/:sectionId/exam" element={<SectionExamPage progress={progress} />} />
 

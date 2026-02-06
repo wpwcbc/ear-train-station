@@ -329,6 +329,38 @@
   }
 }
 
+.learnMapWrap {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.learnMapSvg {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.learnMapCard {
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  padding: 14px;
+  border-left-width: 12px;
+}
+
+.learnMapCardTitle {
+  font-weight: 900;
+  font-size: 16px;
+}
+
+.learnMapCardBlurb {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .cardLink { text-decoration: none; }
 
 .sectionCard {

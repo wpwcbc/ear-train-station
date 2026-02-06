@@ -1,26 +1,13 @@
-import { Link } from 'react-router-dom';
-import { SECTIONS } from '../lib/sections';
+import type { Progress } from '../lib/progress';
+import { LearnMap } from '../components/LearnMap';
 
-export function LearnSectionsPage() {
+export function LearnSectionsPage({ progress }: { progress: Progress }) {
   return (
     <div className="page">
       <h1 className="h1">Learn</h1>
-      <p className="sub">Pick a section. Each section ends with an exam you can jump to.</p>
+      <p className="sub">Follow the line: finish section exams to unlock the next route.</p>
 
-      <div className="gridCards">
-        {SECTIONS.map((s) => (
-          <Link key={s.id} to={`/learn/section/${s.id}`} className="cardLink">
-            <div className="sectionCard">
-              <div className="sectionBar" style={{ background: s.color }} />
-              <div className="sectionBody">
-                <div className="sectionTitle">{s.title}</div>
-                <div className="sectionBlurb">{s.blurb}</div>
-                <div className="sectionCta">Open →</div>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
+      <LearnMap progress={progress} />
     </div>
   );
 }
