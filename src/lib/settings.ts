@@ -74,6 +74,14 @@ export function loadSettings(): Settings {
   }
 }
 
+export const SETTINGS_EVENT = 'ets_settings_changed';
+
 export function saveSettings(s: Settings) {
   localStorage.setItem(KEY, JSON.stringify(s));
+  // storage events don't fire in the same tab; emit a local event for reactive UIs.
+  try {
+    window.dispatchEvent(new Event(SETTINGS_EVENT));
+  } catch {
+    // no-op (SSR/tests)
+  }
 }

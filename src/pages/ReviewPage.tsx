@@ -5,8 +5,8 @@ import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
 import { applyReviewResult, loadMistakes, snoozeMistake, updateMistake, type Mistake } from '../lib/mistakes';
 import { bumpReviewAttempt, bumpReviewClear } from '../lib/quests';
-import { loadSettings, saveSettings } from '../lib/settings';
-import { promptSpeedFactors, promptSpeedLabel } from '../lib/promptTiming';
+import { SETTINGS_EVENT, loadSettings } from '../lib/settings';
+import { promptSpeedFactors } from '../lib/promptTiming';
 import { piano } from '../audio/piano';
 import { playIntervalPrompt, playRootThenChordPrompt, playTonicTargetPrompt } from '../audio/prompts';
 import { makeNoteNameReviewQuestion } from '../exercises/noteName';
@@ -58,13 +58,16 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     function bump() {
       setNow(Date.now());
       setMistakes(loadMistakes());
+      setSettings(loadSettings());
     }
 
     window.addEventListener('focus', bump);
     window.addEventListener('storage', bump);
+    window.addEventListener(SETTINGS_EVENT, bump);
     return () => {
       window.removeEventListener('focus', bump);
       window.removeEventListener('storage', bump);
+      window.removeEventListener(SETTINGS_EVENT, bump);
     };
   }, []);
 
@@ -432,7 +435,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           <p className="sub">
             {drillMode
               ? 'Targeted interval drills from your mistakes (wide register).'
-              : 'Spaced review of missed items. Clear an item with 2 correct reviews in a row.'}
+              : 'Spaced review of missed items. Clear an item by getting it right twice in a row (streak 2/2).'}
           </p>
           {stationFilter ? (
             <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
@@ -466,41 +469,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           <button className="primary" disabled={drillMode ? !drillIlQ : !active} onClick={playPrompt}>
             Play
           </button>
-          {active?.kind === 'triadQuality' || active?.kind === 'functionFamily' ? (
-            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
-              <span>Playback</span>
-              <select
-                value={chordMode}
-                onChange={(e) => {
-                  const v = e.target.value === 'block' ? 'block' : 'arp';
-                  const next = { ...settings, chordPlayback: v } as typeof settings;
-                  setSettings(next);
-                  saveSettings(next);
-                }}
-              >
-                <option value="arp">Arp</option>
-                <option value="block">Block</option>
-              </select>
-            </label>
-          ) : null}
-          <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12, opacity: 0.85 }}>
-            <span>Speed</span>
-            <select
-              value={speed}
-              onChange={(e) => {
-                const v = e.target.value === 'slow' ? 'slow' : e.target.value === 'fast' ? 'fast' : 'normal';
-                const next = { ...settings, promptSpeed: v } as typeof settings;
-                setSettings(next);
-                saveSettings(next);
-              }}
-            >
-              {(['slow', 'normal', 'fast'] as const).map((s) => (
-                <option key={s} value={s}>
-                  {promptSpeedLabel(s)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div style={{ fontSize: 12, opacity: 0.78, display: 'inline-flex', alignItems: 'center' }}>
+            Settings live behind ⚙️
+          </div>
           <button
             className="ghost"
             onClick={() => {
