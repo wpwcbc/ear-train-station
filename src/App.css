@@ -342,47 +342,69 @@
 }
 
 .learnMapCard {
+  /* wrapper only (actual card look is StationSignCard) */
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.stationSign {
+  --sign-accent: var(--route-blue);
   border: 3px solid var(--ink);
   border-radius: 18px;
   background:
     linear-gradient(180deg, rgba(17, 17, 17, 0.03), rgba(17, 17, 17, 0.0)),
     var(--card);
   box-shadow: var(--shadow);
-  padding: 14px;
-  border-left-width: 12px;
+  overflow: hidden;
 }
 
-.learnMapCardRail {
+.stationSignTop {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 12px;
+  padding: 12px 14px 10px;
 }
 
-.learnMapCardDot {
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  border: 2px solid var(--ink);
-  box-shadow: 0 1px 0 rgba(17, 17, 17, 0.15);
-}
-
-.learnMapCardRailLine {
-  height: 4px;
+.stationSignLine {
+  height: 6px;
   flex: 1;
   border-radius: 999px;
-  background: rgba(17, 17, 17, 0.12);
+  background:
+    linear-gradient(90deg, rgba(17, 17, 17, 0.08), rgba(17, 17, 17, 0.06)),
+    var(--sign-accent);
+  box-shadow: 0 2px 0 rgba(17, 17, 17, 0.10);
 }
 
-.learnMapCardTitle {
-  font-weight: 900;
-  font-size: 16px;
+.stationSignStatus {
+  font-size: 12px;
+  font-weight: 800;
+  opacity: 0.75;
+  white-space: nowrap;
 }
 
-.learnMapCardBlurb {
-  margin-top: 4px;
+.stationSignMain {
+  padding: 2px 14px 12px;
+}
+
+.stationSignTitle {
+  font-weight: 950;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.stationSignSubtitle {
+  margin-top: 5px;
   color: var(--muted);
   font-size: 13px;
+  line-height: 1.35;
+}
+
+.stationSignActions {
+  padding: 0 14px 14px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .cardLink { text-decoration: none; }

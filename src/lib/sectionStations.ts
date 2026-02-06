@@ -36,6 +36,15 @@ export function sectionStations(sectionId: SectionId): SectionStations {
   return SECTION_STATIONS[sectionId];
 }
 
+export function nextStationInSection(progress: Progress, sectionId: SectionId): StationId {
+  const { stationIds, examId } = sectionStations(sectionId);
+  for (const sid of stationIds) {
+    if (!progress.stationDone[sid]) return sid;
+  }
+  // All done → keep the CTA stable (send them to the “exam”/capstone station).
+  return examId;
+}
+
 export function sectionStationList(sectionId: SectionId): Station[] {
   const ids = new Set(sectionStations(sectionId).stationIds);
   return STATIONS.filter((s) => ids.has(s.id));

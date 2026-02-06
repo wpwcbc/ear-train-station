@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { SECTIONS, type SectionId } from '../lib/sections';
 import { isSectionComplete, isSectionUnlocked } from '../lib/sectionProgress';
+import { nextStationInSection } from '../lib/sectionStations';
+import { StationSignCard } from './StationSignCard';
 
 export function LearnMap({ progress }: { progress: Progress }) {
   const [selected, setSelected] = useState<SectionId>(SECTIONS[0].id);
@@ -85,34 +87,38 @@ export function LearnMap({ progress }: { progress: Progress }) {
         })}
       </svg>
 
-      <div className="learnMapCard" style={{ borderLeftColor: selectedSection.color }}>
-        <div className="learnMapCardRail" aria-hidden="true">
-          <span className="learnMapCardDot" style={{ background: selectedSection.color }} />
-          <span className="learnMapCardRailLine" />
-        </div>
+      <div className="learnMapCard">
+        <StationSignCard
+          accent={selectedSection.color}
+          title={selectedSection.title}
+          subtitle={selectedSection.blurb}
+          statusRight={
+            isSectionComplete(progress, selectedSection.id)
+              ? 'Completed'
+              : isSectionUnlocked(progress, selectedSection.id)
+                ? 'Unlocked'
+                : 'Locked'
+          }
+          actions={[
+            {
+              label: isSectionComplete(progress, selectedSection.id) ? 'Review' : 'Start',
+              variant: 'primary',
+              to: isSectionUnlocked(progress, selectedSection.id)
+                ? `/lesson/${nextStationInSection(progress, selectedSection.id)}`
+                : undefined,
+              disabled: !isSectionUnlocked(progress, selectedSection.id),
+            },
+            {
+              label: 'Open section',
+              to: isSectionUnlocked(progress, selectedSection.id) ? `/learn/section/${selectedSection.id}` : undefined,
+              disabled: !isSectionUnlocked(progress, selectedSection.id),
+            },
+          ]}
+        />
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
-          <div>
-            <div className="learnMapCardTitle">{selectedSection.title}</div>
-            <div className="learnMapCardBlurb">{selectedSection.blurb}</div>
-          </div>
-          <div style={{ fontSize: 12, opacity: 0.75, textAlign: 'right' }}>
-            {isSectionComplete(progress, selectedSection.id) ? 'Completed' : isSectionUnlocked(progress, selectedSection.id) ? 'Unlocked' : 'Locked'}
-          </div>
-        </div>
-
-        <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          {isSectionUnlocked(progress, selectedSection.id) ? (
-            <Link className="btnPrimary" to={`/learn/section/${selectedSection.id}`}>
-              Open
-            </Link>
-          ) : (
-            <span className="btnPrimary" style={{ opacity: 0.55, cursor: 'not-allowed' }}>
-              Locked
-            </span>
-          )}
+        <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <Link className="btn" to="/review">
-            Review
+            Global review
           </Link>
         </div>
       </div>
