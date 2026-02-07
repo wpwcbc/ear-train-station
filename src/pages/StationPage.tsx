@@ -1058,7 +1058,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   async function playPromptS4() {
     setResult('idle');
-    // root then arpeggiated chord
+    // root then chord (lesson default: arp)
     setHighlighted({ [triadQ.rootMidi]: 'active' });
     await piano.playMidi(triadQ.rootMidi, { durationSec: dur(0.65), velocity: 0.9 });
     await new Promise((r) => setTimeout(r, gap(250)));
@@ -1068,6 +1068,21 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     >;
     setHighlighted(active);
     await piano.playChord(triadQ.chordMidis, { mode: chordMode, durationSec: dur(1.1), velocity: 0.92, gapMs: gap(130) });
+    setHighlighted({});
+  }
+
+  async function playPromptS4BlockPreview() {
+    // Explicit “block chord” intro: tests/exams use block chords by default.
+    setResult('idle');
+    setHighlighted({ [triadQ.rootMidi]: 'active' });
+    await piano.playMidi(triadQ.rootMidi, { durationSec: dur(0.65), velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, gap(250)));
+    const active: Record<number, 'active'> = Object.fromEntries(triadQ.chordMidis.map((m) => [m, 'active'])) as Record<
+      number,
+      'active'
+    >;
+    setHighlighted(active);
+    await piano.playChord(triadQ.chordMidis, { mode: 'block', durationSec: dur(1.1), velocity: 0.92 });
     setHighlighted({});
   }
 
@@ -3514,7 +3529,12 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             <button className="secondary" onClick={() => piano.playMidi(triadQ.rootMidi, { durationSec: dur(0.8), velocity: 0.9 })}>
               Root
             </button>
-            
+            {chordMode === 'arp' ? (
+              <button className="secondary" onClick={playPromptS4BlockPreview} title="Preview how tests/exams will sound">
+                Block
+              </button>
+            ) : null}
+
             <button className="ghost" onClick={next}>Next</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Progress: {Math.min(s4Correct, S4_GOAL)}/{S4_GOAL}

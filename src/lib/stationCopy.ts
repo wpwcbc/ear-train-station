@@ -82,6 +82,8 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
   S4_TRIADS: {
     primer: [
       'Triads = root + 3rd + 5th.',
+      'Lessons start with broken chords (arpeggio) so you can hear each tone clearly.',
+      'Tap “Block” to preview how tests/exams will sound (simultaneous chord).',
       'Quality is determined by the intervals from the root:',
       'Major = 0-4-7 · Minor = 0-3-7 · Diminished = 0-3-6.',
     ],
