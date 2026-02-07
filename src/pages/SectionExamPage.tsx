@@ -67,7 +67,9 @@ export function SectionExamPage({ progress }: { progress: Progress }) {
               Start exam
             </span>
           )}
-          <Link className="linkBtn" to={`/review?station=${plan.examId}`}>Review mistakes for this exam</Link>
+          <Link className="linkBtn" to={`/review?station=${plan.examId}`} state={{ exitTo: `/learn/section/${id}/exam` }}>
+            Review mistakes for this exam
+          </Link>
         </div>
       </div>
 

@@ -40,18 +40,32 @@ export function FocusShell(props: { children?: ReactNode }) {
   const progressPct = topBar.progress == null ? null : Math.round(clamp01(topBar.progress) * 100);
 
   function onExit() {
+    // Special case: in Review drill mode, "X" should return to the review list
+    // (instead of exiting the entire Focus flow).
+    if (loc.pathname === '/review') {
+      const p = new URLSearchParams(loc.search);
+      if (p.get('drill') === '1') {
+        const station = p.get('station');
+        navigate(station ? `/review?station=${station}` : '/review', {
+          replace: true,
+          state: { from: `${loc.pathname}${loc.search}` },
+        });
+        return;
+      }
+    }
+
     const s = loc.state as unknown as { exitTo?: string } | null;
     const exitTo = s?.exitTo;
 
     // If caller provided an explicit exit target (e.g. back to section), honor it.
-    if (exitTo && typeof exitTo === 'string') {
-      navigate(exitTo, { replace: true, state: { from: loc.pathname } });
+    if (exitTo && typeof exitTo === 'string' && exitTo !== loc.pathname) {
+      navigate(exitTo, { replace: true, state: { from: `${loc.pathname}${loc.search}` } });
       return;
     }
 
     // Prefer going back (like Duolingo), but fall back to Learn if direct-open.
     if (window.history.length > 1) navigate(-1);
-    else navigate('/learn', { replace: true, state: { from: loc.pathname } });
+    else navigate('/learn', { replace: true, state: { from: `${loc.pathname}${loc.search}` } });
   }
 
   return (

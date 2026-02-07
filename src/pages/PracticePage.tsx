@@ -97,7 +97,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
           Due: <b>{due}</b> / {total}
         </div>
         <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
-          <Link className="linkBtn" to="/review">
+          <Link className="linkBtn" to="/review" state={{ exitTo: '/practice' }}>
             Review now
           </Link>
           {due === 0 && nextDue ? (
@@ -110,7 +110,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
             <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>Most due by station</div>
             <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
               {stationDueCounts.slice(0, 6).map((s) => (
-                <Link key={s.id} className="pill" to={`/review?station=${s.id}`}>
+                <Link key={s.id} className="pill" to={`/review?station=${s.id}`} state={{ exitTo: '/practice' }}>
                   {s.id} · {s.due}
                 </Link>
               ))}
@@ -130,7 +130,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
           <Link className="linkBtn" to="/learn">
             Lessons
           </Link>
-          <Link className="linkBtn" to="/review">
+          <Link className="linkBtn" to="/review" state={{ exitTo: '/practice' }}>
             Review
           </Link>
         </div>

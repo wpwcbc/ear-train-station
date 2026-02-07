@@ -117,7 +117,7 @@ export function LearnMap({ progress }: { progress: Progress }) {
         />
 
         <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <Link className="btn" to="/review">
+          <Link className="btn" to="/review" state={{ exitTo: '/learn' }}>
             Global review
           </Link>
         </div>
