@@ -43,7 +43,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
         .filter((n) => Number.isFinite(n) && n >= 0 && n <= 24)
     : [];
   const [settings, setSettings] = useState(() => loadSettings());
-  const chordMode = settings.chordPlayback;
+  const chordMode: 'block' | 'arp' = 'block';
   const speed = settings.promptSpeed;
   const timing = useMemo(() => promptSpeedFactors(speed), [speed]);
   const dur = (sec: number) => sec * timing.dur;

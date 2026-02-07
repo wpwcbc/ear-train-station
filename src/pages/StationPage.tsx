@@ -109,7 +109,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   const [settings, setSettings] = useState(() => loadSettings());
   // Settings UI lives in <FocusShell> (⚙️ in the top bar).
-  const chordMode = settings.chordPlayback;
+  const chordMode: 'block' | 'arp' = 'arp';
   const speed = settings.promptSpeed;
   const timing = useMemo(() => promptSpeedFactors(speed), [speed]);
   const dur = (sec: number) => sec * timing.dur;

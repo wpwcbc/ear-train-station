@@ -76,18 +76,6 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
           </label>
 
           <label className="configRow">
-            <span className="configLabel">Chord playback</span>
-            <select
-              className="configSelect"
-              value={s.chordPlayback}
-              onChange={(e) => commit({ ...s, chordPlayback: e.target.value === 'block' ? 'block' : 'arp' })}
-            >
-              <option value="arp">Arpeggiate</option>
-              <option value="block">Block chord</option>
-            </select>
-          </label>
-
-          <label className="configRow">
             <span className="configLabel">Prompt speed</span>
             <select
               className="configSelect"

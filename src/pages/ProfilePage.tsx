@@ -46,6 +46,8 @@ export function ProfilePage({ progress, setProgress }: { progress: Progress; set
       localStorage.removeItem('ets_progress_v2');
       localStorage.removeItem('ets_settings_v1');
       localStorage.removeItem('ets_settings_v2');
+      localStorage.removeItem('ets_settings_v3');
+      localStorage.removeItem('ets_settings_v4');
     } catch {
       // ignore
     }
@@ -69,7 +71,9 @@ export function ProfilePage({ progress, setProgress }: { progress: Progress; set
             </div>
             <div style={{ border: '3px solid var(--ink)', borderRadius: 16, padding: 12, background: 'var(--card)' }}>
               <div style={{ fontSize: 12, color: 'var(--muted)' }}>Streak</div>
-              <div style={{ fontSize: 22, fontWeight: 850 }}>{progress.streakDays} day{progress.streakDays === 1 ? '' : 's'}</div>
+              <div style={{ fontSize: 22, fontWeight: 850 }}>
+                {progress.streakDays} day{progress.streakDays === 1 ? '' : 's'}
+              </div>
             </div>
             <div style={{ border: '3px solid var(--ink)', borderRadius: 16, padding: 12, background: 'var(--card)' }}>
               <div style={{ fontSize: 12, color: 'var(--muted)' }}>Today</div>
@@ -103,28 +107,6 @@ export function ProfilePage({ progress, setProgress }: { progress: Progress; set
           </div>
 
           <div style={{ display: 'grid', gap: 10 }}>
-            <div>
-              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>Chord playback</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {(
-                  [
-                    { k: 'arp', label: 'Arpeggio' },
-                    { k: 'block', label: 'Block chord' },
-                  ] as const
-                ).map((x) => (
-                  <button
-                    key={x.k}
-                    className={settings.chordPlayback === x.k ? 'btnPrimary' : 'btn'}
-                    onClick={() => setSettings({ ...settings, chordPlayback: x.k })}
-                    type="button"
-                    aria-pressed={settings.chordPlayback === x.k}
-                  >
-                    {x.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div>
               <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>Prompt speed</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
