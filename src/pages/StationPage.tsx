@@ -1088,7 +1088,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   async function playPromptS5() {
     setResult('idle');
-    // root then arpeggiated diatonic triad
+    // root then chord (lesson default: arp)
     const rootMidi = diatonicQ.chordMidis[0];
     setHighlighted({ [rootMidi]: 'active' });
     await piano.playMidi(rootMidi, { durationSec: dur(0.65), velocity: 0.9 });
@@ -1102,9 +1102,25 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({});
   }
 
+  async function playPromptS5BlockPreview() {
+    // Preview how tests/exams will sound (block chord).
+    setResult('idle');
+    const rootMidi = diatonicQ.chordMidis[0];
+    setHighlighted({ [rootMidi]: 'active' });
+    await piano.playMidi(rootMidi, { durationSec: dur(0.65), velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, gap(240)));
+    const active: Record<number, 'active'> = Object.fromEntries(diatonicQ.chordMidis.map((m) => [m, 'active'])) as Record<
+      number,
+      'active'
+    >;
+    setHighlighted(active);
+    await piano.playChord(diatonicQ.chordMidis, { mode: 'block', durationSec: dur(1.1), velocity: 0.92 });
+    setHighlighted({});
+  }
+
   async function playPromptS6() {
     setResult('idle');
-    // root then arpeggiated triad
+    // root then chord (lesson default: arp)
     const rootMidi = funcQ.chordMidis[0];
     setHighlighted({ [rootMidi]: 'active' });
     await piano.playMidi(rootMidi, { durationSec: dur(0.65), velocity: 0.9 });
@@ -1115,6 +1131,22 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     >;
     setHighlighted(active);
     await piano.playChord(funcQ.chordMidis, { mode: chordMode, durationSec: dur(1.1), velocity: 0.92, gapMs: gap(130) });
+    setHighlighted({});
+  }
+
+  async function playPromptS6BlockPreview() {
+    // Preview how tests/exams will sound (block chord).
+    setResult('idle');
+    const rootMidi = funcQ.chordMidis[0];
+    setHighlighted({ [rootMidi]: 'active' });
+    await piano.playMidi(rootMidi, { durationSec: dur(0.65), velocity: 0.9 });
+    await new Promise((r) => setTimeout(r, gap(240)));
+    const active: Record<number, 'active'> = Object.fromEntries(funcQ.chordMidis.map((m) => [m, 'active'])) as Record<
+      number,
+      'active'
+    >;
+    setHighlighted(active);
+    await piano.playChord(funcQ.chordMidis, { mode: 'block', durationSec: dur(1.1), velocity: 0.92 });
     setHighlighted({});
   }
 
@@ -3593,7 +3625,12 @@ reviewHref={(t5Index >= T5_TOTAL || t5Wrong >= HEARTS) && stationMistakeCount > 
         <>
           <div className="row">
             <button className="primary" onClick={playPromptS5}>Hear triad</button>
-            
+            {chordMode === 'arp' ? (
+              <button className="secondary" onClick={playPromptS5BlockPreview} title="Preview how tests/exams will sound">
+                Block
+              </button>
+            ) : null}
+
             <button className="ghost" onClick={next}>Next</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Progress: {Math.min(s5Correct, S5_GOAL)}/{S5_GOAL}
@@ -3660,7 +3697,12 @@ reviewHref={(t6Index >= T6_TOTAL || t6Wrong >= HEARTS) && stationMistakeCount > 
         <>
           <div className="row">
             <button className="primary" onClick={playPromptS6}>Hear chord</button>
-            
+            {chordMode === 'arp' ? (
+              <button className="secondary" onClick={playPromptS6BlockPreview} title="Preview how tests/exams will sound">
+                Block
+              </button>
+            ) : null}
+
             <button className="ghost" onClick={next}>Next</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Progress: {Math.min(s6Correct, S6_GOAL)}/{S6_GOAL}

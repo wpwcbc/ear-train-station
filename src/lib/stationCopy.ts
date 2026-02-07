@@ -95,6 +95,8 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
     primer: [
       'In a major key, stacking 1-3-5 on each scale degree yields fixed qualities:',
       'I maj · ii min · iii min · IV maj · V maj · vi min · vii° dim.',
+      'Lesson sound: broken chord (arpeggio) so you can hear each chord tone clearly.',
+      'Tap “Block” to preview how tests/exams will sound (simultaneous chord).',
     ],
   },
   T6_DIATONIC_TRIADS: {
@@ -104,6 +106,8 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
     primer: [
       'Function families (major key):',
       'Tonic = I iii vi (rest) · Subdominant = ii IV (move) · Dominant = V vii° (tension).',
+      'Lesson sound: broken chord (arpeggio) so you can hear each chord tone clearly.',
+      'Tap “Block” to preview how tests/exams will sound (simultaneous chord).',
       'We want fast grouping — not perfect theory debates.',
     ],
   },
