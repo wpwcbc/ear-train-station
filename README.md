@@ -49,3 +49,8 @@ Quick definitions (nice phrasing from Theta Music Trainer): arpeggios are chord 
 ```bash
 npm run gen:icons
 ```
+
+## PWA behavior (updates + caching)
+
+- We use an **in-app update prompt** ("Update available → Reload") so the app doesn’t silently refresh mid-lesson.
+- The service worker also **runtime-caches** the external **piano soundfont JS** payloads (FluidR3 GM from `gleitz.github.io`) to make repeat sessions faster and more offline-friendly.

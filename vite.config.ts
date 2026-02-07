@@ -6,7 +6,10 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // Use an in-app prompt instead of silently reloading mid-lesson.
+      // We'll register via virtual:pwa-register in App.tsx.
+      injectRegister: null,
+      registerType: 'prompt',
       includeAssets: ['vite.svg', 'icons/pwa-192x192.png', 'icons/pwa-512x512.png', 'icons/apple-touch-icon.png'],
       manifest: {
         name: 'Ear Train Station',
@@ -39,6 +42,23 @@ export default defineConfig({
       },
       workbox: {
         navigateFallback: '/index.html',
+        runtimeCaching: [
+          {
+            // Cache piano soundfont JS payloads from the midi-js-soundfonts CDN.
+            urlPattern: /^https:\/\/gleitz\.github\.io\/midi-js-soundfonts\/.*\.js$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'soundfonts',
+              expiration: {
+                maxEntries: 32,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
       },
     }),
   ],
