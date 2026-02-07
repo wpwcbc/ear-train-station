@@ -84,9 +84,21 @@ export const piano: Piano = {
     }
 
     // Arpeggiate (root->3rd->5th) with a small gap.
+    // Use WebAudio scheduling ("when" offsets) instead of awaiting between notes,
+    // so timing stays stable even if the main thread stutters.
+    const gapSec = gapMs / 1000;
+    let lastStartSec = 0;
+
     for (let i = 0; i < midis.length; i++) {
-      play(midis[i], 0, { gain: gain(velocity), duration: Math.max(0.2, durationSec - i * 0.1) });
-      await new Promise((r) => setTimeout(r, gapMs));
+      const m = midis[i];
+      if (m == null) continue;
+      const when = i * gapSec;
+      lastStartSec = Math.max(lastStartSec, when);
+      play(m, when, { gain: gain(velocity), duration: Math.max(0.2, durationSec - i * 0.1) });
     }
+
+    // Resolve after the last note has had time to play out.
+    const totalMs = Math.max(0, Math.round((lastStartSec + durationSec) * 1000));
+    await new Promise((r) => setTimeout(r, totalMs));
   },
 };
