@@ -106,6 +106,7 @@ export function LearnMap({ progress }: { progress: Progress }) {
               to: isSectionUnlocked(progress, selectedSection.id)
                 ? `/lesson/${nextStationInSection(progress, selectedSection.id)}`
                 : undefined,
+              state: { exitTo: '/learn' },
               disabled: !isSectionUnlocked(progress, selectedSection.id),
             },
             {

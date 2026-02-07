@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 export type StationSignCardAction = {
   label: string;
   to?: string;
+  /** react-router state (used for FocusShell exit targets) */
+  state?: any;
   disabled?: boolean;
   variant?: 'primary' | 'default';
 };
@@ -42,7 +44,7 @@ export function StationSignCard(props: {
               );
             }
             return (
-              <Link key={a.label} className={className} to={a.to}>
+              <Link key={a.label} className={className} to={a.to} state={a.state}>
                 {a.label}
               </Link>
             );

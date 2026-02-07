@@ -85,10 +85,12 @@ export function MapPage({
           {(() => {
             const nextId = nextUnlockedIncompleteIn(progress, list);
             return nextId ? (
-              <Link className="linkBtn" to={`/lesson/${nextId}`}>Continue</Link>
+              <Link className="linkBtn" to={`/lesson/${nextId}`} state={{ exitTo: '/learn' }}>
+                Continue
+              </Link>
             ) : null;
           })()}
-          <Link className={stats.due > 0 ? 'linkBtn primaryLink' : 'linkBtn'} to="/review">
+          <Link className={stats.due > 0 ? 'linkBtn primaryLink' : 'linkBtn'} to="/review" state={{ exitTo: '/learn' }}>
             Review{stats.due > 0 ? ` (${stats.due})` : ''}
           </Link>
         </div>
@@ -110,7 +112,9 @@ export function MapPage({
                 <div className="stationBlurb">{s.blurb}</div>
                 <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {unlocked ? (
-                    <Link className="linkBtn" to={`/lesson/${s.id}`}>Start</Link>
+                    <Link className="linkBtn" to={`/lesson/${s.id}`} state={{ exitTo: '/learn' }}>
+                      Start
+                    </Link>
                   ) : (
                     <span style={{ fontSize: 12, opacity: 0.75 }}>Finish previous station(s) to unlock.</span>
                   )}

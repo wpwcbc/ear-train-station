@@ -77,7 +77,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
         </div>
         <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {continueId ? (
-            <Link className="linkBtn" to={`/lesson/${continueId}`}>
+            <Link className="linkBtn" to={`/lesson/${continueId}`} state={{ exitTo: '/practice' }}>
               Continue
             </Link>
           ) : (

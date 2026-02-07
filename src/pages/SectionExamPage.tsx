@@ -52,7 +52,9 @@ export function SectionExamPage({ progress }: { progress: Progress }) {
             <ul style={{ marginTop: 8 }}>
               {missing.map((sid) => (
                 <li key={sid}>
-                  <Link to={`/lesson/${sid}`}>{sid}</Link>
+                  <Link to={`/lesson/${sid}`} state={{ exitTo: `/learn/section/${id}/exam` }}>
+                    {sid}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -61,7 +63,9 @@ export function SectionExamPage({ progress }: { progress: Progress }) {
 
         <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {examUnlocked ? (
-            <Link className="linkBtn primaryLink" to={`/lesson/${plan.examId}`}>Start exam</Link>
+            <Link className="linkBtn primaryLink" to={`/lesson/${plan.examId}`} state={{ exitTo: `/learn/section/${id}/exam` }}>
+              Start exam
+            </Link>
           ) : (
             <span className="linkBtn primaryLink" style={{ opacity: 0.55, cursor: 'not-allowed' }}>
               Start exam
@@ -79,7 +83,7 @@ export function SectionExamPage({ progress }: { progress: Progress }) {
           {list.map((s) => (
             <li key={s.id} style={{ marginBottom: 6 }}>
               <span style={{ opacity: 0.75 }}>{s.kind === 'test' ? 'Test' : 'Lesson'}:</span> {s.title}{' '}
-              <Link style={{ marginLeft: 8 }} to={`/lesson/${s.id}`}>
+              <Link style={{ marginLeft: 8 }} to={`/lesson/${s.id}`} state={{ exitTo: `/learn/section/${id}/exam` }}>
                 Open
               </Link>
             </li>
