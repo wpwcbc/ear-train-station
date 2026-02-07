@@ -82,7 +82,8 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
   S4_TRIADS: {
     primer: [
       'Triads = root + 3rd + 5th.',
-      'Lessons start with broken chords (arpeggio) so you can hear each tone clearly.',
+      'Arpeggio = chord tones one-by-one (“melted” chord). Block = all at once (“frozen” arpeggio).',
+      'Lessons start with arpeggios so you can hear each tone clearly; tests/exams check with block chords.',
       'Tap “Block” to preview how tests/exams will sound (simultaneous chord).',
       'Quality is determined by the intervals from the root:',
       'Major = 0-4-7 · Minor = 0-3-7 · Diminished = 0-3-6.',
@@ -95,7 +96,8 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
     primer: [
       'In a major key, stacking 1-3-5 on each scale degree yields fixed qualities:',
       'I maj · ii min · iii min · IV maj · V maj · vi min · vii° dim.',
-      'Lesson sound: broken chord (arpeggio) so you can hear each chord tone clearly.',
+      'Arpeggio = chord tones one-by-one (“melted” chord). Block = all at once (“frozen” arpeggio).',
+      'Lesson sound: arpeggios for clarity; tests/exams check with block chords.',
       'Tap “Block” to preview how tests/exams will sound (simultaneous chord).',
     ],
   },
@@ -106,7 +108,8 @@ const COPY: Partial<Record<StationId, StationCopy>> = {
     primer: [
       'Function families (major key):',
       'Tonic = I iii vi (rest) · Subdominant = ii IV (move) · Dominant = V vii° (tension).',
-      'Lesson sound: broken chord (arpeggio) so you can hear each chord tone clearly.',
+      'Arpeggio = chord tones one-by-one (“melted” chord). Block = all at once (“frozen” arpeggio).',
+      'Lesson sound: arpeggios for clarity; tests/exams check with block chords.',
       'Tap “Block” to preview how tests/exams will sound (simultaneous chord).',
       'We want fast grouping — not perfect theory debates.',
     ],
