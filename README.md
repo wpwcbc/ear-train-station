@@ -40,3 +40,12 @@ Quick definitions (nice phrasing from Theta Music Trainer): arpeggios are chord 
 
 - We use `env(safe-area-inset-*)` for Focus Mode + bottom UI spacing.
 - iOS needs `viewport-fit=cover` in the viewport meta tag for those safe-area insets to work reliably.
+
+## PWA icons
+
+- Manifest includes the minimal **192x192** + **512x512** PNG icons + an `apple-touch-icon`.
+- Regenerate via:
+
+```bash
+npm run gen:icons
+```
