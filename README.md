@@ -35,3 +35,8 @@ Quick definitions (nice phrasing from Theta Music Trainer): arpeggios are chord 
 
 - Keep *knowledge-only* surfaces clean.
 - Settings live behind the **⚙️** config icon.
+
+## Mobile / iOS notes
+
+- We use `env(safe-area-inset-*)` for Focus Mode + bottom UI spacing.
+- iOS needs `viewport-fit=cover` in the viewport meta tag for those safe-area insets to work reliably.
