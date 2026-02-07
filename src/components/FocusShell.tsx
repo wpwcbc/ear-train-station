@@ -7,6 +7,8 @@ export type FocusTopBarState = {
   progress?: number;
   /** Optional small status text (e.g. "Twist", "Mid-test", etc.) */
   statusText?: string;
+  /** Optional extra context badge (e.g. "Lesson: ARP"). */
+  badge?: { text: string; title?: string };
   /** Hearts only when applicable. */
   hearts?: { current: number; max: number };
 };
@@ -84,6 +86,12 @@ export function FocusShell(props: { children?: ReactNode }) {
           </div>
 
           <div className="focusRight">
+            {topBar.badge ? (
+              <div className="focusBadge" title={topBar.badge.title} aria-label="mode">
+                {topBar.badge.text}
+              </div>
+            ) : null}
+
             {topBar.hearts ? (
               <div className="focusHearts" aria-label="hearts">
                 <span aria-hidden>❤</span>

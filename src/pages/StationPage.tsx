@@ -2370,8 +2370,22 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         break;
     }
 
+    const showChordBadge =
+      id === 'S4_TRIADS' ||
+      id === 'T5_TRIADS' ||
+      id === 'S5_DIATONIC_TRIADS' ||
+      id === 'T6_DIATONIC_TRIADS' ||
+      id === 'S6_FUNCTIONS' ||
+      id === 'T7_FUNCTIONS';
+
     focus.setTopBar({
       statusText: short || undefined,
+      badge: showChordBadge
+        ? {
+            text: chordMode === 'arp' ? 'Lesson: Arp' : 'Test: Block',
+            title: 'Pedagogy: lessons use broken chords (arpeggios) for clarity; tests/exams use block chords.',
+          }
+        : undefined,
       progress: progress01,
       hearts,
     });
