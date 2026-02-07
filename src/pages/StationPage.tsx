@@ -109,7 +109,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   const [settings, setSettings] = useState(() => loadSettings());
   // Settings UI lives in <FocusShell> (⚙️ in the top bar).
-  const chordMode: 'block' | 'arp' = 'arp';
+  // Pedagogy default: lessons teach with arps; tests/exams check with block chords.
+  const chordMode: 'block' | 'arp' = id.startsWith('T') || id.startsWith('E') ? 'block' : 'arp';
   const speed = settings.promptSpeed;
   const timing = useMemo(() => promptSpeedFactors(speed), [speed]);
   const dur = (sec: number) => sec * timing.dur;
