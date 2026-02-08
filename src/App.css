@@ -166,6 +166,12 @@
   opacity: 0.8;
 }
 
+.configActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .configHotkeys {
   display: grid;
   gap: 10px;

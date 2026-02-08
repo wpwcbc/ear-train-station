@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { defaultSettings, loadSettings, saveSettings, type Settings } from '../lib/settings';
 import {
+  clearPianoSoundfontCache,
   getPianoContextState,
   getPianoSoundfontCacheStatus,
   prefetchPianoSoundfonts,
@@ -136,29 +137,54 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
               {offlinePiano ? `${offlinePiano.cached}/${offlinePiano.total} cached` : 'Checking…'}
               {offlineDetail ? ` — ${offlineDetail}` : null}
             </span>
-            <button
-              className="ghost"
-              disabled={offlineDownloading}
-              onClick={async () => {
-                setOfflineDownloading(true);
-                setOfflineDetail('Downloading…');
-                try {
-                  const r = await prefetchPianoSoundfonts();
-                  const st = await getPianoSoundfontCacheStatus();
-                  setOfflinePiano({ cached: st.cached, total: st.total });
-                  if (r.errors.length) setOfflineDetail(`${r.errors.length} failed`);
-                  else setOfflineDetail('Ready');
-                } catch (e) {
-                  setOfflineDetail(e instanceof Error ? e.message : 'Download failed');
-                } finally {
-                  window.setTimeout(() => setOfflineDetail(null), 4000);
-                  setOfflineDownloading(false);
-                }
-              }}
-              aria-label="Download piano for offline"
-            >
-              {offlineDownloading ? 'Downloading…' : 'Download'}
-            </button>
+            <div className="configActions">
+              <button
+                className="ghost"
+                disabled={offlineDownloading}
+                onClick={async () => {
+                  setOfflineDownloading(true);
+                  setOfflineDetail('Downloading…');
+                  try {
+                    const r = await prefetchPianoSoundfonts();
+                    const st = await getPianoSoundfontCacheStatus();
+                    setOfflinePiano({ cached: st.cached, total: st.total });
+                    if (r.errors.length) setOfflineDetail(`${r.errors.length} failed`);
+                    else setOfflineDetail('Ready');
+                  } catch (e) {
+                    setOfflineDetail(e instanceof Error ? e.message : 'Download failed');
+                  } finally {
+                    window.setTimeout(() => setOfflineDetail(null), 4000);
+                    setOfflineDownloading(false);
+                  }
+                }}
+                aria-label="Download piano for offline"
+              >
+                {offlineDownloading ? 'Working…' : 'Download'}
+              </button>
+
+              <button
+                className="ghost"
+                disabled={offlineDownloading || !offlinePiano || offlinePiano.cached === 0}
+                onClick={async () => {
+                  setOfflineDownloading(true);
+                  setOfflineDetail('Clearing…');
+                  try {
+                    await clearPianoSoundfontCache();
+                    const st = await getPianoSoundfontCacheStatus();
+                    setOfflinePiano({ cached: st.cached, total: st.total });
+                    setOfflineDetail('Cleared');
+                  } catch (e) {
+                    setOfflineDetail(e instanceof Error ? e.message : 'Clear failed');
+                  } finally {
+                    window.setTimeout(() => setOfflineDetail(null), 4000);
+                    setOfflineDownloading(false);
+                  }
+                }}
+                aria-label="Clear offline piano cache"
+              >
+                Clear
+              </button>
+            </div>
           </div>
 
           <label className="configRow">

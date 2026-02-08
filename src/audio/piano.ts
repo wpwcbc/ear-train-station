@@ -68,6 +68,18 @@ export async function getPianoSoundfontCacheStatus(): Promise<{ cached: number; 
   }
 }
 
+export async function clearPianoSoundfontCache(): Promise<boolean> {
+  try {
+    if (!('caches' in window)) return false;
+    // We use a dedicated cache for these soundfont payloads.
+    // Deleting and recreating keeps behavior deterministic.
+    const ok = await caches.delete('soundfonts');
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 // Trigger instrument fetch/parse early (best-effort). Useful for first-tap latency on mobile.
 export async function warmupPiano(): Promise<void> {
   const p = await getPianoPlayer();
