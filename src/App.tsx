@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { registerSW } from 'virtual:pwa-register';
 import { NavShell } from './components/NavShell';
@@ -27,6 +27,7 @@ function App() {
   const [audioReady, setAudioReady] = useState(false);
   const [audioWarmError, setAudioWarmError] = useState<string | null>(null);
   const [audioLocked, setAudioLocked] = useState<string | null>(null);
+  const audioUnlockRef = useRef<null | (() => void)>(null);
 
   useEffect(() => {
     saveProgress(progress);
@@ -78,6 +79,9 @@ function App() {
         setAudioWarming(false);
       }
     }
+
+    // Allow a UI button to explicitly retry warmup (e.g. after Safari/iOS re-locks audio).
+    audioUnlockRef.current = () => void doWarm();
 
     function onAudioLocked(ev: Event) {
       const ce = ev as CustomEvent<{ reason?: string }>;
@@ -155,7 +159,21 @@ function App() {
       {audioWarming ? <div className="pwaToast">Loading piano…</div> : null}
       {audioReady ? <div className="pwaToast">Piano ready</div> : null}
       {audioWarmError ? <div className="pwaToast pwaToast--warn">Audio: {audioWarmError}</div> : null}
-      {audioLocked ? <div className="pwaToast pwaToast--warn">{audioLocked}</div> : null}
+
+      {audioLocked ? (
+        <div className="pwaToast pwaToast--action pwaToast--warn">
+          <div className="pwaToast__text">
+            {audioLocked}
+            {audioLocked === 'Sound is paused — tap anywhere to enable' ? ' (iPhone: check mute switch)' : null}
+          </div>
+          <button className="pwaToast__btn" onClick={() => audioUnlockRef.current?.()}>
+            Enable
+          </button>
+          <button className="pwaToast__btn pwaToast__btn--ghost" onClick={() => setAudioLocked(null)}>
+            Dismiss
+          </button>
+        </div>
+      ) : null}
 
       {pwaNeedRefresh ? (
         <div className="pwaToast pwaToast--action">
