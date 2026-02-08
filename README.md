@@ -55,3 +55,4 @@ npm run gen:icons
 
 - We use an **in-app update prompt** ("Update available → Reload") so the app doesn’t silently refresh mid-lesson.
 - The service worker also **runtime-caches** the external **piano soundfont JS** payloads (FluidR3 GM from `gleitz.github.io`) to make repeat sessions faster and more offline-friendly.
+- In **⚙️ Settings → Audio**, there’s an **Offline piano → Download** button that prefetches both `*-mp3.js` and `*-ogg.js` payloads into the `soundfonts` cache (user-initiated, so we don’t auto-download large assets on first load).

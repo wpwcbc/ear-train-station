@@ -12,6 +12,13 @@ export type Piano = {
   ) => Promise<void>;
 };
 
+type PrefetchResult = {
+  urls: string[];
+  fetched: string[];
+  cached: string[];
+  errors: Array<{ url: string; error: string }>;
+};
+
 function dispatchAudioLocked(reason?: string) {
   try {
     window.dispatchEvent(new CustomEvent('kuku:audiolocked', { detail: { reason } }));
@@ -36,10 +43,78 @@ async function ensureContextRunning(p: Soundfont.Player): Promise<boolean> {
   }
 }
 
+function getPianoSoundfontUrls(): string[] {
+  // We cache both formats. soundfont-player will choose the right one at runtime.
+  // Prefetching both increases the chance of offline readiness across browsers.
+  const base = 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/';
+  const name = 'acoustic_grand_piano';
+  return [`${base}${name}-mp3.js`, `${base}${name}-ogg.js`];
+}
+
+export async function getPianoSoundfontCacheStatus(): Promise<{ cached: number; total: number; urls: string[] }> {
+  const urls = getPianoSoundfontUrls();
+  try {
+    if (!('caches' in window)) return { cached: 0, total: urls.length, urls };
+    const cache = await caches.open('soundfonts');
+    let cached = 0;
+    for (const url of urls) {
+      const res = await cache.match(url);
+      if (res) cached++;
+    }
+    return { cached, total: urls.length, urls };
+  } catch {
+    // Cache name may differ per Workbox revision; best-effort only.
+    return { cached: 0, total: urls.length, urls };
+  }
+}
+
 // Trigger instrument fetch/parse early (best-effort). Useful for first-tap latency on mobile.
 export async function warmupPiano(): Promise<void> {
   const p = await getPianoPlayer();
   await ensureContextRunning(p);
+}
+
+// Explicitly prefetch and cache the piano soundfont payload(s) so offline sessions work.
+// Uses Cache API directly so it works even before Workbox routes are hit.
+export async function prefetchPianoSoundfonts(): Promise<PrefetchResult> {
+  const urls = getPianoSoundfontUrls();
+  const result: PrefetchResult = { urls, fetched: [], cached: [], errors: [] };
+
+  let cache: Cache | null = null;
+  try {
+    if ('caches' in window) cache = await caches.open('soundfonts');
+  } catch {
+    cache = null;
+  }
+
+  await Promise.all(
+    urls.map(async (url) => {
+      try {
+        // Try cache first.
+        if (cache) {
+          const hit = await cache.match(url);
+          if (hit) {
+            result.cached.push(url);
+            return;
+          }
+        }
+
+        const res = await fetch(url, { mode: 'cors' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        result.fetched.push(url);
+
+        // Store a clone in cache (if available). If SW is active, it may also populate.
+        if (cache) {
+          await cache.put(url, res.clone());
+          result.cached.push(url);
+        }
+      } catch (e) {
+        result.errors.push({ url, error: e instanceof Error ? e.message : String(e) });
+      }
+    }),
+  );
+
+  return result;
 }
 
 let pianoPromise: Promise<Soundfont.Player> | null = null;

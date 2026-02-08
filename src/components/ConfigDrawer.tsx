@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { defaultSettings, loadSettings, saveSettings, type Settings } from '../lib/settings';
-import { getPianoContextState, warmupPiano } from '../audio/piano';
+import {
+  getPianoContextState,
+  getPianoSoundfontCacheStatus,
+  prefetchPianoSoundfonts,
+  warmupPiano,
+} from '../audio/piano';
 
 function clamp01(n: number) {
   if (Number.isNaN(n)) return 1;
@@ -14,12 +19,22 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
   const [audioDetail, setAudioDetail] = useState<string | null>(null);
   const [audioEnabling, setAudioEnabling] = useState(false);
 
+  const [offlinePiano, setOfflinePiano] = useState<{ cached: number; total: number } | null>(null);
+  const [offlineDownloading, setOfflineDownloading] = useState(false);
+  const [offlineDetail, setOfflineDetail] = useState<string | null>(null);
+
   // Whenever it opens, reload latest settings.
   useEffect(() => {
     if (!props.open) return;
     setDraft(loadSettings());
     setAudioState(getPianoContextState());
     setAudioDetail(null);
+    setOfflineDetail(null);
+
+    void (async () => {
+      const st = await getPianoSoundfontCacheStatus();
+      setOfflinePiano({ cached: st.cached, total: st.total });
+    })();
   }, [props.open]);
 
   // While open, keep audio state fresh (and capture "audio locked" reasons).
@@ -112,6 +127,37 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
               aria-label="Enable audio"
             >
               {audioEnabling ? 'Enabling…' : 'Enable'}
+            </button>
+          </div>
+
+          <div className="configRow">
+            <span className="configLabel">Offline piano</span>
+            <span className="configValue" style={{ justifySelf: 'start' }}>
+              {offlinePiano ? `${offlinePiano.cached}/${offlinePiano.total} cached` : 'Checking…'}
+              {offlineDetail ? ` — ${offlineDetail}` : null}
+            </span>
+            <button
+              className="ghost"
+              disabled={offlineDownloading}
+              onClick={async () => {
+                setOfflineDownloading(true);
+                setOfflineDetail('Downloading…');
+                try {
+                  const r = await prefetchPianoSoundfonts();
+                  const st = await getPianoSoundfontCacheStatus();
+                  setOfflinePiano({ cached: st.cached, total: st.total });
+                  if (r.errors.length) setOfflineDetail(`${r.errors.length} failed`);
+                  else setOfflineDetail('Ready');
+                } catch (e) {
+                  setOfflineDetail(e instanceof Error ? e.message : 'Download failed');
+                } finally {
+                  window.setTimeout(() => setOfflineDetail(null), 4000);
+                  setOfflineDownloading(false);
+                }
+              }}
+              aria-label="Download piano for offline"
+            >
+              {offlineDownloading ? 'Downloading…' : 'Download'}
             </button>
           </div>
 
