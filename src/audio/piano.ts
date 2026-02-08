@@ -19,6 +19,14 @@ type PrefetchResult = {
   errors: Array<{ url: string; error: string }>;
 };
 
+type PrefetchOpts = {
+  // If true, re-fetch even if entries already exist in Cache API.
+  // Useful when the CDN payload updates or the cache became corrupted.
+  force?: boolean;
+};
+
+const PIANO_SOUNDFONT_META_KEY = 'kuku:pianoSoundfontCacheMeta';
+
 function dispatchAudioLocked(reason?: string) {
   try {
     window.dispatchEvent(new CustomEvent('kuku:audiolocked', { detail: { reason } }));
@@ -54,6 +62,27 @@ function getPianoSoundfontUrls(): string[] {
 const PIANO_SOUNDFONT_CACHE = 'kuku-soundfonts-v1';
 const LEGACY_PIANO_SOUNDFONT_CACHE = 'soundfonts';
 
+export function getPianoSoundfontCacheMeta(): { updatedAtMs: number } | null {
+  try {
+    const raw = window.localStorage.getItem(PIANO_SOUNDFONT_META_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { updatedAtMs?: unknown };
+    if (typeof parsed.updatedAtMs !== 'number') return null;
+    return { updatedAtMs: parsed.updatedAtMs };
+  } catch {
+    return null;
+  }
+}
+
+function setPianoSoundfontCacheMeta(meta: { updatedAtMs: number } | null) {
+  try {
+    if (!meta) window.localStorage.removeItem(PIANO_SOUNDFONT_META_KEY);
+    else window.localStorage.setItem(PIANO_SOUNDFONT_META_KEY, JSON.stringify(meta));
+  } catch {
+    // ignore
+  }
+}
+
 export async function getPianoSoundfontCacheStatus(): Promise<{ cached: number; total: number; urls: string[] }> {
   const urls = getPianoSoundfontUrls();
   try {
@@ -83,6 +112,7 @@ export async function getPianoSoundfontCacheStatus(): Promise<{ cached: number; 
 
 export async function clearPianoSoundfontCache(): Promise<boolean> {
   try {
+    setPianoSoundfontCacheMeta(null);
     if (!('caches' in window)) return false;
     // Deterministic clear; also cleans up the legacy cache name.
     const [ok1, ok2] = await Promise.all([
@@ -103,9 +133,10 @@ export async function warmupPiano(): Promise<void> {
 
 // Explicitly prefetch and cache the piano soundfont payload(s) so offline sessions work.
 // Uses Cache API directly so it works even before Workbox routes are hit.
-export async function prefetchPianoSoundfonts(): Promise<PrefetchResult> {
+export async function prefetchPianoSoundfonts(opts?: PrefetchOpts): Promise<PrefetchResult> {
   const urls = getPianoSoundfontUrls();
   const result: PrefetchResult = { urls, fetched: [], cached: [], errors: [] };
+  const force = opts?.force ?? false;
 
   let cache: Cache | null = null;
   try {
@@ -117,8 +148,8 @@ export async function prefetchPianoSoundfonts(): Promise<PrefetchResult> {
   await Promise.all(
     urls.map(async (url) => {
       try {
-        // Try cache first.
-        if (cache) {
+        // Try cache first (unless forced).
+        if (cache && !force) {
           const hit = await cache.match(url);
           if (hit) {
             result.cached.push(url);
@@ -126,7 +157,7 @@ export async function prefetchPianoSoundfonts(): Promise<PrefetchResult> {
           }
         }
 
-        const res = await fetch(url, { mode: 'cors' });
+        const res = await fetch(url, { mode: 'cors', cache: force ? 'reload' : 'default' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         result.fetched.push(url);
 
@@ -140,6 +171,12 @@ export async function prefetchPianoSoundfonts(): Promise<PrefetchResult> {
       }
     }),
   );
+
+  // If we made it here, consider the cache “updated” even if some URLs were already present.
+  // (This timestamp is mainly a UX hint in Settings.)
+  if (result.errors.length === 0 && result.cached.length > 0) {
+    setPianoSoundfontCacheMeta({ updatedAtMs: Date.now() });
+  }
 
   return result;
 }

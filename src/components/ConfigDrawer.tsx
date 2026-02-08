@@ -3,6 +3,7 @@ import { defaultSettings, loadSettings, saveSettings, type Settings } from '../l
 import {
   clearPianoSoundfontCache,
   getPianoContextState,
+  getPianoSoundfontCacheMeta,
   getPianoSoundfontCacheStatus,
   prefetchPianoSoundfonts,
   warmupPiano,
@@ -21,6 +22,7 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
   const [audioEnabling, setAudioEnabling] = useState(false);
 
   const [offlinePiano, setOfflinePiano] = useState<{ cached: number; total: number } | null>(null);
+  const [offlineUpdatedAtMs, setOfflineUpdatedAtMs] = useState<number | null>(null);
   const [offlineDownloading, setOfflineDownloading] = useState(false);
   const [offlineDetail, setOfflineDetail] = useState<string | null>(null);
 
@@ -35,6 +37,8 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
     void (async () => {
       const st = await getPianoSoundfontCacheStatus();
       setOfflinePiano({ cached: st.cached, total: st.total });
+      const meta = getPianoSoundfontCacheMeta();
+      setOfflineUpdatedAtMs(meta?.updatedAtMs ?? null);
     })();
   }, [props.open]);
 
@@ -135,6 +139,7 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
             <span className="configLabel">Offline piano</span>
             <span className="configValue" style={{ justifySelf: 'start' }}>
               {offlinePiano ? `${offlinePiano.cached}/${offlinePiano.total} cached` : 'Checking…'}
+              {offlineUpdatedAtMs ? ` · updated ${new Date(offlineUpdatedAtMs).toLocaleDateString()} ${new Date(offlineUpdatedAtMs).toLocaleTimeString()}` : ''}
               {offlineDetail ? ` — ${offlineDetail}` : null}
             </span>
             <div className="configActions">
@@ -148,6 +153,8 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
                     const r = await prefetchPianoSoundfonts();
                     const st = await getPianoSoundfontCacheStatus();
                     setOfflinePiano({ cached: st.cached, total: st.total });
+                    const meta = getPianoSoundfontCacheMeta();
+                    setOfflineUpdatedAtMs(meta?.updatedAtMs ?? null);
                     if (r.errors.length) setOfflineDetail(`${r.errors.length} failed`);
                     else setOfflineDetail('Ready');
                   } catch (e) {
@@ -167,11 +174,38 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
                 disabled={offlineDownloading || !offlinePiano || offlinePiano.cached === 0}
                 onClick={async () => {
                   setOfflineDownloading(true);
+                  setOfflineDetail('Updating…');
+                  try {
+                    const r = await prefetchPianoSoundfonts({ force: true });
+                    const st = await getPianoSoundfontCacheStatus();
+                    setOfflinePiano({ cached: st.cached, total: st.total });
+                    const meta = getPianoSoundfontCacheMeta();
+                    setOfflineUpdatedAtMs(meta?.updatedAtMs ?? null);
+                    if (r.errors.length) setOfflineDetail(`${r.errors.length} failed`);
+                    else setOfflineDetail('Updated');
+                  } catch (e) {
+                    setOfflineDetail(e instanceof Error ? e.message : 'Update failed');
+                  } finally {
+                    window.setTimeout(() => setOfflineDetail(null), 4000);
+                    setOfflineDownloading(false);
+                  }
+                }}
+                aria-label="Re-download piano payloads"
+              >
+                Update
+              </button>
+
+              <button
+                className="ghost"
+                disabled={offlineDownloading || !offlinePiano || offlinePiano.cached === 0}
+                onClick={async () => {
+                  setOfflineDownloading(true);
                   setOfflineDetail('Clearing…');
                   try {
                     await clearPianoSoundfontCache();
                     const st = await getPianoSoundfontCacheStatus();
                     setOfflinePiano({ cached: st.cached, total: st.total });
+                    setOfflineUpdatedAtMs(null);
                     setOfflineDetail('Cleared');
                   } catch (e) {
                     setOfflineDetail(e instanceof Error ? e.message : 'Clear failed');
