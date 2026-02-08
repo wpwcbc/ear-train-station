@@ -5,11 +5,9 @@ import { useMistakeStats } from '../lib/hooks/useMistakeStats';
 
 export function MapPage({
   progress,
-  setProgress,
   stations,
 }: {
   progress: Progress;
-  setProgress: (p: Progress) => void;
   stations?: ReadonlyArray<Station>;
 }) {
   const stats = useMistakeStats();
@@ -60,23 +58,9 @@ export function MapPage({
             {stats.due === 0 && nextDueIn ? <span style={{ opacity: 0.75 }}> · next in {nextDueIn}</span> : null}
           </span>
           <span style={{ opacity: 0.65 }}>•</span>
-          <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-            <span>Daily goal</span>
-            <select
-              value={progress.dailyGoalXp}
-              onChange={(e) => {
-                const n = Number.parseInt(e.target.value, 10);
-                if (!Number.isFinite(n) || n <= 0) return;
-                setProgress({ ...progress, dailyGoalXp: n });
-              }}
-            >
-              {[10, 20, 40, 60].map((n) => (
-                <option key={n} value={n}>
-                  {n} XP
-                </option>
-              ))}
-            </select>
-          </label>
+          <span>
+            Daily goal: {progress.dailyGoalXp} XP <span style={{ opacity: 0.7 }}>(edit in Profile)</span>
+          </span>
           {progress.dailyXpToday >= progress.dailyGoalXp ? (
             <span style={{ opacity: 0.95 }}>• Daily goal reached</span>
           ) : null}
