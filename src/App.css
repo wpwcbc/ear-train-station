@@ -963,3 +963,7 @@ button.ghost { background: transparent; }
   background: transparent;
   opacity: 0.8;
 }
+
+.pwaToast--warn {
+  background: rgba(255, 245, 230, 0.98);
+}

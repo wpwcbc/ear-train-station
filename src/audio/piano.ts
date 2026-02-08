@@ -12,6 +12,17 @@ export type Piano = {
   ) => Promise<void>;
 };
 
+// Trigger instrument fetch/parse early (best-effort). Useful for first-tap latency on mobile.
+export async function warmupPiano(): Promise<void> {
+  const p = await getPianoPlayer();
+  try {
+    const ctx = (p as unknown as { context?: AudioContext }).context;
+    if (ctx && ctx.state === 'suspended') await ctx.resume();
+  } catch {
+    // ignore
+  }
+}
+
 let pianoPromise: Promise<Soundfont.Player> | null = null;
 
 async function getPianoPlayer() {

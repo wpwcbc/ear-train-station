@@ -13,6 +13,7 @@ import { ReviewPage } from './pages/ReviewPage';
 import { QuestsPage } from './pages/QuestsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { loadProgress, saveProgress, type Progress } from './lib/progress';
+import { warmupPiano } from './audio/piano';
 import './App.css';
 
 function App() {
@@ -21,6 +22,10 @@ function App() {
   const [pwaNeedRefresh, setPwaNeedRefresh] = useState(false);
   const [pwaOfflineReady, setPwaOfflineReady] = useState(false);
   const [doPwaUpdate, setDoPwaUpdate] = useState<null | (() => void)>(null);
+
+  const [audioWarming, setAudioWarming] = useState(false);
+  const [audioReady, setAudioReady] = useState(false);
+  const [audioWarmError, setAudioWarmError] = useState<string | null>(null);
 
   useEffect(() => {
     saveProgress(progress);
@@ -39,6 +44,37 @@ function App() {
     });
 
     setDoPwaUpdate(() => () => void updateSW(true));
+  }, []);
+
+  useEffect(() => {
+    // Best-effort audio warmup on the first user gesture.
+    // This helps avoid first-note latency on mobile, and also primes SW runtime caching.
+    let didWarm = false;
+
+    async function doWarm() {
+      if (didWarm) return;
+      didWarm = true;
+      setAudioWarmError(null);
+      setAudioWarming(true);
+      try {
+        await warmupPiano();
+        setAudioReady(true);
+        window.setTimeout(() => setAudioReady(false), 2500);
+      } catch (e) {
+        setAudioWarmError(e instanceof Error ? e.message : 'Audio warmup failed');
+        window.setTimeout(() => setAudioWarmError(null), 4000);
+      } finally {
+        setAudioWarming(false);
+      }
+    }
+
+    window.addEventListener('pointerdown', doWarm, { once: true, passive: true });
+    window.addEventListener('keydown', doWarm, { once: true });
+
+    return () => {
+      window.removeEventListener('pointerdown', doWarm);
+      window.removeEventListener('keydown', doWarm);
+    };
   }, []);
 
   return (
@@ -72,6 +108,11 @@ function App() {
 
       {/* PWA status + update prompt (kept subtle; doesn’t add a new settings surface) */}
       {pwaOfflineReady ? <div className="pwaToast">Ready for offline</div> : null}
+
+      {/* Audio warmup status (on first user gesture) */}
+      {audioWarming ? <div className="pwaToast">Loading piano…</div> : null}
+      {audioReady ? <div className="pwaToast">Piano ready</div> : null}
+      {audioWarmError ? <div className="pwaToast pwaToast--warn">Audio: {audioWarmError}</div> : null}
 
       {pwaNeedRefresh ? (
         <div className="pwaToast pwaToast--action">
