@@ -3963,23 +3963,37 @@ reviewHref={(t7Index >= T7_TOTAL || t7Wrong >= HEARTS) && stationMistakeCount > 
         <div className="result">Content for this station is next.</div>
       )
     ) : (
-      <div
-        className="result r_correct"
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 12,
-          flexWrap: 'wrap',
-        }}
-      >
-        <div>
-          <div style={{ fontWeight: 700 }}>Already completed.</div>
-          <div style={{ fontSize: 12, opacity: 0.9 }}>You can practice again for fun (XP still counts).</div>
+      <div className="callout" style={{ display: 'flex', gap: 12, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+        <div style={{ minWidth: 220 }}>
+          <div style={{ fontWeight: 800 }}>Station completed</div>
+          <div style={{ fontSize: 12, opacity: 0.9, marginTop: 4 }}>
+            Today: <b>{Math.max(0, progress.dailyXpToday || 0)}</b>/<b>{Math.max(1, progress.dailyGoalXp || 0)}</b> XP · Streak:{' '}
+            <b>{progress.streakDays}</b> day{progress.streakDays === 1 ? '' : 's'} · Total XP: <b>{progress.xp}</b>
+          </div>
+          <div style={{ fontSize: 12, opacity: 0.75, marginTop: 6 }}>
+            Tip: daily goal is editable in ⚙️ only.
+          </div>
         </div>
-        <button className="primary" onClick={() => setPractice(true)}>
-          Practice again
-        </button>
+
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <button className="linkBtn" onClick={() => setPractice(true)}>
+            Practice again
+          </button>
+
+          {examSectionId ? (
+            <Link className="linkBtn primaryLink" to={`/learn/section/${examSectionId}`}>
+              Back to section
+            </Link>
+          ) : nextId && nextUnlocked ? (
+            <Link className="linkBtn primaryLink" to={`/station/${nextId}`}>
+              Next station
+            </Link>
+          ) : (
+            <Link className="linkBtn primaryLink" to="/learn">
+              Back to Learn
+            </Link>
+          )}
+        </div>
       </div>
     )}
 
