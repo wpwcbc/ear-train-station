@@ -48,7 +48,7 @@ export default defineConfig({
             urlPattern: /^https:\/\/gleitz\.github\.io\/midi-js-soundfonts\/.*\.js$/i,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'soundfonts',
+              cacheName: 'kuku-soundfonts-v1',
               expiration: {
                 maxEntries: 32,
                 maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days

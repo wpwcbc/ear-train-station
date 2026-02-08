@@ -85,6 +85,7 @@ function getPianoSoundfontUrls(): string[] {
 }
 
 const PIANO_SOUNDFONT_CACHE = 'kuku-soundfonts-v1';
+// Before 2026-02-09, Workbox runtimeCaching used this cache name. Keep it for migration.
 const LEGACY_PIANO_SOUNDFONT_CACHE = 'soundfonts';
 
 export function getPianoSoundfontCacheMeta(): { updatedAtMs: number } | null {
@@ -192,21 +193,59 @@ export async function prefetchPianoSoundfonts(opts?: PrefetchOpts): Promise<Pref
   const force = opts?.force ?? false;
 
   let cache: Cache | null = null;
+  let legacy: Cache | null = null;
   try {
-    if ('caches' in window) cache = await caches.open(PIANO_SOUNDFONT_CACHE);
+    if ('caches' in window) {
+      cache = await caches.open(PIANO_SOUNDFONT_CACHE);
+      try {
+        legacy = await caches.open(LEGACY_PIANO_SOUNDFONT_CACHE);
+      } catch {
+        legacy = null;
+      }
+    }
   } catch {
     cache = null;
+    legacy = null;
+  }
+
+  // If an older install has entries in the legacy Workbox cache, migrate them forward so:
+  // - Settings status is accurate
+  // - the current SW/runtimeCaching (which now uses PIANO_SOUNDFONT_CACHE) can serve them offline.
+  if (cache && legacy) {
+    await Promise.all(
+      urls.map(async (url) => {
+        try {
+          const already = await cache.match(url);
+          if (already) return;
+          const hit = await legacy.match(url);
+          if (hit) await cache.put(url, hit);
+        } catch {
+          // Best-effort only.
+        }
+      }),
+    );
   }
 
   await Promise.all(
     urls.map(async (url) => {
       try {
-        // Try cache first (unless forced).
-        if (cache && !force) {
-          const hit = await cache.match(url);
-          if (hit) {
-            result.cached.push(url);
-            return;
+        // Try cache first (unless forced). Fall back to legacy cache if present.
+        if (!force) {
+          if (cache) {
+            const hit = await cache.match(url);
+            if (hit) {
+              result.cached.push(url);
+              return;
+            }
+          }
+          if (legacy) {
+            const hit = await legacy.match(url);
+            if (hit) {
+              // Also copy it forward so future loads use the new cache name.
+              if (cache) await cache.put(url, hit);
+              result.cached.push(url);
+              return;
+            }
           }
         }
 
