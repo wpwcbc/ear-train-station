@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ConfigDrawer } from './ConfigDrawer';
 
@@ -36,6 +36,11 @@ export function FocusShell(props: { children?: ReactNode }) {
   const loc = useLocation();
   const [configOpen, setConfigOpen] = useState(false);
   const [topBar, setTopBar] = useState<FocusTopBarState>({});
+
+  // Avoid “stuck drawer” when navigating between focus routes (esp. mobile back/exit).
+  useEffect(() => {
+    setConfigOpen(false);
+  }, [loc.pathname, loc.search]);
 
   const ctx = useMemo<FocusUIContextValue>(() => ({ topBar, setTopBar }), [topBar]);
 
