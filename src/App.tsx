@@ -51,10 +51,20 @@ function App() {
     // Best-effort audio warmup on the first user gesture.
     // This helps avoid first-note latency on mobile, and also primes SW runtime caching.
     let didWarm = false;
+    let clearLockedTimer: number | null = null;
+
+    function armWarmupOnce() {
+      // On some iOS/Safari builds, pointer events can be flaky; cover touchstart too.
+      window.addEventListener('pointerdown', doWarm, { once: true, passive: true });
+      window.addEventListener('touchstart', doWarm, { once: true, passive: true });
+      window.addEventListener('keydown', doWarm, { once: true });
+    }
 
     async function doWarm() {
       if (didWarm) return;
       didWarm = true;
+      if (clearLockedTimer != null) window.clearTimeout(clearLockedTimer);
+      setAudioLocked(null);
       setAudioWarmError(null);
       setAudioWarming(true);
       try {
@@ -73,22 +83,27 @@ function App() {
       const ce = ev as CustomEvent<{ reason?: string }>;
       const reason = ce?.detail?.reason;
       setAudioLocked(reason ?? 'Sound is paused — tap anywhere to enable');
-      window.setTimeout(() => setAudioLocked(null), 4500);
+
+      // Keep the warning visible long enough that the user actually sees it.
+      // (If they interact, doWarm() clears it immediately.)
+      if (clearLockedTimer != null) window.clearTimeout(clearLockedTimer);
+      clearLockedTimer = window.setTimeout(() => setAudioLocked(null), 15000);
 
       // If audio gets re-locked later (Safari/iOS quirks), arm one more warmup attempt
       // on the next user gesture.
-      window.addEventListener('pointerdown', doWarm, { once: true, passive: true });
-      window.addEventListener('keydown', doWarm, { once: true });
+      didWarm = false;
+      armWarmupOnce();
     }
 
     window.addEventListener('kuku:audiolocked', onAudioLocked);
-    window.addEventListener('pointerdown', doWarm, { once: true, passive: true });
-    window.addEventListener('keydown', doWarm, { once: true });
+    armWarmupOnce();
 
     return () => {
       window.removeEventListener('kuku:audiolocked', onAudioLocked);
       window.removeEventListener('pointerdown', doWarm);
+      window.removeEventListener('touchstart', doWarm);
       window.removeEventListener('keydown', doWarm);
+      if (clearLockedTimer != null) window.clearTimeout(clearLockedTimer);
     };
   }, []);
 
