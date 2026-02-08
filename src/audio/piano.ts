@@ -110,6 +110,34 @@ export async function getPianoSoundfontCacheStatus(): Promise<{ cached: number; 
   }
 }
 
+export async function getPianoSoundfontCacheSizeBytes(): Promise<number | null> {
+  const urls = getPianoSoundfontUrls();
+  try {
+    if (!('caches' in window)) return null;
+
+    const cache = await caches.open(PIANO_SOUNDFONT_CACHE);
+    let legacy: Cache | null = null;
+    try {
+      legacy = await caches.open(LEGACY_PIANO_SOUNDFONT_CACHE);
+    } catch {
+      legacy = null;
+    }
+
+    let total = 0;
+    for (const url of urls) {
+      const res = (await cache.match(url)) ?? (legacy ? await legacy.match(url) : undefined);
+      if (!res) continue;
+      // These are small in count (2 files), so blob() is acceptable in Settings UI.
+      const b = await res.clone().blob();
+      total += b.size;
+    }
+
+    return total;
+  } catch {
+    return null;
+  }
+}
+
 export async function clearPianoSoundfontCache(): Promise<boolean> {
   try {
     setPianoSoundfontCacheMeta(null);

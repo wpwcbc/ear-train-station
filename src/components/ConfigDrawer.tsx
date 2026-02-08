@@ -4,6 +4,7 @@ import {
   clearPianoSoundfontCache,
   getPianoContextState,
   getPianoSoundfontCacheMeta,
+  getPianoSoundfontCacheSizeBytes,
   getPianoSoundfontCacheStatus,
   prefetchPianoSoundfonts,
   warmupPiano,
@@ -22,6 +23,8 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
   const [audioEnabling, setAudioEnabling] = useState(false);
 
   const [offlinePiano, setOfflinePiano] = useState<{ cached: number; total: number } | null>(null);
+  const [offlinePianoBytes, setOfflinePianoBytes] = useState<number | null>(null);
+  const [storageEstimate, setStorageEstimate] = useState<{ usage: number; quota: number } | null>(null);
   const [offlineUpdatedAtMs, setOfflineUpdatedAtMs] = useState<number | null>(null);
   const [offlineDownloading, setOfflineDownloading] = useState(false);
   const [offlineDetail, setOfflineDetail] = useState<string | null>(null);
@@ -37,6 +40,17 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
     void (async () => {
       const st = await getPianoSoundfontCacheStatus();
       setOfflinePiano({ cached: st.cached, total: st.total });
+      setOfflinePianoBytes(await getPianoSoundfontCacheSizeBytes());
+
+      try {
+        const est = await (navigator as unknown as { storage?: { estimate?: () => Promise<{ usage?: number; quota?: number }> } })
+          .storage?.estimate?.();
+        if (typeof est?.usage === 'number' && typeof est?.quota === 'number') setStorageEstimate({ usage: est.usage, quota: est.quota });
+        else setStorageEstimate(null);
+      } catch {
+        setStorageEstimate(null);
+      }
+
       const meta = getPianoSoundfontCacheMeta();
       setOfflineUpdatedAtMs(meta?.updatedAtMs ?? null);
     })();
@@ -139,6 +153,8 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
             <span className="configLabel">Offline piano</span>
             <span className="configValue" style={{ justifySelf: 'start' }}>
               {offlinePiano ? `${offlinePiano.cached}/${offlinePiano.total} cached` : 'Checking…'}
+              {typeof offlinePianoBytes === 'number' ? ` · ${(offlinePianoBytes / (1024 * 1024)).toFixed(1)} MB` : ''}
+              {storageEstimate ? ` · storage ${(storageEstimate.usage / (1024 * 1024)).toFixed(0)} / ${(storageEstimate.quota / (1024 * 1024)).toFixed(0)} MB` : ''}
               {offlineUpdatedAtMs ? ` · updated ${new Date(offlineUpdatedAtMs).toLocaleDateString()} ${new Date(offlineUpdatedAtMs).toLocaleTimeString()}` : ''}
               {offlineDetail ? ` — ${offlineDetail}` : null}
             </span>
@@ -153,6 +169,7 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
                     const r = await prefetchPianoSoundfonts();
                     const st = await getPianoSoundfontCacheStatus();
                     setOfflinePiano({ cached: st.cached, total: st.total });
+                    setOfflinePianoBytes(await getPianoSoundfontCacheSizeBytes());
                     const meta = getPianoSoundfontCacheMeta();
                     setOfflineUpdatedAtMs(meta?.updatedAtMs ?? null);
                     if (r.errors.length) setOfflineDetail(`${r.errors.length} failed`);
@@ -179,6 +196,7 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
                     const r = await prefetchPianoSoundfonts({ force: true });
                     const st = await getPianoSoundfontCacheStatus();
                     setOfflinePiano({ cached: st.cached, total: st.total });
+                    setOfflinePianoBytes(await getPianoSoundfontCacheSizeBytes());
                     const meta = getPianoSoundfontCacheMeta();
                     setOfflineUpdatedAtMs(meta?.updatedAtMs ?? null);
                     if (r.errors.length) setOfflineDetail(`${r.errors.length} failed`);
@@ -205,6 +223,7 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
                     await clearPianoSoundfontCache();
                     const st = await getPianoSoundfontCacheStatus();
                     setOfflinePiano({ cached: st.cached, total: st.total });
+                    setOfflinePianoBytes(await getPianoSoundfontCacheSizeBytes());
                     setOfflineUpdatedAtMs(null);
                     setOfflineDetail('Cleared');
                   } catch (e) {
