@@ -877,6 +877,46 @@
   box-shadow: var(--shadow);
 }
 
+/* Map (Train Line) header: keep compact on mobile */
+.mapHeaderRow {
+  align-items: baseline;
+}
+
+.mapHeaderStats {
+  text-align: right;
+  font-size: 12px;
+  opacity: 0.85;
+  min-width: 160px;
+  max-width: 240px;
+}
+
+.mapHeaderBar {
+  margin-top: 6px;
+  height: 10px;
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+  overflow: hidden;
+  background: #fff;
+}
+
+.mapHeaderBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #8dd4ff, #b6f2d8);
+}
+
+@media (max-width: 520px) {
+  .mapHeaderRow {
+    align-items: flex-start;
+  }
+
+  .mapHeaderStats {
+    text-align: left;
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+  }
+}
+
 .title { font-size: 20px; margin: 0 0 6px; }
 
 .row { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 10px; }

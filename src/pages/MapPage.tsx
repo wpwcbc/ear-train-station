@@ -28,32 +28,22 @@ export function MapPage({
 
   return (
     <div className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+      <div className="rowBetween mapHeaderRow">
         <div>
           <h1 className="title">Train Line</h1>
           <p className="sub">Complete stations in order. Short lessons, frequent tests.</p>
         </div>
-        <div style={{ textAlign: 'right', fontSize: 12, opacity: 0.85, minWidth: 160 }}>
+
+        <div className="mapHeaderStats" aria-label="daily stats">
           <div>XP: {progress.xp}</div>
           <div>
             Today: {Math.min(progress.dailyXpToday, progress.dailyGoalXp)}/{progress.dailyGoalXp}
           </div>
-          <div
-            aria-label="daily goal progress"
-            style={{
-              marginTop: 6,
-              height: 10,
-              borderRadius: 999,
-              border: '2px solid var(--ink)',
-              overflow: 'hidden',
-              background: '#fff',
-            }}
-          >
+          <div className="mapHeaderBar" aria-label="daily goal progress">
             <div
+              className="mapHeaderBarFill"
               style={{
                 width: `${Math.max(0, Math.min(100, Math.round((progress.dailyXpToday / Math.max(1, progress.dailyGoalXp)) * 100)))}%`,
-                height: '100%',
-                background: 'linear-gradient(90deg, #8dd4ff, #b6f2d8)',
               }}
             />
           </div>
