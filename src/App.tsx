@@ -26,6 +26,7 @@ function App() {
   const [audioWarming, setAudioWarming] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
   const [audioWarmError, setAudioWarmError] = useState<string | null>(null);
+  const [audioLocked, setAudioLocked] = useState<string | null>(null);
 
   useEffect(() => {
     saveProgress(progress);
@@ -68,10 +69,19 @@ function App() {
       }
     }
 
+    function onAudioLocked(ev: Event) {
+      const ce = ev as CustomEvent<{ reason?: string }>;
+      const reason = ce?.detail?.reason;
+      setAudioLocked(reason ?? 'Sound is paused — tap anywhere to enable');
+      window.setTimeout(() => setAudioLocked(null), 4500);
+    }
+
+    window.addEventListener('kuku:audiolocked', onAudioLocked);
     window.addEventListener('pointerdown', doWarm, { once: true, passive: true });
     window.addEventListener('keydown', doWarm, { once: true });
 
     return () => {
+      window.removeEventListener('kuku:audiolocked', onAudioLocked);
       window.removeEventListener('pointerdown', doWarm);
       window.removeEventListener('keydown', doWarm);
     };
@@ -113,6 +123,7 @@ function App() {
       {audioWarming ? <div className="pwaToast">Loading piano…</div> : null}
       {audioReady ? <div className="pwaToast">Piano ready</div> : null}
       {audioWarmError ? <div className="pwaToast pwaToast--warn">Audio: {audioWarmError}</div> : null}
+      {audioLocked ? <div className="pwaToast pwaToast--warn">{audioLocked}</div> : null}
 
       {pwaNeedRefresh ? (
         <div className="pwaToast pwaToast--action">

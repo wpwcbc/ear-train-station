@@ -12,15 +12,34 @@ export type Piano = {
   ) => Promise<void>;
 };
 
-// Trigger instrument fetch/parse early (best-effort). Useful for first-tap latency on mobile.
-export async function warmupPiano(): Promise<void> {
-  const p = await getPianoPlayer();
+function dispatchAudioLocked(reason?: string) {
   try {
-    const ctx = (p as unknown as { context?: AudioContext }).context;
-    if (ctx && ctx.state === 'suspended') await ctx.resume();
+    window.dispatchEvent(new CustomEvent('kuku:audiolocked', { detail: { reason } }));
   } catch {
     // ignore
   }
+}
+
+async function ensureContextRunning(p: Soundfont.Player): Promise<boolean> {
+  try {
+    const ctx = (p as unknown as { context?: AudioContext }).context;
+    if (!ctx) return true;
+    if (ctx.state === 'suspended') await ctx.resume();
+    if (ctx.state !== 'running') {
+      dispatchAudioLocked(`AudioContext state: ${ctx.state}`);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    dispatchAudioLocked(e instanceof Error ? e.message : 'AudioContext resume failed');
+    return false;
+  }
+}
+
+// Trigger instrument fetch/parse early (best-effort). Useful for first-tap latency on mobile.
+export async function warmupPiano(): Promise<void> {
+  const p = await getPianoPlayer();
+  await ensureContextRunning(p);
 }
 
 let pianoPromise: Promise<Soundfont.Player> | null = null;
@@ -54,13 +73,10 @@ export const piano: Piano = {
     const durationSec = opts?.durationSec ?? 1.0;
     const velocity = opts?.velocity ?? 0.9;
     const volume = loadSettings().volume;
-    // Ensure context is started (some browsers require a user gesture; our UI uses clicks).
-    try {
-      const ctx = (p as unknown as { context?: AudioContext }).context;
-      if (ctx && ctx.state === 'suspended') await ctx.resume();
-    } catch {
-      // ignore
-    }
+    // Ensure context is started (some browsers require a user gesture).
+    const ok = await ensureContextRunning(p);
+    if (!ok) return;
+
     (p as unknown as { play: (midi: number, when: number, opts: { gain: number; duration: number }) => void }).play(
       midi,
       0,
@@ -76,12 +92,8 @@ export const piano: Piano = {
     const mode = opts?.mode ?? 'block';
     const gapMs = opts?.gapMs ?? 120;
 
-    try {
-      const ctx = (p as unknown as { context?: AudioContext }).context;
-      if (ctx && ctx.state === 'suspended') await ctx.resume();
-    } catch {
-      // ignore
-    }
+    const ok = await ensureContextRunning(p);
+    if (!ok) return;
 
     const play = (p as unknown as {
       play: (midi: number, when: number, opts: { gain: number; duration: number }) => void;
