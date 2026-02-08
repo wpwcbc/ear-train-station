@@ -17,6 +17,14 @@ function msToHuman(ms: number): string {
   return `${d}d`;
 }
 
+function localDayKey(ts = Date.now()): string {
+  const d = new Date(ts);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export function PracticePage({ progress }: { progress: Progress }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -54,6 +62,38 @@ export function PracticePage({ progress }: { progress: Progress }) {
     <div className="page">
       <h1 className="h1">Practice</h1>
       <p className="sub">Daily workout + spaced review (Duolingo-ish).</p>
+
+      <div className="card" style={{ marginTop: 12 }}>
+        <h2 className="h2">Today’s workout</h2>
+        <div style={{ fontSize: 12, opacity: 0.8 }}>
+          Two focused sessions that rotate daily (inspired by Duolingo’s Practice Hub).
+        </div>
+
+        {(() => {
+          const dayKey = localDayKey();
+          const topDueStation = stationDueCounts[0]?.id ?? null;
+
+          // Deterministic-ish daily rotation: alternate the “top due station” suggestion
+          // with a general review, so it doesn’t feel stuck forever.
+          const rotate = (Number(dayKey.replaceAll('-', '')) || 0) % 2;
+          const reviewTo = topDueStation && rotate === 0 ? `/review?station=${topDueStation}` : '/review';
+          const reviewLabel = topDueStation && rotate === 0 ? `Targeted review (${topDueStation})` : 'Targeted review';
+
+          const newLabel = continueId ? 'New material (continue)' : 'New material (pick a section)';
+          const newTo = continueId ? `/lesson/${continueId}` : '/learn';
+
+          return (
+            <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <Link className="linkBtn" to={reviewTo} state={{ exitTo: '/practice' }} title={dayKey}>
+                {reviewLabel}
+              </Link>
+              <Link className="linkBtn" to={newTo} state={{ exitTo: '/practice' }}>
+                {newLabel}
+              </Link>
+            </div>
+          );
+        })()}
+      </div>
 
       <div className="card" style={{ marginTop: 12 }}>
         <h2 className="h2">Daily goal</h2>
