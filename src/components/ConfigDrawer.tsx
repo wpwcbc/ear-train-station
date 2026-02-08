@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { defaultSettings, loadSettings, saveSettings, type Settings } from '../lib/settings';
+import { getPianoContextState, warmupPiano } from '../audio/piano';
 
 function clamp01(n: number) {
   if (Number.isNaN(n)) return 1;
@@ -9,10 +10,36 @@ function clamp01(n: number) {
 export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
   const [draft, setDraft] = useState<Settings>(() => loadSettings());
 
+  const [audioState, setAudioState] = useState<ReturnType<typeof getPianoContextState>>(() => getPianoContextState());
+  const [audioDetail, setAudioDetail] = useState<string | null>(null);
+  const [audioEnabling, setAudioEnabling] = useState(false);
+
   // Whenever it opens, reload latest settings.
   useEffect(() => {
     if (!props.open) return;
     setDraft(loadSettings());
+    setAudioState(getPianoContextState());
+    setAudioDetail(null);
+  }, [props.open]);
+
+  // While open, keep audio state fresh (and capture "audio locked" reasons).
+  useEffect(() => {
+    if (!props.open) return;
+
+    const t = window.setInterval(() => setAudioState(getPianoContextState()), 500);
+
+    function onAudioLocked(ev: Event) {
+      const ce = ev as CustomEvent<{ reason?: string }>;
+      const reason = ce?.detail?.reason;
+      setAudioDetail(reason ?? 'Sound is paused — tap anywhere to enable');
+      setAudioState(getPianoContextState());
+    }
+
+    window.addEventListener('kuku:audiolocked', onAudioLocked);
+    return () => {
+      window.clearInterval(t);
+      window.removeEventListener('kuku:audiolocked', onAudioLocked);
+    };
   }, [props.open]);
 
   // Allow Esc to close.
@@ -60,6 +87,33 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
 
         <div className="configSection">
           <div className="configH">Audio</div>
+
+          <div className="configRow">
+            <span className="configLabel">Status</span>
+            <span className="configValue" style={{ justifySelf: 'start' }}>
+              {audioState}
+              {audioDetail ? ` — ${audioDetail}` : null}
+            </span>
+            <button
+              className="ghost"
+              disabled={audioEnabling}
+              onClick={async () => {
+                setAudioEnabling(true);
+                setAudioDetail(null);
+                try {
+                  await warmupPiano();
+                  setAudioState(getPianoContextState());
+                } catch (e) {
+                  setAudioDetail(e instanceof Error ? e.message : 'Audio warmup failed');
+                } finally {
+                  setAudioEnabling(false);
+                }
+              }}
+              aria-label="Enable audio"
+            >
+              {audioEnabling ? 'Enabling…' : 'Enable'}
+            </button>
+          </div>
 
           <label className="configRow">
             <span className="configLabel">Master volume</span>
