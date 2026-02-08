@@ -108,6 +108,15 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   }, [practiceFocusIntervals]);
 
   const [settings, setSettings] = useState(() => loadSettings());
+
+  // Tiny celebration when the user crosses their daily goal threshold.
+  const [toast, setToast] = useState<null | { text: string }>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => setToast(null), 2400);
+    return () => window.clearTimeout(t);
+  }, [toast]);
+
   // Settings UI lives in <FocusShell> (⚙️ in the top bar).
   // Pedagogy default: lessons teach with arps; tests/exams check with block chords.
   const chordMode: 'block' | 'arp' = id.startsWith('T') || id.startsWith('E') ? 'block' : 'arp';
@@ -575,6 +584,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       if (doneNext && !progress.stationDone[sid as StationId]) delta += 1;
     }
     if (delta > 0) bumpStationCompleted(delta);
+
+    // Daily goal celebration: fire exactly when crossing the threshold.
+    const goal = Math.max(1, next.dailyGoalXp || 0);
+    const before = Math.max(0, progress.dailyXpToday || 0);
+    const after = Math.max(0, next.dailyXpToday || 0);
+    if (before < goal && after >= goal) {
+      setToast({ text: 'Daily goal reached — nice.' });
+    }
 
     setProgress(next);
   }
@@ -2432,6 +2449,28 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   return (
     <div className="card">
+      {toast ? (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'fixed',
+            top: 12,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 1000,
+            padding: '10px 12px',
+            borderRadius: 14,
+            border: '3px solid var(--ink)',
+            background: 'linear-gradient(90deg, #b6f2d8, #8dd4ff)',
+            color: '#111',
+            fontWeight: 850,
+            boxShadow: '0 10px 30px rgba(0,0,0,0.18)',
+          }}
+        >
+          {toast.text}
+        </div>
+      ) : null}
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
         <div>
           <h1 className="title">{station.title}</h1>
