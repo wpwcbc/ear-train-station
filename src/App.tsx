@@ -74,6 +74,11 @@ function App() {
       const reason = ce?.detail?.reason;
       setAudioLocked(reason ?? 'Sound is paused — tap anywhere to enable');
       window.setTimeout(() => setAudioLocked(null), 4500);
+
+      // If audio gets re-locked later (Safari/iOS quirks), arm one more warmup attempt
+      // on the next user gesture.
+      window.addEventListener('pointerdown', doWarm, { once: true, passive: true });
+      window.addEventListener('keydown', doWarm, { once: true });
     }
 
     window.addEventListener('kuku:audiolocked', onAudioLocked);
