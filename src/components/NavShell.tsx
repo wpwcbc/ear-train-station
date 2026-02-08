@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import type { Progress } from '../lib/progress';
 import { ConfigDrawer } from './ConfigDrawer';
 
 type Tab = { to: string; label: string; icon: string; accent: string };
@@ -12,7 +13,13 @@ const TABS: Tab[] = [
   { to: '/profile', label: 'Profile', icon: '◉', accent: 'var(--route-red)' },
 ];
 
-export function NavShell() {
+export function NavShell({
+  progress,
+  setProgress,
+}: {
+  progress: Progress;
+  setProgress: (p: Progress) => void;
+}) {
   const [configOpen, setConfigOpen] = useState(false);
   const loc = useLocation();
 
@@ -78,7 +85,7 @@ export function NavShell() {
         </nav>
       </div>
 
-      <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} />
+      <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} progress={progress} setProgress={setProgress} />
     </div>
   );
 }

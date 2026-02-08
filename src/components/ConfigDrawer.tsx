@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { Progress } from '../lib/progress';
+import { defaultProgress, loadProgress, saveProgress } from '../lib/progress';
 import { defaultSettings, loadSettings, saveSettings, type Settings } from '../lib/settings';
 import {
   clearPianoSoundfontCache,
@@ -15,7 +17,16 @@ function clamp01(n: number) {
   return Math.max(0, Math.min(1, n));
 }
 
-export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
+export function ConfigDrawer(props: {
+  open: boolean;
+  onClose: () => void;
+  progress: Progress;
+  setProgress: (p: Progress) => void;
+}) {
   const [draft, setDraft] = useState<Settings>(() => loadSettings());
 
   const [audioState, setAudioState] = useState<ReturnType<typeof getPianoContextState>>(() => getPianoContextState());
@@ -112,6 +123,43 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
 
   const s = draft ?? defaultSettings();
 
+  const goal = clamp(props.progress.dailyGoalXp || 20, 5, 200);
+
+  function setDailyGoalXp(nextGoal: number) {
+    props.setProgress({ ...props.progress, dailyGoalXp: clamp(nextGoal, 5, 200) });
+  }
+
+  function resetEverything() {
+    const ok = window.confirm('Reset all progress, XP, streak, and settings? This cannot be undone.');
+    if (!ok) return;
+
+    const p = defaultProgress();
+    props.setProgress(p);
+    saveProgress(p);
+
+    const next = defaultSettings();
+    setDraft(next);
+    saveSettings(next);
+
+    // Local review queue / study history (best-effort)
+    try {
+      localStorage.removeItem('ets_mistakes_v1');
+      localStorage.removeItem('ets_mistakes_v2');
+      localStorage.removeItem('ets_progress_v1');
+      localStorage.removeItem('ets_progress_v2');
+      localStorage.removeItem('ets_settings_v1');
+      localStorage.removeItem('ets_settings_v2');
+      localStorage.removeItem('ets_settings_v3');
+      localStorage.removeItem('ets_settings_v4');
+    } catch {
+      // ignore
+    }
+
+    // Re-load once to ensure normalization for today happens.
+    props.setProgress(loadProgress());
+    setDraft(loadSettings());
+  }
+
   function commit(next: Settings) {
     setDraft(next);
     saveSettings(next);
@@ -129,6 +177,28 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
           <button className="ghost" onClick={props.onClose} aria-label="Close">
             ✕
           </button>
+        </div>
+
+        <div className="configSection">
+          <div className="configH">Motivation</div>
+
+          <div className="configRow">
+            <span className="configLabel">Daily goal</span>
+            <span className="configValue" style={{ justifySelf: 'start' }}>
+              {goal} XP
+            </span>
+            <div className="configActions" style={{ flexWrap: 'wrap' }}>
+              {[10, 20, 30, 50].map((g) => (
+                <button key={g} className={g === goal ? 'primary' : 'ghost'} onClick={() => setDailyGoalXp(g)}>
+                  {g}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
+            Tip: main pages are read-only; tweak this in ⚙️.
+          </div>
         </div>
 
         <div className="configSection">
@@ -316,6 +386,19 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
               <option value="fast">Fast</option>
             </select>
           </label>
+        </div>
+
+        <div className="configSection">
+          <div className="configH">Data</div>
+          <div className="configRow">
+            <span className="configLabel">Reset everything</span>
+            <span className="configValue" style={{ justifySelf: 'start' }}>
+              Fresh start (progress + settings)
+            </span>
+            <button className="ghost" onClick={resetEverything} aria-label="Reset everything">
+              Reset
+            </button>
+          </div>
         </div>
 
         <div className="configSection">

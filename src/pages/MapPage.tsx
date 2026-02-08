@@ -59,7 +59,7 @@ export function MapPage({
           </span>
           <span style={{ opacity: 0.65 }}>•</span>
           <span>
-            Daily goal: {progress.dailyGoalXp} XP <span style={{ opacity: 0.7 }}>(edit in Profile)</span>
+            Daily goal: {progress.dailyGoalXp} XP <span style={{ opacity: 0.7 }}>(edit in ⚙️)</span>
           </span>
           {progress.dailyXpToday >= progress.dailyGoalXp ? (
             <span style={{ opacity: 0.95 }}>• Daily goal reached</span>

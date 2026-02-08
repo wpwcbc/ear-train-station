@@ -127,7 +127,7 @@ function App() {
     <>
       <Routes>
         {/* Main app tabs */}
-        <Route element={<NavShell />}>
+        <Route element={<NavShell progress={progress} setProgress={setProgress} />}>
           <Route index element={<Navigate to="/learn" replace />} />
 
           <Route path="/learn" element={<LearnSectionsPage progress={progress} />} />
@@ -143,7 +143,7 @@ function App() {
         </Route>
 
         {/* Focus Mode (no side/bottom nav; knowledge-only surface + ⚙️) */}
-        <Route element={<FocusShell />}>
+        <Route element={<FocusShell progress={progress} setProgress={setProgress} />}>
           <Route path="/lesson/:stationId" element={<StationPage progress={progress} setProgress={setProgress} />} />
           <Route path="/learn/section/:sectionId/exam" element={<SectionExamPage progress={progress} />} />
           <Route path="/review" element={<ReviewPage progress={progress} setProgress={setProgress} />} />

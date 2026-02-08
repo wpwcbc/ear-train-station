@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import type { Progress } from '../lib/progress';
 import { ConfigDrawer } from './ConfigDrawer';
 
 export type FocusTopBarState = {
@@ -31,7 +32,7 @@ function clamp01(n: number) {
   return Math.max(0, Math.min(1, n));
 }
 
-export function FocusShell(props: { children?: ReactNode }) {
+export function FocusShell(props: { children?: ReactNode; progress: Progress; setProgress: (p: Progress) => void }) {
   const navigate = useNavigate();
   const loc = useLocation();
   const [configOpen, setConfigOpen] = useState(false);
@@ -117,7 +118,7 @@ export function FocusShell(props: { children?: ReactNode }) {
           <Outlet />
         </main>
 
-        <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} />
+        <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} progress={props.progress} setProgress={props.setProgress} />
       </div>
     </FocusUIContext.Provider>
   );
