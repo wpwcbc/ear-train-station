@@ -6,6 +6,7 @@ import { isSectionExamUnlocked, sectionStations } from '../lib/sectionStations';
 import { SectionRoute } from '../components/SectionRoute';
 
 export function SectionDetailPage({ progress, setProgress: _setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
+  void _setProgress;
   const { sectionId } = useParams();
   const id = (sectionId ?? 'NOTES') as SectionId;
   const section = SECTIONS.find((s) => s.id === id);

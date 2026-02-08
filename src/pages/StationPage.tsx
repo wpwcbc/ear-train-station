@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useFocusUI } from '../components/FocusShell';
+
+/* eslint-disable react-hooks/preserve-manual-memoization */
+import { useFocusUI } from '../components/focusUI';
 import type { StationId, Progress } from '../lib/progress';
 import { applyStudyReward, markStationDone } from '../lib/progress';
 import { addMistake, loadMistakes, mistakeCountForStation } from '../lib/mistakes';
@@ -62,6 +64,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const nextSection = examSectionIndex >= 0 ? (SECTIONS[examSectionIndex + 1] ?? null) : null;
 
   const [now, setNow] = useState(() => Date.now());
+  const [settings, setSettings] = useState(() => loadSettings());
+
   useEffect(() => {
     function bump() {
       setNow(Date.now());
@@ -106,8 +110,6 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     if (!practiceFocusIntervals?.length) return undefined;
     return practiceFocusIntervals.map((l) => LABEL_TO_SEMITONE[l]);
   }, [practiceFocusIntervals]);
-
-  const [settings, setSettings] = useState(() => loadSettings());
 
   // Tiny celebration when the user crosses their daily goal threshold.
   const [toast, setToast] = useState<null | { text: string }>(null);
@@ -752,10 +754,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     if (!s3TwistPassed) return;
     if (progress.stationDone[id]) return;
 
-    let p2 = progress;
-    p2 = markStationDone(p2, id);
-    p2 = applyStudyReward(p2, 10);
-    commitProgress(p2);
+    const t = window.setTimeout(() => {
+      let p2 = progress;
+      p2 = markStationDone(p2, id);
+      p2 = applyStudyReward(p2, 10);
+      commitProgress(p2);
+    }, 0);
+
+    return () => window.clearTimeout(t);
   }, [id, s3TwistPassed, progress]);
 
   async function playPromptS1() {
@@ -891,10 +897,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     if (!s1bTwistPassed) return;
     if (progress.stationDone[id]) return;
 
-    let p2 = progress;
-    p2 = markStationDone(p2, id);
-    p2 = applyStudyReward(p2, 10);
-    commitProgress(p2);
+    const t = window.setTimeout(() => {
+      let p2 = progress;
+      p2 = markStationDone(p2, id);
+      p2 = applyStudyReward(p2, 10);
+      commitProgress(p2);
+    }, 0);
+
+    return () => window.clearTimeout(t);
   }, [id, s1bTwistPassed, progress]);
 
   // When the Twist is passed, mark the lesson complete (Duolingo-ish “earned it” moment).
@@ -903,10 +913,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     if (!s1TwistPassed) return;
     if (progress.stationDone[id]) return;
 
-    let p2 = progress;
-    p2 = markStationDone(p2, id);
-    p2 = applyStudyReward(p2, 10); // completion bonus
-    commitProgress(p2);
+    const t = window.setTimeout(() => {
+      let p2 = progress;
+      p2 = markStationDone(p2, id);
+      p2 = applyStudyReward(p2, 10); // completion bonus
+      commitProgress(p2);
+    }, 0);
+
+    return () => window.clearTimeout(t);
   }, [id, s1TwistPassed, progress]);
 
   async function playPromptS1C() {
@@ -978,10 +992,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     if (!s1cTwistPassed) return;
     if (progress.stationDone[id]) return;
 
-    let p2 = progress;
-    p2 = markStationDone(p2, id);
-    p2 = applyStudyReward(p2, 10);
-    commitProgress(p2);
+    const t = window.setTimeout(() => {
+      let p2 = progress;
+      p2 = markStationDone(p2, id);
+      p2 = applyStudyReward(p2, 10);
+      commitProgress(p2);
+    }, 0);
+
+    return () => window.clearTimeout(t);
   }, [id, s1cTwistPassed, progress]);
 
   async function playS2Scale(kind: 'soFar' | 'full' | 'fullOctave') {

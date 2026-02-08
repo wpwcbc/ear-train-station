@@ -48,7 +48,8 @@ export function SectionRoute({
 
   // If progress changes (e.g. after completing a station), gently move selection to the next target.
   useEffect(() => {
-    setSelectedId((cur) => cur ?? defaultSelected);
+    const t = window.setTimeout(() => setSelectedId((cur) => cur ?? defaultSelected), 0);
+    return () => window.clearTimeout(t);
   }, [defaultSelected]);
 
   const selectedNode = nodes.find((n) => n.stationId === selectedId) ?? null;

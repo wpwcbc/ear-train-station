@@ -1,36 +1,8 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { ConfigDrawer } from './ConfigDrawer';
-
-export type FocusTopBarState = {
-  /** 0..1 */
-  progress?: number;
-  /** Optional small status text (e.g. "Twist", "Mid-test", etc.) */
-  statusText?: string;
-  /** Optional extra context badge (e.g. "Lesson: ARP"). */
-  badge?: { text: string; title?: string };
-  /** Hearts only when applicable. */
-  hearts?: { current: number; max: number };
-};
-
-type FocusUIContextValue = {
-  topBar: FocusTopBarState;
-  setTopBar: (next: FocusTopBarState) => void;
-};
-
-const FocusUIContext = createContext<FocusUIContextValue | null>(null);
-
-export function useFocusUI() {
-  const ctx = useContext(FocusUIContext);
-  if (!ctx) throw new Error('useFocusUI must be used inside <FocusShell>.');
-  return ctx;
-}
-
-function clamp01(n: number) {
-  if (Number.isNaN(n)) return 0;
-  return Math.max(0, Math.min(1, n));
-}
+import { FocusUIContext, type FocusUIContextValue, type FocusTopBarState } from './focusUI';
 
 export function FocusShell(props: { children?: ReactNode; progress: Progress; setProgress: (p: Progress) => void }) {
   const navigate = useNavigate();
@@ -38,10 +10,17 @@ export function FocusShell(props: { children?: ReactNode; progress: Progress; se
   const [configOpen, setConfigOpen] = useState(false);
   const [topBar, setTopBar] = useState<FocusTopBarState>({});
 
+  function clamp01(n: number) {
+    if (Number.isNaN(n)) return 0;
+    return Math.max(0, Math.min(1, n));
+  }
+
   // Avoid “stuck drawer” when navigating between focus routes (esp. mobile back/exit).
   useEffect(() => {
-    setConfigOpen(false);
-  }, [loc.pathname, loc.search]);
+    if (!configOpen) return;
+    const t = window.setTimeout(() => setConfigOpen(false), 0);
+    return () => window.clearTimeout(t);
+  }, [loc.pathname, loc.search, configOpen]);
 
   const ctx = useMemo<FocusUIContextValue>(() => ({ topBar, setTopBar }), [topBar]);
 

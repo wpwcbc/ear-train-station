@@ -1,10 +1,11 @@
+import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 
 export type StationSignCardAction = {
   label: string;
   to?: string;
   /** react-router state (used for FocusShell exit targets) */
-  state?: any;
+  state?: unknown;
   disabled?: boolean;
   variant?: 'primary' | 'default';
 };
@@ -18,8 +19,10 @@ export function StationSignCard(props: {
 }) {
   const { accent, title, subtitle, statusRight, actions } = props;
 
+  const signStyle = { '--sign-accent': accent } as CSSProperties;
+
   return (
-    <div className="stationSign" style={{ ['--sign-accent' as any]: accent }}>
+    <div className="stationSign" style={signStyle}>
       <div className="stationSignTop">
         <div className="stationSignLine" aria-hidden="true" />
         <div className="stationSignStatus" aria-label={statusRight ? `Status: ${statusRight}` : undefined}>

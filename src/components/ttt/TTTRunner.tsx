@@ -24,11 +24,15 @@ export function TTTRunner({
   const [phase, setPhase] = useState<TTTPhase>(defaultPhase);
 
   useEffect(() => {
-    if (phase === 'teach' && teachComplete) setPhase('test');
+    if (!(phase === 'teach' && teachComplete)) return;
+    const t = window.setTimeout(() => setPhase('test'), 0);
+    return () => window.clearTimeout(t);
   }, [phase, teachComplete]);
 
   useEffect(() => {
-    if (phase === 'test' && testComplete) setPhase('twist');
+    if (!(phase === 'test' && testComplete)) return;
+    const t = window.setTimeout(() => setPhase('twist'), 0);
+    return () => window.clearTimeout(t);
   }, [phase, testComplete]);
 
   useEffect(() => {

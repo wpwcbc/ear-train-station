@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { ConfigDrawer } from './ConfigDrawer';
@@ -28,8 +28,10 @@ export function NavShell({
     return TABS.find((t) => loc.pathname === t.to || loc.pathname.startsWith(`${t.to}/`)) ?? TABS[0];
   }, [loc.pathname]);
 
+  const shellStyle = { '--tab-accent': activeTab.accent } as CSSProperties;
+
   return (
-    <div className="shell" style={{ ['--tab-accent' as any]: activeTab.accent }}>
+    <div className="shell" style={shellStyle}>
       <aside className="sideNav" aria-label="primary">
         <div className="brandBlock">
           <div className="brandRow">
@@ -47,7 +49,7 @@ export function NavShell({
             <NavLink
               key={t.to}
               to={t.to}
-              style={{ ['--item-accent' as any]: t.accent }}
+              style={{ '--item-accent': t.accent } as CSSProperties}
               className={({ isActive }) => `navItem ${isActive ? 'active' : ''}`}
             >
               <span className="navIcon" aria-hidden>
@@ -73,7 +75,7 @@ export function NavShell({
             <NavLink
               key={t.to}
               to={t.to}
-              style={{ ['--item-accent' as any]: t.accent }}
+              style={{ '--item-accent': t.accent } as CSSProperties}
               className={({ isActive }) => `bottomItem ${isActive ? 'active' : ''}`}
             >
               <span className="bottomIcon" aria-hidden>
