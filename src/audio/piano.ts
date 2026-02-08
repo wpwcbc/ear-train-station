@@ -51,19 +51,32 @@ function getPianoSoundfontUrls(): string[] {
   return [`${base}${name}-mp3.js`, `${base}${name}-ogg.js`];
 }
 
+const PIANO_SOUNDFONT_CACHE = 'kuku-soundfonts-v1';
+const LEGACY_PIANO_SOUNDFONT_CACHE = 'soundfonts';
+
 export async function getPianoSoundfontCacheStatus(): Promise<{ cached: number; total: number; urls: string[] }> {
   const urls = getPianoSoundfontUrls();
   try {
     if (!('caches' in window)) return { cached: 0, total: urls.length, urls };
-    const cache = await caches.open('soundfonts');
+
+    // Prefer the versioned cache, but count legacy entries too so older installs still show status.
+    const cache = await caches.open(PIANO_SOUNDFONT_CACHE);
+    let legacy: Cache | null = null;
+    try {
+      legacy = await caches.open(LEGACY_PIANO_SOUNDFONT_CACHE);
+    } catch {
+      legacy = null;
+    }
+
     let cached = 0;
     for (const url of urls) {
-      const res = await cache.match(url);
+      const res = (await cache.match(url)) ?? (legacy ? await legacy.match(url) : undefined);
       if (res) cached++;
     }
+
     return { cached, total: urls.length, urls };
   } catch {
-    // Cache name may differ per Workbox revision; best-effort only.
+    // Best-effort only.
     return { cached: 0, total: urls.length, urls };
   }
 }
@@ -71,10 +84,12 @@ export async function getPianoSoundfontCacheStatus(): Promise<{ cached: number; 
 export async function clearPianoSoundfontCache(): Promise<boolean> {
   try {
     if (!('caches' in window)) return false;
-    // We use a dedicated cache for these soundfont payloads.
-    // Deleting and recreating keeps behavior deterministic.
-    const ok = await caches.delete('soundfonts');
-    return ok;
+    // Deterministic clear; also cleans up the legacy cache name.
+    const [ok1, ok2] = await Promise.all([
+      caches.delete(PIANO_SOUNDFONT_CACHE),
+      caches.delete(LEGACY_PIANO_SOUNDFONT_CACHE),
+    ]);
+    return ok1 || ok2;
   } catch {
     return false;
   }
@@ -94,7 +109,7 @@ export async function prefetchPianoSoundfonts(): Promise<PrefetchResult> {
 
   let cache: Cache | null = null;
   try {
-    if ('caches' in window) cache = await caches.open('soundfonts');
+    if ('caches' in window) cache = await caches.open(PIANO_SOUNDFONT_CACHE);
   } catch {
     cache = null;
   }
