@@ -5,6 +5,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useFocusUI } from '../components/focusUI';
 import type { StationId, Progress } from '../lib/progress';
 import { applyStudyReward, markStationDone } from '../lib/progress';
+import { hasShownDailyGoalReachedToast, markDailyGoalReachedToastShown } from '../lib/dailyGoalToast';
 import { addMistake, loadMistakes, mistakeCountForStation } from '../lib/mistakes';
 import { bumpStationCompleted } from '../lib/quests';
 import { STATIONS, nextStationId, isStationUnlocked } from '../lib/stations';
@@ -592,7 +593,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     const before = Math.max(0, progress.dailyXpToday || 0);
     const after = Math.max(0, next.dailyXpToday || 0);
     if (before < goal && after >= goal) {
-      setToast({ text: 'Daily goal reached — nice.' });
+      const ymd = next.dailyYmd ?? progress.dailyYmd ?? undefined;
+      if (!hasShownDailyGoalReachedToast(ymd)) {
+        markDailyGoalReachedToastShown(ymd);
+        setToast({ text: 'Daily goal reached — nice.' });
+      }
     }
 
     setProgress(next);
