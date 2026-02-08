@@ -59,5 +59,6 @@ npm run gen:icons
   - **Download**: prefetches both `*-mp3.js` and `*-ogg.js` payloads into a versioned Cache API bucket (user-initiated, so we don’t auto-download large assets on first load).
   - **Update**: re-downloads and overwrites cached payloads (useful if the cache is corrupted or the CDN payload changed).
   - **Clear**: deletes the cache so you can start fresh.
+  - **Keep**: requests **persistent storage** (`navigator.storage.persist()`), which helps prevent eviction in some browsers (support varies; iOS may ignore it).
   - UI also shows **approx cache size** + (when available) the browser’s **storage usage/quota**.
   - Note: on iOS, PWA storage can be **evicted by the OS** (especially if the app isn’t used for a while), so Offline piano is a best-effort acceleration — not a guarantee.

@@ -25,6 +25,8 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
   const [offlinePiano, setOfflinePiano] = useState<{ cached: number; total: number } | null>(null);
   const [offlinePianoBytes, setOfflinePianoBytes] = useState<number | null>(null);
   const [storageEstimate, setStorageEstimate] = useState<{ usage: number; quota: number } | null>(null);
+  const [storagePersistent, setStoragePersistent] = useState<boolean | null>(null);
+  const [storagePersisting, setStoragePersisting] = useState(false);
   const [offlineUpdatedAtMs, setOfflineUpdatedAtMs] = useState<number | null>(null);
   const [offlineDownloading, setOfflineDownloading] = useState(false);
   const [offlineDetail, setOfflineDetail] = useState<string | null>(null);
@@ -49,6 +51,16 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
         else setStorageEstimate(null);
       } catch {
         setStorageEstimate(null);
+      }
+
+      try {
+        const persisted = await (
+          navigator as unknown as { storage?: { persisted?: () => Promise<boolean> } }
+        ).storage?.persisted?.();
+        if (typeof persisted === 'boolean') setStoragePersistent(persisted);
+        else setStoragePersistent(null);
+      } catch {
+        setStoragePersistent(null);
       }
 
       const meta = getPianoSoundfontCacheMeta();
@@ -155,10 +167,45 @@ export function ConfigDrawer(props: { open: boolean; onClose: () => void }) {
               {offlinePiano ? `${offlinePiano.cached}/${offlinePiano.total} cached` : 'Checking…'}
               {typeof offlinePianoBytes === 'number' ? ` · ${(offlinePianoBytes / (1024 * 1024)).toFixed(1)} MB` : ''}
               {storageEstimate ? ` · storage ${(storageEstimate.usage / (1024 * 1024)).toFixed(0)} / ${(storageEstimate.quota / (1024 * 1024)).toFixed(0)} MB` : ''}
+              {typeof storagePersistent === 'boolean' ? ` · ${storagePersistent ? 'persistent' : 'evictable'}` : ''}
               {offlineUpdatedAtMs ? ` · updated ${new Date(offlineUpdatedAtMs).toLocaleDateString()} ${new Date(offlineUpdatedAtMs).toLocaleTimeString()}` : ''}
               {offlineDetail ? ` — ${offlineDetail}` : null}
             </span>
             <div className="configActions">
+              <button
+                className="ghost"
+                disabled={
+                  storagePersisting ||
+                  storagePersistent === true ||
+                  !(
+                    (navigator as unknown as { storage?: { persist?: () => Promise<boolean> } }).storage?.persist
+                  )
+                }
+                onClick={async () => {
+                  setStoragePersisting(true);
+                  setOfflineDetail('Keeping offline data…');
+                  try {
+                    const ok = await (
+                      navigator as unknown as { storage?: { persist?: () => Promise<boolean>; persisted?: () => Promise<boolean> } }
+                    ).storage?.persist?.();
+                    const persisted = await (
+                      navigator as unknown as { storage?: { persisted?: () => Promise<boolean> } }
+                    ).storage?.persisted?.();
+                    if (typeof persisted === 'boolean') setStoragePersistent(persisted);
+                    if (ok) setOfflineDetail('Marked as persistent');
+                    else setOfflineDetail('May still be evictable on this browser');
+                  } catch (e) {
+                    setOfflineDetail(e instanceof Error ? e.message : 'Persist request failed');
+                  } finally {
+                    window.setTimeout(() => setOfflineDetail(null), 5000);
+                    setStoragePersisting(false);
+                  }
+                }}
+                aria-label="Request persistent storage"
+              >
+                {storagePersistent === true ? 'Kept' : storagePersisting ? 'Keeping…' : 'Keep'}
+              </button>
+
               <button
                 className="ghost"
                 disabled={offlineDownloading}
