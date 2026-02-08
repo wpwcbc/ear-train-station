@@ -40,6 +40,7 @@ Quick definitions (nice phrasing from Theta Music Trainer): arpeggios are chord 
 
 - We use `env(safe-area-inset-*)` for Focus Mode + bottom UI spacing.
 - iOS needs `viewport-fit=cover` in the viewport meta tag for those safe-area insets to work reliably.
+- WebAudio can get **suspended** when the tab is backgrounded; on return we do a best-effort resume, and if it stays paused we show a subtle toast (“Sound is paused — tap anywhere to enable”).
 
 ## PWA icons
 

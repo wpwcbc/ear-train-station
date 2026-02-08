@@ -43,6 +43,27 @@ export async function warmupPiano(): Promise<void> {
 }
 
 let pianoPromise: Promise<Soundfont.Player> | null = null;
+let pianoCtx: AudioContext | null = null;
+
+export function getPianoContextState(): AudioContextState | 'uninitialized' {
+  return pianoCtx?.state ?? 'uninitialized';
+}
+
+export async function resumePianoContextBestEffort(): Promise<boolean> {
+  try {
+    const ctx = pianoCtx;
+    if (!ctx) return true;
+    if (ctx.state === 'suspended') await ctx.resume();
+    if (ctx.state !== 'running') {
+      dispatchAudioLocked(`AudioContext state: ${ctx.state}`);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    dispatchAudioLocked(e instanceof Error ? e.message : 'AudioContext resume failed');
+    return false;
+  }
+}
 
 async function getPianoPlayer() {
   if (pianoPromise) return pianoPromise;
@@ -51,6 +72,7 @@ async function getPianoPlayer() {
   const AudioContextCtor = window.AudioContext || w.webkitAudioContext;
   if (!AudioContextCtor) throw new Error('WebAudio AudioContext not available');
   const ctx: AudioContext = new AudioContextCtor();
+  pianoCtx = ctx;
 
   // Common, permissive CDN location. If this breaks, we can vendor the .js/.sf2 later.
   const soundfontUrl = 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/';

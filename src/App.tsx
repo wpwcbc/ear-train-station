@@ -13,7 +13,7 @@ import { ReviewPage } from './pages/ReviewPage';
 import { QuestsPage } from './pages/QuestsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { loadProgress, saveProgress, type Progress } from './lib/progress';
-import { warmupPiano } from './audio/piano';
+import { resumePianoContextBestEffort, warmupPiano } from './audio/piano';
 import './App.css';
 
 function App() {
@@ -95,11 +95,23 @@ function App() {
       armWarmupOnce();
     }
 
+    async function onVisibilityOrPageShow() {
+      // On iOS/Safari, returning from background can leave WebAudio suspended.
+      // Try a best-effort resume; if it fails, piano.ts will dispatch kuku:audiolocked
+      // which re-arms warmup on the next gesture.
+      if (document.visibilityState !== 'visible') return;
+      await resumePianoContextBestEffort();
+    }
+
     window.addEventListener('kuku:audiolocked', onAudioLocked);
+    document.addEventListener('visibilitychange', onVisibilityOrPageShow);
+    window.addEventListener('pageshow', onVisibilityOrPageShow);
     armWarmupOnce();
 
     return () => {
       window.removeEventListener('kuku:audiolocked', onAudioLocked);
+      document.removeEventListener('visibilitychange', onVisibilityOrPageShow);
+      window.removeEventListener('pageshow', onVisibilityOrPageShow);
       window.removeEventListener('pointerdown', doWarm);
       window.removeEventListener('touchstart', doWarm);
       window.removeEventListener('keydown', doWarm);
