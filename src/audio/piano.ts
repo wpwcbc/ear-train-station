@@ -51,12 +51,37 @@ async function ensureContextRunning(p: Soundfont.Player): Promise<boolean> {
   }
 }
 
+function getPreferredAudioFormats(): Array<'mp3' | 'ogg'> {
+  // Keep this conservative. iOS Safari in particular can be weird with canPlayType()
+  // and definitely won’t play .ogg JS payloads from midi-js-soundfonts.
+  //
+  // In practice:
+  // - Safari/iOS: mp3
+  // - Chromium/Firefox: ogg is usually fine (smaller) but mp3 is also fine.
+  try {
+    if (typeof document === 'undefined') return ['mp3', 'ogg'];
+    const a = document.createElement('audio');
+
+    const ogg = a.canPlayType('audio/ogg; codecs="vorbis"');
+    if (ogg === 'probably' || ogg === 'maybe') return ['ogg', 'mp3'];
+
+    const mp3 = a.canPlayType('audio/mpeg; codecs="mp3"') || a.canPlayType('audio/mpeg');
+    if (mp3 === 'probably' || mp3 === 'maybe') return ['mp3'];
+
+    // Last resort: try both.
+    return ['mp3', 'ogg'];
+  } catch {
+    return ['mp3', 'ogg'];
+  }
+}
+
 function getPianoSoundfontUrls(): string[] {
-  // We cache both formats. soundfont-player will choose the right one at runtime.
-  // Prefetching both increases the chance of offline readiness across browsers.
+  // Only prefetch the formats the browser is likely to actually use.
+  // This reduces storage pressure (important on iOS PWA) while keeping a fallback.
   const base = 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/';
   const name = 'acoustic_grand_piano';
-  return [`${base}${name}-mp3.js`, `${base}${name}-ogg.js`];
+  const formats = getPreferredAudioFormats();
+  return formats.map((fmt) => `${base}${name}-${fmt}.js`);
 }
 
 const PIANO_SOUNDFONT_CACHE = 'kuku-soundfonts-v1';
