@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useHotkeys } from '../lib/hooks/useHotkeys';
 import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
@@ -30,6 +30,9 @@ function msToHuman(ms: number): string {
 }
 
 export function ReviewPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
+  const loc = useLocation();
+  const inheritedState = loc.state;
+
   const [seed, setSeed] = useState(1);
   const [searchParams] = useSearchParams();
   const stationFilter = (searchParams.get('station') || '').trim();
@@ -521,7 +524,11 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       {!drillMode && intervalStats.length > 0 ? (
         <div style={{ marginTop: 10, fontSize: 12, opacity: 0.85, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={{ opacity: 0.9 }}>Quick drills:</span>
-          <Link className="pill" to={`/review?drill=1&semitones=${intervalStats.slice(0, 3).map((x) => x.semitones).join(',')}${stationFilter ? `&station=${stationFilter}` : ''}`}>
+          <Link
+            className="pill"
+            to={`/review?drill=1&semitones=${intervalStats.slice(0, 3).map((x) => x.semitones).join(',')}${stationFilter ? `&station=${stationFilter}` : ''}`}
+            state={inheritedState}
+          >
             Top misses ({intervalStats
               .slice(0, 3)
               .map((x) => SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`)
@@ -532,6 +539,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               key={x.semitones}
               className="pill"
               to={`/review?drill=1&semitones=${x.semitones}${stationFilter ? `&station=${stationFilter}` : ''}`}
+              state={inheritedState}
             >
               {SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`} ×{x.count}
             </Link>
@@ -566,8 +574,16 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           <div className="result r_correct">
             Drill complete — {drillCorrect}/{DRILL_TOTAL} correct.
             <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <Link className="linkBtn" to={`/review?drill=1&semitones=${drillFocusSemitones.join(',')}${stationFilter ? `&station=${stationFilter}` : ''}`}>Restart drill</Link>
-              <Link className="linkBtn" to={stationFilter ? `/review?station=${stationFilter}` : '/review'}>Back to review</Link>
+              <Link
+                className="linkBtn"
+                to={`/review?drill=1&semitones=${drillFocusSemitones.join(',')}${stationFilter ? `&station=${stationFilter}` : ''}`}
+                state={inheritedState}
+              >
+                Restart drill
+              </Link>
+              <Link className="linkBtn" to={stationFilter ? `/review?station=${stationFilter}` : '/review'} state={inheritedState}>
+                Back to review
+              </Link>
             </div>
           </div>
         )
