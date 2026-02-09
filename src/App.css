@@ -842,6 +842,7 @@
   border: 3px solid var(--ink);
   background: var(--card);
   font-weight: 950;
+  cursor: pointer;
 }
 
 .focusProgress {
@@ -912,6 +913,7 @@
   border: 3px solid var(--ink);
   background: var(--card);
   font-weight: 950;
+  cursor: pointer;
 }
 
 .focusContent {
