@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
 /* eslint-disable react-hooks/preserve-manual-memoization */
 import { useFocusUI } from '../components/focusUI';
@@ -19,6 +19,7 @@ import { PianoKeyboard } from '../components/PianoKeyboard';
 import { StaffNote } from '../components/StaffNote';
 import { TestHeader } from '../components/TestHeader';
 import { ChoiceGrid } from '../components/ChoiceGrid';
+import { DuoBottomBar } from '../components/DuoBottomBar';
 import { HintOverlay, InfoCardPager, TTTRunner } from '../components/ttt';
 // ConfigDrawer is handled by FocusShell in Focus Mode.
 import { useHotkeys } from '../lib/hooks/useHotkeys';
@@ -49,6 +50,7 @@ import { degreeMeaning, makeScaleDegreeNameQuestion, type ScaleDegreeName } from
 import { makeDegreeIntervalQuestion } from '../exercises/degreeInterval';
 
 export function StationPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
+  const navigate = useNavigate();
   const { stationId } = useParams();
   const id = (stationId ?? 'S3_INTERVALS') as StationId;
   const focus = useFocusUI();
@@ -59,6 +61,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const nextUnlocked = nextId ? isStationUnlocked(progress, nextId) : false;
 
   const copy = stationCopy(id);
+  void copy;
 
   const examSectionId = sectionIdByExamId(id);
   const examSection = examSectionId ? SECTIONS.find((s) => s.id === examSectionId) ?? null : null;
@@ -2483,7 +2486,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   }
 
   return (
-    <div className="card">
+    <div className="focusStage">
       {toast ? (
         <div
           role="status"
@@ -2506,25 +2509,20 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           {toast.text}
         </div>
       ) : null}
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
-        <div>
-          <h1 className="title">{station.title}</h1>
-          <p className="sub">{station.blurb}</p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {mistakesThisVisit > 0 ? (
-            <span style={{ fontSize: 12, opacity: 0.75 }}>+{mistakesThisVisit} new</span>
-          ) : null}
-          {stationMistakeCount > 0 ? (
-            <Link
-              to={`/review?station=${id}`}
-              className={stationMistakeDue > 0 ? 'linkBtn primaryLink' : 'linkBtn'}
-              style={{ fontSize: 12, padding: '6px 10px' }}
-            >
-              Review{stationMistakeDue > 0 ? ` (${stationMistakeDue} due)` : ` (${stationMistakeCount})`}
-            </Link>
-          ) : null}
-        </div>
+
+      <div className="focusCenter">
+      {/* Duolingo-style Focus Mode: no big station header. */}
+      <div className="focusMetaRow">
+        {stationMistakeCount > 0 ? (
+          <Link
+            to={`/review?station=${id}`}
+            className={stationMistakeDue > 0 ? 'linkBtn primaryLink' : 'linkBtn'}
+            style={{ fontSize: 12, padding: '6px 10px' }}
+          >
+            Review{stationMistakeDue > 0 ? ` (${stationMistakeDue} due)` : ` (${stationMistakeCount})`}
+            {mistakesThisVisit > 0 ? ` · +${mistakesThisVisit} new` : ''}
+          </Link>
+        ) : null}
       </div>
 
       {done ? (
@@ -2569,34 +2567,15 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         </div>
       ) : null}
 
-      {copy ? (
-        <details style={{ marginTop: 10 }}>
-          <summary style={{ cursor: 'pointer', fontWeight: 700 }}>Guidebook</summary>
-          <div style={{ marginTop: 8, fontSize: 12, opacity: 0.9, lineHeight: 1.5 }}>
-            <ul style={{ margin: 0, paddingLeft: 18 }}>
-              {copy.primer.map((t, i) => (
-                <li key={i}>{t}</li>
-              ))}
-            </ul>
-
-            {copy.tips?.length ? (
-              <>
-                <div style={{ marginTop: 10, fontWeight: 700, opacity: 0.95 }}>Tips</div>
-                <ul style={{ margin: 0, paddingLeft: 18, marginTop: 6, opacity: 0.9 }}>
-                  {copy.tips.map((t, i) => (
-                    <li key={i}>{t}</li>
-                  ))}
-                </ul>
-              </>
-            ) : null}
-          </div>
-        </details>
-      ) : null}
-
+      {/* Guidebook is accessible via ⚙️ only (knowledge-only surface). */}
 
       {!done || practice ? (
         id === 'S1_NOTES' ? (
         <>
+          <DuoBottomBar
+            left={<button className="btn" onClick={() => navigate(-1)}>Skip</button>}
+            right={<span className="btnPrimary" style={{ opacity: 0.55 }}>Check</span>}
+          />
           <TTTRunner
             teachComplete={s1TeachDone}
             testComplete={s1TestComplete}
@@ -4003,7 +3982,7 @@ reviewHref={(t7Index >= T7_TOTAL || t7Wrong >= HEARTS) && stationMistakeCount > 
               Back to section
             </Link>
           ) : nextId && nextUnlocked ? (
-            <Link className="linkBtn primaryLink" to={`/station/${nextId}`}>
+            <Link className="linkBtn primaryLink" to={`/lesson/${nextId}`}>
               Next station
             </Link>
           ) : (
@@ -4015,19 +3994,7 @@ reviewHref={(t7Index >= T7_TOTAL || t7Wrong >= HEARTS) && stationMistakeCount > 
       </div>
     )}
 
-      {copy?.tips?.length ? (
-        <div style={{ marginTop: 12, fontSize: 12, opacity: 0.8, lineHeight: 1.5 }}>
-          <div style={{ fontWeight: 700, opacity: 0.9 }}>Tip</div>
-          <ul style={{ margin: 6, paddingLeft: 18 }}>
-            {copy.tips.map((t, i) => (
-              <li key={i}>{t}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
-      <div className="row" style={{ marginTop: 14 }}>
-        <Link className="linkBtn" to="/learn">Back</Link>
+      {/* Tips + extra navigation removed in Focus Mode. Guidebook lives behind ⚙️. */}
       </div>
     </div>
   );

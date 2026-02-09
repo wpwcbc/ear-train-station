@@ -914,13 +914,57 @@
 }
 
 .focusContent {
-  padding: 18px 12px calc(22px + env(safe-area-inset-bottom, 0px));
+  padding: 18px 12px calc(88px + env(safe-area-inset-bottom, 0px));
 }
 
 @media (min-width: 901px) {
   .focusContent {
-    padding: 24px 16px 30px;
+    padding: 24px 16px calc(92px + env(safe-area-inset-bottom, 0px));
   }
+}
+
+/* Duolingo-like centered stage for lesson content */
+.focusStage {
+  min-height: calc(100vh - 80px);
+}
+
+.focusCenter {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.focusMetaRow {
+  display: flex;
+  justify-content: flex-end;
+  margin: 8px 0 8px;
+}
+
+.duoBottomBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg);
+  border-top: 3px solid var(--ink);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+  z-index: 900;
+}
+
+.duoBottomBarInner {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.duoBottomLeft,
+.duoBottomRight {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 /* Existing legacy components */
