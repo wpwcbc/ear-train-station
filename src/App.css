@@ -561,10 +561,13 @@
   display: block;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 640px) {
   .sectionRouteSvg {
-    height: 118px;
+    height: 260px;
   }
+}
+
+@media (max-width: 520px) {
   .routeLine {
     stroke-width: 10;
   }

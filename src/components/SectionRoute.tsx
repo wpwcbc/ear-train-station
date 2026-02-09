@@ -3,6 +3,7 @@ import { StationSignCard } from './StationSignCard';
 import type { Progress } from '../lib/progress';
 import { isStationUnlockedIn, nextUnlockedIncompleteIn, type Station } from '../lib/stations';
 import type { SectionNode } from '../lib/sectionNodes';
+import { SECTIONS } from '../lib/sections';
 
 function displayTitle(full: string): string {
   // Prefer the content after the em dash: "Station 1 — Note names & accidentals" → "Note names & accidentals".
@@ -42,6 +43,7 @@ export function SectionRoute({
 }) {
   const stations: Station[] = useMemo(() => nodes.map((n) => n.station), [nodes]);
   const isMobile = useIsMobile(640);
+  // Mobile card should be bottom-sheet style with vertical route.
 
   const defaultSelected = useMemo(() => {
     const next = nextUnlockedIncompleteIn(progress, stations);
@@ -61,7 +63,7 @@ export function SectionRoute({
   const selectedDone = selectedNode ? !!progress.stationDone[selectedNode.stationId] : false;
 
   const W = 900;
-  const H = 90;
+  const H = isMobile ? 220 : 90;
   const P = 34;
   const n = Math.max(nodes.length, 1);
 
@@ -76,6 +78,8 @@ export function SectionRoute({
     }
   }
 
+  const sectionColor = SECTIONS.find((s) => s.id === sectionId)?.color ?? 'var(--route-blue)';
+
   const card = selectedNode ? (
     <div
       className={isMobile ? 'routeSheet' : 'routeCard'}
@@ -88,7 +92,7 @@ export function SectionRoute({
         const next = idx >= 0 && idx < stations.length - 1 ? stations[idx + 1] : null;
 
         const kindLabel = selectedNode.kind === 'exam' ? 'EXAM' : selectedNode.kind === 'test' ? 'TEST' : 'LESSON';
-        const code = selectedNode.kind === 'exam' ? 'EX' : String(idx + 1);
+        const code = selectedNode.kind === 'exam' ? 'EX' : `${sectionId[0] ?? 'S'}${idx + 1}`;
 
         const lockText = !selectedUnlocked
           ? prev
@@ -98,7 +102,7 @@ export function SectionRoute({
 
         return (
           <StationSignCard
-            accent={selectedNode.kind === 'exam' ? 'var(--route-yellow)' : 'var(--route-blue)'}
+            accent={sectionColor}
             code={code}
             title={displayTitle(selectedNode.station.title)}
             subtitle={lockText ?? selectedNode.station.blurb}
@@ -145,12 +149,16 @@ export function SectionRoute({
         aria-label="Section route"
         preserveAspectRatio="xMidYMid meet"
       >
-        <path d={`M ${P} ${H / 2} L ${W - P} ${H / 2}`} className="routeLine" />
+        {isMobile ? (
+          <path d={`M ${W / 2} ${P} L ${W / 2} ${H - P}`} className="routeLine" />
+        ) : (
+          <path d={`M ${P} ${H / 2} L ${W - P} ${H / 2}`} className="routeLine" />
+        )}
 
         {nodes.map((node, idx) => {
           const t = n === 1 ? 0.5 : idx / (n - 1);
-          const x = P + t * (W - P * 2);
-          const y = H / 2;
+          const x = isMobile ? W / 2 : P + t * (W - P * 2);
+          const y = isMobile ? P + t * (H - P * 2) : H / 2;
 
           const done = !!progress.stationDone[node.stationId];
           const unlocked = isStationUnlockedIn(progress, node.stationId, stations);
