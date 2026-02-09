@@ -14,6 +14,7 @@ import { SECTIONS } from '../lib/sections';
 import { stationCopy } from '../lib/stationCopy';
 import { loadSettings } from '../lib/settings';
 import { promptSpeedFactors } from '../lib/promptTiming';
+import { DEFAULT_WIDE_REGISTER_MAX_MIDI, WIDE_REGISTER_MIN_MIDI } from '../lib/registerPolicy';
 import { PianoKeyboard } from '../components/PianoKeyboard';
 import { StaffNote } from '../components/StaffNote';
 import { TestHeader } from '../components/TestHeader';
@@ -166,8 +167,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     () =>
       makeIntervalLabelQuestion({
         seed: seed * 1000 + 3030 + s3TwistIndex,
-        rootMinMidi: 43, // G2
-        rootMaxMidi: 72, // C5
+        rootMinMidi: WIDE_REGISTER_MIN_MIDI, // G2
+        rootMaxMidi: DEFAULT_WIDE_REGISTER_MAX_MIDI, // C5
         minSemitones: 0,
         maxSemitones: 12,
         choiceCount: 6,
@@ -205,7 +206,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     () =>
       makeIntervalLabelQuestion({
         seed: seed * 1000 + 1290 + t3bIndex,
-        rootMinMidi: 43, // G2
+        rootMinMidi: WIDE_REGISTER_MIN_MIDI, // G2
         rootMaxMidi: 55, // G3 (tight range; still “test” register rule)
         minSemitones: 0,
         maxSemitones: 12,
@@ -226,8 +227,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     () =>
       makeIntervalLabelQuestion({
         seed: seed * 1000 + 1300 + t3Index,
-        rootMinMidi: 43, // G2
-        rootMaxMidi: 72, // C5 (keeps target <= C6 when +12)
+        rootMinMidi: WIDE_REGISTER_MIN_MIDI, // G2
+        rootMaxMidi: DEFAULT_WIDE_REGISTER_MAX_MIDI, // C5 (keeps target <= C6 when +12)
         minSemitones: 0,
         maxSemitones: 12,
         allowedSemitones: practice ? practiceAllowedSemitones : undefined,
@@ -247,8 +248,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     () =>
       makeIntervalLabelQuestion({
         seed: seed * 1000 + 1313 + e3Index,
-        rootMinMidi: 43, // G2
-        rootMaxMidi: 72, // C5
+        rootMinMidi: WIDE_REGISTER_MIN_MIDI, // G2
+        rootMaxMidi: DEFAULT_WIDE_REGISTER_MAX_MIDI, // C5
         minSemitones: 0,
         maxSemitones: 12,
         allowedSemitones: practice ? practiceAllowedSemitones : undefined,
@@ -272,7 +273,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     () =>
       makeTriadQualityQuestion({
         seed: seed * 1000 + 1500 + t5Index,
-        minRootMidi: 43, // G2
+        minRootMidi: WIDE_REGISTER_MIN_MIDI, // G2
         maxRootMidi: 77, // F5 (keeps 5th <= C6-ish)
         choiceCount: 3,
       }),
@@ -290,7 +291,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       makeDiatonicTriadQualityQuestion({
         seed: seed * 1000 + 1600 + t6Index,
         mode: 'test',
-        tonicMinMidi: 43, // G2
+        tonicMinMidi: WIDE_REGISTER_MIN_MIDI, // G2
         tonicMaxMidi: 65, // F4-ish (keeps chord comfortably below C6)
         choiceCount: 3,
       }),
@@ -317,7 +318,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     () =>
       makeFunctionFamilyQuestion({
         seed: seed * 1000 + 1700 + t7Index,
-        tonicMinMidi: 43, // G2
+        tonicMinMidi: WIDE_REGISTER_MIN_MIDI, // G2
         tonicMaxMidi: 65, // F4-ish
       }),
     [seed, t7Index],
@@ -381,7 +382,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     () =>
       makeNoteNameQuestion({
         seed: seed * 1000 + 1100 + t1Index,
-        minMidi: 43, // G2
+        minMidi: WIDE_REGISTER_MIN_MIDI, // G2
         maxMidi: 84, // C6
         choiceCount: 6,
       }),
@@ -398,7 +399,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     () =>
       makeNoteNameQuestion({
         seed: seed * 1000 + 1112 + e1Index,
-        minMidi: 43, // G2
+        minMidi: WIDE_REGISTER_MIN_MIDI, // G2
         maxMidi: 88, // E6
         choiceCount: 7,
       }),
