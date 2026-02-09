@@ -701,22 +701,43 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                           <div style={{ fontSize: 12, opacity: 0.85 }}>
                             {mistakeShortLabel(m)}
                             <span style={{ marginLeft: 8, opacity: 0.75 }}>• from {m.sourceStationId}</span>
+                            <span style={{ marginLeft: 8, opacity: 0.75 }}>
+                              • {(m.dueAt ?? 0) <= now ? 'due' : `due in ${msToHuman((m.dueAt ?? m.addedAt) - now)}`}
+                            </span>
+                            <span style={{ marginLeft: 8, opacity: 0.75 }}>
+                              • streak {m.correctStreak}/{requiredClearStreak(m)}
+                              {requiredClearStreak(m) >= 3 ? <span style={{ marginLeft: 6, opacity: 0.9 }}>Hard</span> : null}
+                            </span>
+                            <span style={{ marginLeft: 8, opacity: 0.75 }}>• wrongs {m.wrongCount ?? 0}</span>
                           </div>
-                          <button
-                            className="ghost"
-                            onClick={() => {
-                              const prev = loadMistakes();
-                              const next = prev.filter((x) => x.id !== m.id);
-                              if (next.length == prev.length) return;
-                              saveMistakes(next);
-                              setMistakes(next);
-                              armUndo(prev, 'Removed 1 item.');
-                              refresh();
-                            }}
-                            title="Remove this item from your Review queue"
-                          >
-                            Remove
-                          </button>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            <button
+                              className="ghost"
+                              onClick={() => {
+                                // Give it breathing room without nuking it from the queue.
+                                snoozeMistake(m.id, 60 * 60_000);
+                                refresh();
+                              }}
+                              title="Snooze this item for 1 hour"
+                            >
+                              Snooze 1h
+                            </button>
+                            <button
+                              className="ghost"
+                              onClick={() => {
+                                const prev = loadMistakes();
+                                const next = prev.filter((x) => x.id !== m.id);
+                                if (next.length == prev.length) return;
+                                saveMistakes(next);
+                                setMistakes(next);
+                                armUndo(prev, 'Removed 1 item.');
+                                refresh();
+                              }}
+                              title="Remove this item from your Review queue"
+                            >
+                              Remove
+                            </button>
+                          </div>
                         </div>
                       ))}
                   </div>
