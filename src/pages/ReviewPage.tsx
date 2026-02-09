@@ -3,7 +3,16 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useHotkeys } from '../lib/hooks/useHotkeys';
 import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
-import { applyReviewResult, loadMistakes, requiredClearStreak, snoozeMistake, updateMistake, type Mistake } from '../lib/mistakes';
+import {
+  applyReviewResult,
+  loadMistakes,
+  removeMistake,
+  requiredClearStreak,
+  saveMistakes,
+  snoozeMistake,
+  updateMistake,
+  type Mistake,
+} from '../lib/mistakes';
 import { bumpReviewAttempt, bumpReviewClear } from '../lib/quests';
 import { SETTINGS_EVENT, loadSettings } from '../lib/settings';
 import { promptSpeedFactors } from '../lib/promptTiming';
@@ -97,6 +106,22 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     }
     return [...map.values()].sort((a, b) => b.weight - a.weight || b.count - a.count || a.semitones - b.semitones);
   }, [filtered]);
+
+  const mistakeKindStats = useMemo(() => {
+    const map = new Map<Mistake['kind'], { kind: Mistake['kind']; total: number; due: number }>();
+    for (const m of filtered) {
+      const cur = map.get(m.kind) ?? { kind: m.kind, total: 0, due: 0 };
+      cur.total += 1;
+      if ((m.dueAt ?? 0) <= now) cur.due += 1;
+      map.set(m.kind, cur);
+    }
+    const order: Mistake['kind'][] = ['intervalLabel', 'noteName', 'triadQuality', 'scaleDegreeName', 'majorScaleDegree', 'functionFamily'];
+    return [...map.values()].sort((a, b) => {
+      const ai = order.indexOf(a.kind);
+      const bi = order.indexOf(b.kind);
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi) || b.due - a.due || b.total - a.total;
+    });
+  }, [filtered, now]);
 
   const drillFocusSemitones = useMemo(() => {
     if (!drillMode) return [] as number[];
@@ -547,6 +572,71 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
         </div>
       ) : null}
 
+      {!drillMode && mistakeKindStats.length > 0 ? (
+        <details style={{ marginTop: 10 }}>
+          <summary style={{ cursor: 'pointer', fontSize: 12, opacity: 0.85 }}>Manage mistakes</summary>
+          <div style={{ marginTop: 8, display: 'grid', gap: 8 }}>
+            {mistakeKindStats.map((s) => {
+              const kindLabel: Record<Mistake['kind'], string> = {
+                noteName: 'Note names',
+                intervalLabel: 'Intervals',
+                triadQuality: 'Triad quality',
+                scaleDegreeName: 'Scale degrees (names)',
+                majorScaleDegree: 'Major scale degrees',
+                functionFamily: 'Function families',
+              };
+
+              return (
+                <div key={s.kind} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 12, opacity: 0.9 }}>
+                    <b>{kindLabel[s.kind] ?? s.kind}</b> — {s.due} due / {s.total} total
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button
+                      className="ghost"
+                      onClick={() => {
+                        // Remove items of this kind (and respect station filter, if any).
+                        const all = loadMistakes();
+                        const next = all.filter((m) => {
+                          if (m.kind !== s.kind) return true;
+                          if (stationFilter && m.sourceStationId !== stationFilter) return true;
+                          return false;
+                        });
+                        saveMistakes(next);
+                        refresh();
+                      }}
+                      title="Remove items of this kind from your Review queue"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+            <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+              Tip: “Hard” items need 3 clears (a clean 3/3 streak) before they disappear.
+            </div>
+
+            {active ? (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 6 }}>
+                <div style={{ fontSize: 12, opacity: 0.82 }}>Current: <b>{active.kind}</b> from <b>{active.sourceStationId}</b></div>
+                <button
+                  className="ghost"
+                  onClick={() => {
+                    removeMistake(active.id);
+                    refresh();
+                  }}
+                  title="Remove the current item from your Review queue"
+                >
+                  Remove current
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </details>
+      ) : null}
+
       {drillMode ? (
         drillIlQ ? (
           <>
@@ -613,6 +703,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
           <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
             From: {active.sourceStationId} • Streak: {active.correctStreak}/{requiredClearStreak(active)}
+            {requiredClearStreak(active) >= 3 ? <span style={{ marginLeft: 8, opacity: 0.9 }}>• Hard</span> : null}
           </div>
         </>
       ) : active.kind === 'intervalLabel' && ilQ ? (
@@ -633,6 +724,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
           <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
             From: {active.sourceStationId} • Streak: {active.correctStreak}/{requiredClearStreak(active)}
+            {requiredClearStreak(active) >= 3 ? <span style={{ marginLeft: 8, opacity: 0.9 }}>• Hard</span> : null}
           </div>
         </>
       ) : active.kind === 'scaleDegreeName' && degQ ? (
@@ -659,6 +751,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
           <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
             From: {active.sourceStationId} • Streak: {active.correctStreak}/{requiredClearStreak(active)}
+            {requiredClearStreak(active) >= 3 ? <span style={{ marginLeft: 8, opacity: 0.9 }}>• Hard</span> : null}
           </div>
         </>
       ) : active.kind === 'majorScaleDegree' && msQ ? (
@@ -679,6 +772,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
           <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
             From: {active.sourceStationId} • Streak: {active.correctStreak}/{requiredClearStreak(active)}
+            {requiredClearStreak(active) >= 3 ? <span style={{ marginLeft: 8, opacity: 0.9 }}>• Hard</span> : null}
           </div>
         </>
       ) : active.kind === 'functionFamily' && ffQ ? (
@@ -699,6 +793,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
           <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
             From: {active.sourceStationId} • Streak: {active.correctStreak}/{requiredClearStreak(active)}
+            {requiredClearStreak(active) >= 3 ? <span style={{ marginLeft: 8, opacity: 0.9 }}>• Hard</span> : null}
           </div>
         </>
       ) : active.kind === 'triadQuality' && triadQ ? (
@@ -719,6 +814,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
           <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
             From: {active.sourceStationId} • Streak: {active.correctStreak}/{requiredClearStreak(active)}
+            {requiredClearStreak(active) >= 3 ? <span style={{ marginLeft: 8, opacity: 0.9 }}>• Hard</span> : null}
           </div>
         </>
       ) : (
