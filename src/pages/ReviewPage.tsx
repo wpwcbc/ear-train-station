@@ -6,7 +6,6 @@ import { applyStudyReward } from '../lib/progress';
 import {
   applyReviewResult,
   loadMistakes,
-  removeMistake,
   requiredClearStreak,
   saveMistakes,
   snoozeMistake,
@@ -38,6 +37,21 @@ function msToHuman(ms: number): string {
   return `${d}d`;
 }
 
+type UndoState = {
+  prev: Mistake[];
+  text: string;
+  expiresAt: number;
+};
+
+function mistakeShortLabel(m: Mistake): string {
+  if (m.kind === 'noteName') return `Note: MIDI ${m.midi}`;
+  if (m.kind === 'intervalLabel') return `Interval: ${(SEMITONE_TO_LABEL[m.semitones] ?? `${m.semitones}st`)} (root MIDI ${m.rootMidi})`;
+  if (m.kind === 'triadQuality') return `Triad: ${triadQualityLabel(m.quality)} (root MIDI ${m.rootMidi})`;
+  if (m.kind === 'scaleDegreeName') return `Scale degree: ${m.key} — ${m.degree}`;
+  if (m.kind === 'majorScaleDegree') return `Major scale: ${m.key} — ${m.degree}`;
+  return `Function: ${m.key} — ${m.degree}`;
+}
+
 export function ReviewPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
   const loc = useLocation();
   const inheritedState = loc.state;
@@ -64,6 +78,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const [doneCount, setDoneCount] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [mistakes, setMistakes] = useState<Mistake[]>(() => loadMistakes());
+  const [undo, setUndo] = useState<UndoState | null>(null);
 
   // Keep the review queue reactive: update on focus/storage, and wake up when the next item becomes due.
   useEffect(() => {
@@ -82,6 +97,18 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       window.removeEventListener(SETTINGS_EVENT, bump);
     };
   }, []);
+
+  // Auto-clear the Undo window after ~15s so we don't keep stale actions around.
+  useEffect(() => {
+    if (!undo) return;
+    const ms = Math.max(0, undo.expiresAt - Date.now());
+    const t = window.setTimeout(() => setUndo(null), ms);
+    return () => window.clearTimeout(t);
+  }, [undo]);
+
+  function armUndo(prev: Mistake[], text: string) {
+    setUndo({ prev, text, expiresAt: Date.now() + 15_000 });
+  }
 
   const filtered = useMemo(() => {
     if (!stationFilter) return mistakes;
@@ -587,28 +614,77 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               };
 
               return (
-                <div key={s.kind} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <div style={{ fontSize: 12, opacity: 0.9 }}>
-                    <b>{kindLabel[s.kind] ?? s.kind}</b> — {s.due} due / {s.total} total
+                <div key={s.kind} style={{ display: 'grid', gap: 6, padding: '6px 0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: 12, opacity: 0.9 }}>
+                      <b>{kindLabel[s.kind] ?? s.kind}</b> — {s.due} due / {s.total} total
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button
+                        className="ghost"
+                        onClick={() => {
+                          // Remove items of this kind (and respect station filter, if any).
+                          const prev = loadMistakes();
+                          const next = prev.filter((m) => {
+                            if (m.kind !== s.kind) return true;
+                            if (stationFilter && m.sourceStationId !== stationFilter) return true;
+                            return false;
+                          });
+                          if (next.length === prev.length) return;
+                          saveMistakes(next);
+                          setMistakes(next);
+                          armUndo(prev, `Removed ${kindLabel[s.kind] ?? s.kind}.`);
+                          refresh();
+                        }}
+                        title="Remove items of this kind from your Review queue"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button
-                      className="ghost"
-                      onClick={() => {
-                        // Remove items of this kind (and respect station filter, if any).
-                        const all = loadMistakes();
-                        const next = all.filter((m) => {
-                          if (m.kind !== s.kind) return true;
-                          if (stationFilter && m.sourceStationId !== stationFilter) return true;
-                          return false;
-                        });
-                        saveMistakes(next);
-                        refresh();
-                      }}
-                      title="Remove items of this kind from your Review queue"
-                    >
-                      Remove
-                    </button>
+
+                  <div style={{ display: 'grid', gap: 6 }}>
+                    {filtered
+                      .filter((m) => m.kind === s.kind)
+                      .slice()
+                      .sort((a, b) => (a.dueAt ?? a.addedAt) - (b.dueAt ?? b.addedAt) || b.addedAt - a.addedAt)
+                      .slice(0, 3)
+                      .map((m) => (
+                        <div
+                          key={m.id}
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 10,
+                            flexWrap: 'wrap',
+                            border: '2px solid var(--ink)',
+                            borderRadius: 14,
+                            padding: '6px 8px',
+                            background: 'rgba(255,255,255,0.6)',
+                          }}
+                        >
+                          <div style={{ fontSize: 12, opacity: 0.85 }}>
+                            {mistakeShortLabel(m)}
+                            <span style={{ marginLeft: 8, opacity: 0.75 }}>• from {m.sourceStationId}</span>
+                          </div>
+                          <button
+                            className="ghost"
+                            onClick={() => {
+                              const prev = loadMistakes();
+                              const next = prev.filter((x) => x.id !== m.id);
+                              if (next.length == prev.length) return;
+                              saveMistakes(next);
+                              setMistakes(next);
+                              armUndo(prev, 'Removed 1 item.');
+                              refresh();
+                            }}
+                            title="Remove this item from your Review queue"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
                   </div>
                 </div>
               );
@@ -624,7 +700,12 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                 <button
                   className="ghost"
                   onClick={() => {
-                    removeMistake(active.id);
+                    const prev = loadMistakes();
+                    const next = prev.filter((m) => m.id !== active.id);
+                    if (next.length === prev.length) return;
+                    saveMistakes(next);
+                    setMistakes(next);
+                    armUndo(prev, 'Removed current item.');
                     refresh();
                   }}
                   title="Remove the current item from your Review queue"
@@ -635,6 +716,28 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             ) : null}
           </div>
         </details>
+      ) : null}
+
+      {undo ? (
+        <div className="pwaToast pwaToast--action">
+          <div className="pwaToast__text">{undo.text}</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <button
+              className="pwaToast__btn"
+              onClick={() => {
+                saveMistakes(undo.prev);
+                setMistakes(undo.prev);
+                setUndo(null);
+                refresh();
+              }}
+            >
+              Undo
+            </button>
+            <button className="pwaToast__btn pwaToast__btn--ghost" onClick={() => setUndo(null)}>
+              Dismiss
+            </button>
+          </div>
+        </div>
       ) : null}
 
       {drillMode ? (
