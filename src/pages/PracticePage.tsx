@@ -4,6 +4,7 @@ import type { Progress } from '../lib/progress';
 import { nextUnlockedIncomplete } from '../lib/stations';
 import { dueMistakeCount, mistakeCount, mistakeCountForStation, nextDueAt } from '../lib/mistakes';
 import { STATIONS } from '../lib/stations';
+import { getABVariant } from '../lib/ab';
 
 function msToHuman(ms: number): string {
   if (ms <= 0) return 'now';
@@ -43,6 +44,8 @@ export function PracticePage({ progress }: { progress: Progress }) {
   const total = mistakeCount();
   const nextDue = nextDueAt();
 
+  const workoutCopyVariant = getABVariant('practice_today_workout_copy_v1');
+
   const continueId = nextUnlockedIncomplete(progress);
 
   const goal = Math.max(1, progress.dailyGoalXp);
@@ -63,10 +66,12 @@ export function PracticePage({ progress }: { progress: Progress }) {
       <h1 className="h1">Practice</h1>
       <p className="sub">Daily workout + spaced review (Duolingo-ish).</p>
 
-      <div className="card" style={{ marginTop: 12 }}>
-        <h2 className="h2">Today’s workout</h2>
+      <div className="card" style={{ marginTop: 12 }} data-ab={workoutCopyVariant}>
+        <h2 className="h2">{workoutCopyVariant === 'A' ? 'Today’s workout' : 'Daily drills'}</h2>
         <div style={{ fontSize: 12, opacity: 0.8 }}>
-          Two focused sessions that rotate daily (inspired by Duolingo’s Practice Hub).
+          {workoutCopyVariant === 'A'
+            ? 'Two focused sessions that rotate daily (inspired by Duolingo’s Practice Hub).'
+            : 'Two quick sessions picked for you — rotates daily.'}
         </div>
 
         {(() => {
@@ -78,17 +83,19 @@ export function PracticePage({ progress }: { progress: Progress }) {
           const rotate = (Number(dayKey.replaceAll('-', '')) || 0) % 2;
           const reviewTo = topDueStation && rotate === 0 ? `/review?station=${topDueStation}` : '/review';
           const reviewLabel = topDueStation && rotate === 0 ? `Targeted review (${topDueStation})` : 'Targeted review';
+          const reviewLabelB = topDueStation && rotate === 0 ? `Fix weak spots (${topDueStation})` : 'Fix weak spots';
 
           const newLabel = continueId ? 'New material (continue)' : 'New material (pick a section)';
+          const newLabelB = continueId ? 'Learn something new (continue)' : 'Learn something new';
           const newTo = continueId ? `/lesson/${continueId}` : '/learn';
 
           return (
             <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <Link className="linkBtn" to={reviewTo} state={{ exitTo: '/practice' }} title={dayKey}>
-                {reviewLabel}
+                {workoutCopyVariant === 'A' ? reviewLabel : reviewLabelB}
               </Link>
               <Link className="linkBtn" to={newTo} state={{ exitTo: '/practice' }}>
-                {newLabel}
+                {workoutCopyVariant === 'A' ? newLabel : newLabelB}
               </Link>
             </div>
           );
