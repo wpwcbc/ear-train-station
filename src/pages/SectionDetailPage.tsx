@@ -25,7 +25,7 @@ export function SectionDetailPage({ progress, setProgress: _setProgress }: { pro
   const examUnlocked = isSectionExamUnlocked(progress, id);
 
   return (
-    <div className="page">
+    <div className="page sectionPage">
       <div className="rowBetween">
         <div>
           <h1 className="h1">{section.title}</h1>

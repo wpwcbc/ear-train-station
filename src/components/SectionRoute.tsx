@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { StationSignCard } from './StationSignCard';
 import type { Progress } from '../lib/progress';
 import { isStationUnlockedIn, nextUnlockedIncompleteIn, type Station } from '../lib/stations';
 import type { SectionNode } from '../lib/sectionNodes';
 
-function shortTitle(full: string): string {
-  // Keep the “station-sign” header compact: take the prefix before the em dash.
+function displayTitle(full: string): string {
+  // Prefer the content after the em dash: "Station 1 — Note names & accidentals" → "Note names & accidentals".
   const parts = full.split('—');
-  return (parts[0] ?? full).trim();
+  const core = (parts.length > 1 ? parts.slice(1).join('—') : full).trim();
+  // Keep it short: take the part before '&' if present.
+  const short = core.split('&')[0]?.trim();
+  return short || core;
 }
 
+// (unused)
 function useIsMobile(breakpointPx: number): boolean {
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -73,45 +77,62 @@ export function SectionRoute({
   }
 
   const card = selectedNode ? (
-    <div className={isMobile ? 'routeSheet' : 'routeCard'} role={isMobile ? 'dialog' : undefined} aria-modal={isMobile ? true : undefined}>
-      <div className="routeCardHeader">
-        <div className="routeCardKicker">{shortTitle(selectedNode.station.title)}</div>
-        <div className="routeCardTitle">{selectedNode.station.title}</div>
-      </div>
+    <div
+      className={isMobile ? 'routeSheet' : 'routeCard'}
+      role={isMobile ? 'dialog' : undefined}
+      aria-modal={isMobile ? true : undefined}
+    >
+      {(() => {
+        const idx = stations.findIndex((s) => s.id === selectedNode.stationId);
+        const prev = idx > 0 ? stations[idx - 1] : null;
+        const next = idx >= 0 && idx < stations.length - 1 ? stations[idx + 1] : null;
 
-      <div className="routeCardBody">
-        <div className="routeCardBlurb">{selectedNode.station.blurb}</div>
+        const kindLabel = selectedNode.kind === 'exam' ? 'EXAM' : selectedNode.kind === 'test' ? 'TEST' : 'LESSON';
+        const code = selectedNode.kind === 'exam' ? 'EX' : String(idx + 1);
 
-        <div className="routeCardMeta">
-          <span className={selectedNode.kind === 'lesson' ? 'pill' : selectedNode.kind === 'exam' ? 'pill warn' : 'pill strong'}>
-            {selectedNode.kind === 'exam' ? 'Exam' : selectedNode.kind === 'test' ? 'Test' : 'Lesson'}
-          </span>
-          {selectedDone ? <span className="pill ok">Done</span> : null}
-          {!selectedUnlocked ? <span className="pill muted">Locked</span> : null}
+        const lockText = !selectedUnlocked
+          ? prev
+            ? `Complete “${displayTitle(prev.title)}” first to unlock.`
+            : 'Finish the previous station(s) to unlock.'
+          : undefined;
+
+        return (
+          <StationSignCard
+            accent={selectedNode.kind === 'exam' ? 'var(--route-yellow)' : 'var(--route-blue)'}
+            code={code}
+            title={displayTitle(selectedNode.station.title)}
+            subtitle={lockText ?? selectedNode.station.blurb}
+            leftLabel={prev ? displayTitle(prev.title) : undefined}
+            rightLabel={next ? displayTitle(next.title) : undefined}
+            statusRight={`${kindLabel}${selectedDone ? ' · DONE' : !selectedUnlocked ? ' · LOCKED' : ''}`}
+            actions={
+              selectedUnlocked
+                ? [
+                    {
+                      label: selectedDone ? 'Redo' : 'Start',
+                      to: `/lesson/${selectedNode.stationId}`,
+                      state: { exitTo: `/learn/section/${sectionId}` },
+                      variant: 'primary',
+                    },
+                    ...(isMobile
+                      ? [{ label: 'Close', disabled: true }]
+                      : []),
+                  ]
+                : isMobile
+                  ? [{ label: 'Close', disabled: true }]
+                  : undefined
+            }
+          />
+        );
+      })()}
+
+      {isMobile ? (
+        <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn" onClick={() => setSelectedId(null)}>
+            Close
+          </button>
         </div>
-
-        <div className="routeCardActions">
-          {selectedUnlocked ? (
-            <Link className="btnPrimary" to={`/lesson/${selectedNode.stationId}`} state={{ exitTo: `/learn/section/${sectionId}` }}>
-              {selectedDone ? 'Redo' : 'Start'}
-            </Link>
-          ) : (
-            <div className="sub" style={{ margin: 0 }}>
-              {(() => {
-                const idx = stations.findIndex((s) => s.id === selectedNode.stationId);
-                const prev = idx > 0 ? stations[idx - 1] : null;
-                return prev ? `Complete “${shortTitle(prev.title)}” first to unlock.` : 'Finish the previous station(s) to unlock.';
-              })()}
-            </div>
-          )}
-
-          {isMobile ? (
-            <button className="btn" onClick={() => setSelectedId(null)}>
-              Close
-            </button>
-          ) : null}
-        </div>
-      </div>
+      ) : null}
     </div>
   ) : null;
 
@@ -140,7 +161,7 @@ export function SectionRoute({
             .filter(Boolean)
             .join(' ');
 
-          const label = shortTitle(node.station.title);
+          const label = displayTitle(node.station.title);
 
           return (
             <g

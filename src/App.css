@@ -288,6 +288,11 @@
   margin: 0 auto;
 }
 
+/* Section detail pages should feel like Duolingo: a centered canvas. */
+.sectionPage {
+  width: min(980px, 100%);
+}
+
 .h1 {
   margin: 0;
   font-size: 28px;
@@ -404,6 +409,17 @@
   padding: 12px 14px 10px;
 }
 
+.stationSignCode {
+  width: 44px;
+  height: 32px;
+  border-radius: 10px;
+  border: 3px solid var(--ink);
+  display: grid;
+  place-items: center;
+  font-weight: 950;
+  background: rgba(17, 17, 17, 0.03);
+}
+
 .stationSignLine {
   height: 6px;
   flex: 1;
@@ -438,8 +454,45 @@
   line-height: 1.35;
 }
 
+.stationSignNav {
+  display: grid;
+  grid-template-columns: 1fr 10px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-top: 2px solid rgba(17, 17, 17, 0.12);
+  border-bottom: 2px solid rgba(17, 17, 17, 0.12);
+  background: rgba(17, 17, 17, 0.02);
+  font-size: 12px;
+  font-weight: 750;
+  color: rgba(17, 17, 17, 0.72);
+}
+
+.stationSignNavSide {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stationSignNavSide.right {
+  justify-content: flex-end;
+}
+
+.stationSignNavMid {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(17, 17, 17, 0.10), rgba(17, 17, 17, 0.06));
+}
+
+.stationSignNav .arrow {
+  opacity: 0.75;
+}
+
 .stationSignActions {
-  padding: 0 14px 14px;
+  padding: 12px 14px 14px;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
