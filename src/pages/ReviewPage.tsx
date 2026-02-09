@@ -62,6 +62,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const stationFilter = (searchParams.get('station') || '').trim();
   const drill = (searchParams.get('drill') || '').trim();
   const drillMode = drill === '1' || drill === 'true' || drill === 'yes';
+  const warmup = (searchParams.get('warmup') || '').trim();
+  const warmupMode = warmup === '1' || warmup === 'true' || warmup === 'yes';
   const drillSemisRaw = (searchParams.get('semitones') || '').trim();
   const drillSemitones = drillSemisRaw
     ? drillSemisRaw
@@ -121,6 +123,22 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       .filter((m) => (m.dueAt ?? 0) <= now)
       .sort((a, b) => (a.dueAt ?? a.addedAt) - (b.dueAt ?? b.addedAt) || b.addedAt - a.addedAt);
   }, [filtered, now]);
+
+  // Warm-up: when nothing is due, let users optionally practice a short set early.
+  // Inspired by Duolingo's behavior: if you have no "new" mistakes, you can still run a short session with older ones.
+  const warmupQueue = useMemo(() => {
+    if (!warmupMode) return [] as Mistake[];
+    // Prefer "hard" mistakes (wrongCount) and items due sooner.
+    return filtered
+      .slice()
+      .sort((a, b) => {
+        const aw = a.wrongCount ?? 0;
+        const bw = b.wrongCount ?? 0;
+        if (bw !== aw) return bw - aw;
+        return (a.dueAt ?? a.addedAt) - (b.dueAt ?? b.addedAt);
+      })
+      .slice(0, 10);
+  }, [filtered, warmupMode]);
 
   const intervalStats = useMemo(() => {
     const map = new Map<number, { semitones: number; count: number; weight: number }>();
@@ -185,7 +203,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     });
   }, [drillMode, drillFocusSemitones, drillIndex, seed]);
 
-  const active = (drillMode ? undefined : (due[0] as Mistake | undefined)) as Mistake | undefined;
+  const active = (drillMode
+    ? undefined
+    : ((warmupMode ? warmupQueue[0] : due[0]) as Mistake | undefined)) as Mistake | undefined;
 
   const noteQ = useMemo(() => {
     if (!active || active.kind !== 'noteName') return null;
@@ -487,11 +507,13 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     <div className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
         <div>
-          <h1 className="title">{drillMode ? 'Review Drill' : 'Review'}</h1>
+          <h1 className="title">{drillMode ? 'Review Drill' : warmupMode ? 'Warm‑up Review' : 'Review'}</h1>
           <p className="sub">
             {drillMode
               ? 'Targeted interval drills from your mistakes (wide register: G2+).'
-              : 'Spaced review of missed items. Clear an item by getting it right twice in a row (streak 2/2).'}
+              : warmupMode
+                ? 'A quick warm‑up set from your queue (even if nothing is due yet).'
+                : 'Spaced review of missed items. Clear an item by getting it right twice in a row (streak 2/2).'}
           </p>
           {drillMode ? (
             <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>
@@ -516,9 +538,15 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             </>
           ) : (
             <>
-              <div>
-                Due: {dueCount} / {totalCount}
-              </div>
+              {warmupMode ? (
+                <div>
+                  Warm‑up: {Math.min(doneCount, warmupQueue.length)} / {warmupQueue.length}
+                </div>
+              ) : (
+                <div>
+                  Due: {dueCount} / {totalCount}
+                </div>
+              )}
               <div>Cleared: {doneCount}</div>
             </>
           )}
@@ -788,11 +816,23 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
         )
       ) : !active ? (
         <div className="result r_idle">
-          {totalCount === 0
-            ? 'No mistakes queued. Go do a station and come back if you miss something.'
-            : nextDue
-              ? `Nothing due yet. Next item due in ${msToHuman(nextDue - now)}.`
-              : 'Nothing due yet.'}
+          {totalCount === 0 ? (
+            'No mistakes queued. Go do a station and come back if you miss something.'
+          ) : (
+            <>
+              <div>{nextDue ? `Nothing due yet. Next item due in ${msToHuman(nextDue - now)}.` : 'Nothing due yet.'}</div>
+              {dueCount === 0 ? (
+                <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <Link className="linkBtn" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}`} state={inheritedState}>
+                    Warm‑up (practice early)
+                  </Link>
+                  <Link className="linkBtn" to={`/review?drill=1${stationFilter ? `&station=${stationFilter}` : ''}`} state={inheritedState}>
+                    Drill top misses
+                  </Link>
+                </div>
+              ) : null}
+            </>
+          )}
         </div>
       ) : active.kind === 'noteName' && noteQ ? (
         <>
