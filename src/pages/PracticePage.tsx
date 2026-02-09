@@ -140,6 +140,9 @@ export function PracticePage({ progress }: { progress: Progress }) {
           <Link className="linkBtn" to="/review" state={{ exitTo: '/practice' }}>
             Review now
           </Link>
+          <Link className="linkBtn" to="/review?drill=1" state={{ exitTo: '/practice' }} title="Auto-picks your top 3 missed interval labels">
+            Top misses drill
+          </Link>
           {due === 0 && nextDue ? (
             <span style={{ fontSize: 12, opacity: 0.75 }}>Next due in {msToHuman(nextDue - now)}</span>
           ) : null}

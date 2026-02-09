@@ -86,8 +86,27 @@ export function MapPage({
           <Link className={stats.due > 0 ? 'linkBtn primaryLink' : 'linkBtn'} to="/review" state={{ exitTo: '/learn' }}>
             Review{stats.due > 0 ? ` (${stats.due})` : ''}
           </Link>
+          <Link className="linkBtn" to="/practice" state={{ exitTo: '/learn' }}>
+            Practice
+          </Link>
         </div>
       </div>
+
+      <details style={{ marginTop: 10 }}>
+        <summary style={{ cursor: 'pointer', fontSize: 12, opacity: 0.85 }}>What is Review?</summary>
+        <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85, lineHeight: 1.35 }}>
+          Review is <b>spaced practice</b> from things you missed recently. Items become “due” over time; clear an item by getting it right twice in a row.
+          <span style={{ opacity: 0.9 }}> Tip: if you fail a test, do a quick Review session to fix weak spots, then retry.</span>
+          <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <Link className="pill" to="/review" state={{ exitTo: '/learn' }}>
+              Review now
+            </Link>
+            <Link className="pill" to="/practice" state={{ exitTo: '/learn' }}>
+              Practice hub
+            </Link>
+          </div>
+        </div>
+      </details>
 
       <div className="line">
         {list.map((s, idx) => {
