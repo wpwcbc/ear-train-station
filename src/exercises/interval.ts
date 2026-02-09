@@ -1,4 +1,5 @@
 import { mulberry32 } from '../lib/rng';
+import { DEFAULT_WIDE_REGISTER_MAX_MIDI } from '../lib/registerPolicy';
 
 export type IntervalQuestion = {
   id: string;
@@ -147,7 +148,7 @@ export function makeIntervalLabelQuestion(opts: {
   const rng = mulberry32(opts.seed);
 
   const rootMin = opts.rootMinMidi ?? 60;
-  const rootMax = opts.rootMaxMidi ?? 72;
+  const rootMax = opts.rootMaxMidi ?? DEFAULT_WIDE_REGISTER_MAX_MIDI;
   const rootSpan = Math.max(1, rootMax - rootMin + 1);
   const rootMidi = rootMin + Math.floor(rng() * rootSpan);
 

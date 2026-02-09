@@ -1,3 +1,5 @@
+import { DEFAULT_WIDE_REGISTER_MAX_MIDI, WIDE_REGISTER_MIN_MIDI } from '../registerPolicy';
+
 export const MAJOR_KEYS = [
   { key: 'C', scale: ['C', 'D', 'E', 'F', 'G', 'A', 'B'] },
   { key: 'G', scale: ['G', 'A', 'B', 'C', 'D', 'E', 'F#'] },
@@ -36,6 +38,6 @@ export const MAJOR_OFFSETS = [0, 2, 4, 5, 7, 9, 11] as const;
 export function pickTestTonicMidi(tonicPc: number, rng: () => number) {
   // Lessons stay in a stable register; tests can roam (but keep >= G2).
   const base = 60 + tonicPc;
-  const candidates = [base - 24, base - 12, base].filter((m) => m >= 43 && m <= 72);
+  const candidates = [base - 24, base - 12, base].filter((m) => m >= WIDE_REGISTER_MIN_MIDI && m <= DEFAULT_WIDE_REGISTER_MAX_MIDI);
   return candidates[Math.floor(rng() * candidates.length)] ?? base;
 }

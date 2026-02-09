@@ -24,6 +24,7 @@ import { degreeMeaning, makeScaleDegreeNameReviewQuestion, type ScaleDegreeName 
 import { makeMajorScaleDegreeReviewQuestion } from '../exercises/majorScale';
 import { makeFunctionFamilyQuestion, type FunctionFamily } from '../exercises/functionFamily';
 import { MAJOR_KEYS } from '../lib/theory/major';
+import { DEFAULT_WIDE_REGISTER_MAX_MIDI, WIDE_REGISTER_MIN_MIDI } from '../lib/registerPolicy';
 
 function msToHuman(ms: number): string {
   if (ms <= 0) return 'now';
@@ -177,8 +178,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     // Tests/exams: wide register (>= G2). Keep drills aligned with that.
     return makeIntervalLabelQuestion({
       seed: seed * 10_000 + 7000 + drillIndex,
-      rootMinMidi: 43, // G2
-      rootMaxMidi: 72, // C5-ish
+      rootMinMidi: WIDE_REGISTER_MIN_MIDI, // G2
+      rootMaxMidi: DEFAULT_WIDE_REGISTER_MAX_MIDI,
       allowedSemitones: drillFocusSemitones,
       choiceCount: 6,
     });
@@ -489,9 +490,14 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           <h1 className="title">{drillMode ? 'Review Drill' : 'Review'}</h1>
           <p className="sub">
             {drillMode
-              ? 'Targeted interval drills from your mistakes (wide register).'
+              ? 'Targeted interval drills from your mistakes (wide register: G2+).'
               : 'Spaced review of missed items. Clear an item by getting it right twice in a row (streak 2/2).'}
           </p>
+          {drillMode ? (
+            <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>
+              Tip: lessons stay stable; drills/tests roam wider so your ears generalize.
+            </div>
+          ) : null}
           {stationFilter ? (
             <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
               Filter: <b>{stationFilter}</b> · <Link to="/review">Show all</Link>
