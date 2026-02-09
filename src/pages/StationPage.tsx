@@ -68,6 +68,17 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [now, setNow] = useState(() => Date.now());
   const [settings, setSettings] = useState(() => loadSettings());
 
+  const [mistakesThisVisit, setMistakesThisVisit] = useState(0);
+
+  const trackMistake = (m: Parameters<typeof addMistake>[0]) => {
+    setMistakesThisVisit((n) => n + 1);
+    addMistake(m);
+  };
+
+  useEffect(() => {
+    setMistakesThisVisit(0);
+  }, [id]);
+
   useEffect(() => {
     function bump() {
       setNow(Date.now());
@@ -728,7 +739,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult(ok ? 'correct' : 'wrong');
 
     if (!ok) {
-      addMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: s3TwistQ.rootMidi, semitones: s3TwistQ.semitones });
+      trackMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: s3TwistQ.rootMidi, semitones: s3TwistQ.semitones });
       setS3TwistWrong((n) => n + 1);
       setS3TwistIndex((i) => i + 1);
       return;
@@ -784,7 +795,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      addMistake({ kind: 'noteName', sourceStationId: id, midi: noteQ.midi });
+      trackMistake({ kind: 'noteName', sourceStationId: id, midi: noteQ.midi });
       return;
     }
 
@@ -807,7 +818,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({ [s1TwistQ.midi]: ok ? 'correct' : 'wrong' });
 
     if (!ok) {
-      addMistake({ kind: 'noteName', sourceStationId: id, midi: s1TwistQ.midi });
+      trackMistake({ kind: 'noteName', sourceStationId: id, midi: s1TwistQ.midi });
       setS1TwistWrong((n) => n + 1);
       setS1TwistIndex((i) => i + 1);
       return;
@@ -848,7 +859,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      addMistake({ kind: 'noteName', sourceStationId: id, midi: s1bQ.midi });
+      trackMistake({ kind: 'noteName', sourceStationId: id, midi: s1bQ.midi });
       return;
     }
 
@@ -871,7 +882,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({ [s1bTwistQ.midi]: ok ? 'correct' : 'wrong' });
 
     if (!ok) {
-      addMistake({ kind: 'noteName', sourceStationId: id, midi: s1bTwistQ.midi });
+      trackMistake({ kind: 'noteName', sourceStationId: id, midi: s1bTwistQ.midi });
       setS1bTwistWrong((n) => n + 1);
       setS1bTwistIndex((i) => i + 1);
       return;
@@ -943,7 +954,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      addMistake({ kind: 'noteName', sourceStationId: id, midi: s1cQ.midi });
+      trackMistake({ kind: 'noteName', sourceStationId: id, midi: s1cQ.midi });
       return;
     }
 
@@ -966,7 +977,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({ [s1cTwistQ.midi]: ok ? 'correct' : 'wrong' });
 
     if (!ok) {
-      addMistake({ kind: 'noteName', sourceStationId: id, midi: s1cTwistQ.midi });
+      trackMistake({ kind: 'noteName', sourceStationId: id, midi: s1cTwistQ.midi });
       setS1cTwistWrong((n) => n + 1);
       setS1cTwistIndex((i) => i + 1);
       return;
@@ -1059,7 +1070,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     if (!ok) {
       setCombo(0);
       setHighlighted({ [s2Q.targetMidi]: 'correct' });
-      addMistake({
+      trackMistake({
         kind: 'majorScaleDegree',
         sourceStationId: id,
         key: s2Q.key,
@@ -1207,7 +1218,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      addMistake({ kind: 'scaleDegreeName', sourceStationId: id, key: degreeQ.key, degree: degreeQ.degree });
+      trackMistake({ kind: 'scaleDegreeName', sourceStationId: id, key: degreeQ.key, degree: degreeQ.degree });
       return;
     }
 
@@ -1231,7 +1242,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      addMistake({
+      trackMistake({
         kind: 'intervalLabel',
         sourceStationId: id,
         rootMidi: degreeIntervalQ.tonicMidi,
@@ -1262,7 +1273,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult(ok ? 'correct' : 'wrong');
 
     if (!ok) {
-      addMistake({ kind: 'scaleDegreeName', sourceStationId: id, key: t4Q.key, degree: t4Q.degree });
+      trackMistake({ kind: 'scaleDegreeName', sourceStationId: id, key: t4Q.key, degree: t4Q.degree });
 
       const nextWrong = t4Wrong + 1;
       setT4Wrong(nextWrong);
@@ -1341,7 +1352,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({ [t1bQ.midi]: ok ? 'correct' : 'wrong' });
 
     if (!ok) {
-      addMistake({ kind: 'noteName', sourceStationId: id, midi: t1bQ.midi });
+      trackMistake({ kind: 'noteName', sourceStationId: id, midi: t1bQ.midi });
       setT1bWrong((n) => n + 1);
       setT1bIndex((i) => Math.min(T1B_TOTAL, i + 1));
       return;
@@ -1388,7 +1399,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     // Wrong: spend a life, record mistake, and advance.
     if (!ok) {
-      addMistake({ kind: 'noteName', sourceStationId: id, midi: t1Q.midi });
+      trackMistake({ kind: 'noteName', sourceStationId: id, midi: t1Q.midi });
 
       const nextWrong = t1Wrong + 1;
       setT1Wrong(nextWrong);
@@ -1452,7 +1463,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({ [e1Q.midi]: ok ? 'correct' : 'wrong' });
 
     if (!ok) {
-      addMistake({ kind: 'noteName', sourceStationId: id, midi: e1Q.midi });
+      trackMistake({ kind: 'noteName', sourceStationId: id, midi: e1Q.midi });
 
       const nextWrong = e1Wrong + 1;
       setE1Wrong(nextWrong);
@@ -1529,7 +1540,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult(ok ? 'correct' : 'wrong');
 
     if (!ok) {
-      addMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: t3bQ.rootMidi, semitones: t3bQ.semitones });
+      trackMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: t3bQ.rootMidi, semitones: t3bQ.semitones });
       setT3bWrong((n) => n + 1);
 
       const nextIndex = t3bIndex + 1;
@@ -1586,7 +1597,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult(ok ? 'correct' : 'wrong');
 
     if (!ok) {
-      addMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: t3Q.rootMidi, semitones: t3Q.semitones });
+      trackMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: t3Q.rootMidi, semitones: t3Q.semitones });
 
       const nextWrong = t3Wrong + 1;
       setT3Wrong(nextWrong);
@@ -1657,7 +1668,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult(ok ? 'correct' : 'wrong');
 
     if (!ok) {
-      addMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: e3Q.rootMidi, semitones: e3Q.semitones });
+      trackMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: e3Q.rootMidi, semitones: e3Q.semitones });
 
       const nextWrong = e3Wrong + 1;
       setE3Wrong(nextWrong);
@@ -1762,7 +1773,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult(ok ? 'correct' : 'wrong');
 
     if (!ok) {
-      addMistake({ kind: 'triadQuality', sourceStationId: id, rootMidi: t5Q.rootMidi, quality: t5Q.quality });
+      trackMistake({ kind: 'triadQuality', sourceStationId: id, rootMidi: t5Q.rootMidi, quality: t5Q.quality });
 
       const nextWrong = t5Wrong + 1;
       setT5Wrong(nextWrong);
@@ -1824,7 +1835,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       // Reuse triadQuality mistake type so Review can replay the chord.
-      addMistake({ kind: 'triadQuality', sourceStationId: id, rootMidi: t6Q.chordMidis[0], quality: t6Q.quality });
+      trackMistake({ kind: 'triadQuality', sourceStationId: id, rootMidi: t6Q.chordMidis[0], quality: t6Q.quality });
 
       const nextWrong = t6Wrong + 1;
       setT6Wrong(nextWrong);
@@ -1884,7 +1895,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult(ok ? 'correct' : 'wrong');
 
     if (!ok) {
-      addMistake({
+      trackMistake({
         kind: 'functionFamily',
         sourceStationId: id,
         key: t7Q.key,
@@ -1951,7 +1962,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       // Feed review: tonic→degree is just an interval-label item.
-      addMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: t8Q.tonicMidi, semitones: t8Q.semitones });
+      trackMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: t8Q.tonicMidi, semitones: t8Q.semitones });
 
       const nextWrong = t8Wrong + 1;
       setT8Wrong(nextWrong);
@@ -2013,7 +2024,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     if (!ok) {
       setHighlighted({ [t2Q.targetMidi]: 'correct' });
       // Feed the review queue: “degree → correct spelling” is a perfect spaced-review item.
-      addMistake({
+      trackMistake({
         kind: 'majorScaleDegree',
         sourceStationId: id,
         key: t2Q.key,
@@ -2084,7 +2095,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      addMistake({ kind: 'triadQuality', sourceStationId: id, rootMidi: triadQ.rootMidi, quality: triadQ.quality });
+      trackMistake({ kind: 'triadQuality', sourceStationId: id, rootMidi: triadQ.rootMidi, quality: triadQ.quality });
       setHighlighted({
         ...correctHi,
         ...(triadQ.chordMidis.includes(triadQ.rootMidi) ? {} : { [triadQ.rootMidi]: 'correct' }),
@@ -2109,7 +2120,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     if (!ok) {
       setCombo(0);
       // Feed spaced review: diatonic triad quality is reviewable as a triad-quality item.
-      addMistake({ kind: 'triadQuality', sourceStationId: id, rootMidi: diatonicQ.chordMidis[0], quality: diatonicQ.quality });
+      trackMistake({ kind: 'triadQuality', sourceStationId: id, rootMidi: diatonicQ.chordMidis[0], quality: diatonicQ.quality });
       setHighlighted(correctHi);
       return;
     }
@@ -2136,7 +2147,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       setCombo(0);
-      addMistake({ kind: 'functionFamily', sourceStationId: id, key: funcQ.key, degree: funcQ.degree, tonicMidi: funcQ.tonicMidi });
+      trackMistake({ kind: 'functionFamily', sourceStationId: id, key: funcQ.key, degree: funcQ.degree, tonicMidi: funcQ.tonicMidi });
       setHighlighted(correctHi);
       return;
     }
@@ -2501,6 +2512,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           <p className="sub">{station.blurb}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {mistakesThisVisit > 0 ? (
+            <span style={{ fontSize: 12, opacity: 0.75 }}>+{mistakesThisVisit} new</span>
+          ) : null}
           {stationMistakeCount > 0 ? (
             <Link
               to={`/review?station=${id}`}
@@ -2527,6 +2541,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
           <div>
             <div style={{ fontWeight: 700 }}>Completed.</div>
             <div style={{ fontSize: 12, opacity: 0.9 }}>Nice — keep the chain going.</div>
+            {mistakesThisVisit > 0 ? (
+              <div style={{ fontSize: 12, opacity: 0.9, marginTop: 6 }}>Captured {mistakesThisVisit} mistake{mistakesThisVisit === 1 ? '' : 's'} this visit — use Review to clear them.</div>
+            ) : null}
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
             <button
