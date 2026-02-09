@@ -59,7 +59,16 @@ export function FocusShell(props: { children?: ReactNode; progress: Progress; se
     <FocusUIContext.Provider value={ctx}>
       <div className="focusShell">
         <header className="focusTop" aria-label="lesson header">
-          <button className="focusExit" onClick={onExit} aria-label="Exit">
+          <button
+            type="button"
+            className="focusExit"
+            onClick={onExit}
+            onPointerDown={(e) => {
+              // Some mobile browsers can be flaky with click on sticky headers.
+              e.currentTarget.setPointerCapture?.(e.pointerId);
+            }}
+            aria-label="Exit"
+          >
             ✕
           </button>
 
@@ -86,7 +95,15 @@ export function FocusShell(props: { children?: ReactNode; progress: Progress; se
               </div>
             ) : null}
 
-            <button className="focusConfig" onClick={() => setConfigOpen(true)} aria-label="Open settings">
+            <button
+              type="button"
+              className="focusConfig"
+              onClick={() => setConfigOpen(true)}
+              onPointerDown={(e) => {
+                e.currentTarget.setPointerCapture?.(e.pointerId);
+              }}
+              aria-label="Open settings"
+            >
               ⚙
             </button>
           </div>
