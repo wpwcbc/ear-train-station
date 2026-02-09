@@ -205,8 +205,14 @@ export function nextDueAt(): number | null {
 /**
  * Applies a small spaced-repetition schedule.
  * - wrong → retry soon
- * - correct 2x in a row → clear
+ * - correct streak clears the item (usually 2; harder items require 3)
  */
+export function requiredClearStreak(m: Mistake): number {
+  // If you’ve missed this item a lot, demand one extra “clean” rep before clearing.
+  const wc = m.wrongCount ?? 0;
+  return wc >= 3 ? 3 : 2;
+}
+
 export function applyReviewResult(m: Mistake, result: 'correct' | 'wrong', now = Date.now()): Mistake | null {
   if (result === 'wrong') {
     return {
@@ -218,9 +224,12 @@ export function applyReviewResult(m: Mistake, result: 'correct' | 'wrong', now =
   }
 
   const nextStreak = (m.correctStreak ?? 0) + 1;
-  if (nextStreak >= 2) return null;
+  const need = requiredClearStreak(m);
+  if (nextStreak >= need) return null;
 
-  const delayMs = nextStreak === 1 ? 10 * 60_000 : 60 * 60_000;
+  // Tiny Leitner-ish schedule: first win = soon; then spread out.
+  // (Kept intentionally short so review feels “snappy”, not a flashcard app.)
+  const delayMs = nextStreak === 1 ? 10 * 60_000 : nextStreak === 2 ? 60 * 60_000 : 6 * 60 * 60_000;
   return {
     ...m,
     correctStreak: nextStreak,

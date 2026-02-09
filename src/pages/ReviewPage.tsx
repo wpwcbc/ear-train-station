@@ -3,7 +3,7 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useHotkeys } from '../lib/hooks/useHotkeys';
 import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
-import { applyReviewResult, loadMistakes, snoozeMistake, updateMistake, type Mistake } from '../lib/mistakes';
+import { applyReviewResult, loadMistakes, requiredClearStreak, snoozeMistake, updateMistake, type Mistake } from '../lib/mistakes';
 import { bumpReviewAttempt, bumpReviewClear } from '../lib/quests';
 import { SETTINGS_EVENT, loadSettings } from '../lib/settings';
 import { promptSpeedFactors } from '../lib/promptTiming';
@@ -612,7 +612,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           </div>
 
           <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
-            From: {active.sourceStationId} • Streak: {active.correctStreak}/2
+            From: {active.sourceStationId} • Streak: {active.correctStreak}/{requiredClearStreak(active)}
           </div>
         </>
       ) : active.kind === 'intervalLabel' && ilQ ? (
@@ -632,7 +632,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           </div>
 
           <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
-            From: {active.sourceStationId} • Streak: {active.correctStreak}/2
+            From: {active.sourceStationId} • Streak: {active.correctStreak}/{requiredClearStreak(active)}
           </div>
         </>
       ) : active.kind === 'scaleDegreeName' && degQ ? (
@@ -658,7 +658,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           ) : null}
 
           <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
-            From: {active.sourceStationId} • Streak: {active.correctStreak}/2
+            From: {active.sourceStationId} • Streak: {active.correctStreak}/{requiredClearStreak(active)}
           </div>
         </>
       ) : active.kind === 'majorScaleDegree' && msQ ? (
@@ -678,7 +678,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           </div>
 
           <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
-            From: {active.sourceStationId} • Streak: {active.correctStreak}/2
+            From: {active.sourceStationId} • Streak: {active.correctStreak}/{requiredClearStreak(active)}
           </div>
         </>
       ) : active.kind === 'functionFamily' && ffQ ? (
@@ -698,7 +698,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           </div>
 
           <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
-            From: {active.sourceStationId} • Streak: {active.correctStreak}/2
+            From: {active.sourceStationId} • Streak: {active.correctStreak}/{requiredClearStreak(active)}
           </div>
         </>
       ) : active.kind === 'triadQuality' && triadQ ? (
@@ -718,7 +718,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           </div>
 
           <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
-            From: {active.sourceStationId} • Streak: {active.correctStreak}/2
+            From: {active.sourceStationId} • Streak: {active.correctStreak}/{requiredClearStreak(active)}
           </div>
         </>
       ) : (
