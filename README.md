@@ -36,6 +36,7 @@ Quick definitions (nice phrasing from Theta Music Trainer): arpeggios are chord 
 - Keep *knowledge-only* surfaces clean.
 - Settings live behind the **⚙️** config icon.
 - Review is spaced by default; if nothing is due you can still run a short **Warm‑up** set (practice early) from your queue.
+- Review → **Manage mistakes** shows examples with due/streak meta; you can **Snooze 1h** (defer) or Remove (with Undo) to keep the queue healthy.
 
 ## Mobile / iOS notes
 
