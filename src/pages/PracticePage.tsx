@@ -304,6 +304,9 @@ export function PracticePage({ progress }: { progress: Progress }) {
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           Review unlocks by spaced repetition — warm‑up is optional.
+          <span style={{ marginLeft: 6, opacity: 0.85 }} title="Deep-link override: add ?n=5 (or 3–30) to change the session length.">
+            Sessions are up to <b>10</b> items by default.
+          </span>
         </div>
 
         {sched.total ? (
