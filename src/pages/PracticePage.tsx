@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { nextUnlockedIncomplete } from '../lib/stations';
-import { dueMistakeCount, mistakeCount, mistakeCountForStation, nextDueAt } from '../lib/mistakes';
+import { mistakeCountForStation, mistakeScheduleSummary } from '../lib/mistakes';
 import { STATIONS } from '../lib/stations';
 import { getABVariant } from '../lib/ab';
 
@@ -40,9 +40,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
     };
   }, []);
 
-  const due = dueMistakeCount();
-  const total = mistakeCount();
-  const nextDue = nextDueAt();
+  const sched = mistakeScheduleSummary(now);
 
   const workoutCopyVariant = getABVariant('practice_today_workout_copy_v1');
 
@@ -141,8 +139,34 @@ export function PracticePage({ progress }: { progress: Progress }) {
       <div className="card" style={{ marginTop: 12 }}>
         <h2 className="h2">Review queue</h2>
         <div style={{ fontSize: 14, opacity: 0.9 }}>
-          Due: <b>{due}</b> / {total}
+          Due now: <b>{sched.dueNow}</b> / {sched.total}
+          {sched.hard ? (
+            <span style={{ marginLeft: 8, fontSize: 12, opacity: 0.8 }} title="Hard = items you’ve missed 3+ times (need 3 clears)">
+              · Hard {sched.hard}
+            </span>
+          ) : null}
         </div>
+
+        {sched.total ? (
+          <div className="row" style={{ marginTop: 10, gap: 8, flexWrap: 'wrap', alignItems: 'baseline' }}>
+            <span className="pill" title="Eligible now">
+              Now · {sched.dueNow}
+            </span>
+            <span className="pill" title="Becomes eligible within 1 hour">
+              ≤1h · {sched.within1h}
+            </span>
+            <span className="pill" title="Becomes eligible later today">
+              Today · {sched.today}
+            </span>
+            <span className="pill" title="Not today">
+              Later · {sched.later}
+            </span>
+            {sched.dueNow === 0 && sched.nextDueAt ? (
+              <span style={{ fontSize: 12, opacity: 0.75 }}>Next due in {msToHuman(sched.nextDueAt - now)}</span>
+            ) : null}
+          </div>
+        ) : null}
+
         <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
           <Link className="linkBtn" to="/review" state={{ exitTo: '/practice' }}>
             Review now
@@ -150,9 +174,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
           <Link className="linkBtn" to="/review?drill=1" state={{ exitTo: '/practice' }} title="Auto-picks your top 3 missed interval labels">
             Top misses drill
           </Link>
-          {due === 0 && nextDue ? (
-            <span style={{ fontSize: 12, opacity: 0.75 }}>Next due in {msToHuman(nextDue - now)}</span>
-          ) : null}
+          {sched.total === 0 ? <span style={{ fontSize: 12, opacity: 0.75 }}>No mistakes yet — nice.</span> : null}
         </div>
 
         {stationDueCounts.length ? (

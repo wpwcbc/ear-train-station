@@ -202,6 +202,55 @@ export function nextDueAt(): number | null {
   return Number.isFinite(min) ? min : null;
 }
 
+export type MistakeScheduleSummary = {
+  total: number;
+  dueNow: number;
+  within1h: number;
+  today: number;
+  later: number;
+  hard: number;
+  nextDueAt: number | null;
+};
+
+/**
+ * Small read-only summary for UI (Practice/Review).
+ * Buckets are mutually exclusive.
+ */
+export function mistakeScheduleSummary(now = Date.now()): MistakeScheduleSummary {
+  const all = loadMistakes();
+  const total = all.length;
+
+  let dueNow = 0;
+  let within1h = 0;
+  let today = 0;
+  let later = 0;
+  let hard = 0;
+
+  let minNext = Number.POSITIVE_INFINITY;
+
+  for (const m of all) {
+    const dueAt = m.dueAt ?? m.addedAt;
+    minNext = Math.min(minNext, dueAt);
+
+    if ((m.wrongCount ?? 0) >= 3) hard += 1;
+
+    const dt = dueAt - now;
+    if (dt <= 0) {
+      dueNow += 1;
+    } else if (dt <= 60 * 60_000) {
+      within1h += 1;
+    } else if (dt <= 24 * 60 * 60_000) {
+      today += 1;
+    } else {
+      later += 1;
+    }
+  }
+
+  const nextDueAt = total ? (Number.isFinite(minNext) ? minNext : null) : null;
+
+  return { total, dueNow, within1h, today, later, hard, nextDueAt };
+}
+
 /**
  * Applies a small spaced-repetition schedule.
  * - wrong → retry soon
