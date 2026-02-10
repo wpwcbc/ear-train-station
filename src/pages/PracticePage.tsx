@@ -46,6 +46,29 @@ function setWorkoutDone(dayKey: string, session: 1 | 2) {
   }
 }
 
+function subDays(dayKey: string, days: number): string {
+  const [y, m, d] = dayKey.split('-').map((x) => Number(x));
+  const dt = new Date(y, (m || 1) - 1, d || 1);
+  dt.setDate(dt.getDate() - days);
+  return localDayKey(dt.getTime());
+}
+
+function getWorkoutDayDone(dayKey: string): boolean {
+  // Treat 1+ sessions as “done for the day” (Duolingo-like: forgiving).
+  // The per-session checkmarks still preserve the 2-session “workout” framing.
+  return getWorkoutDone(dayKey, 1) || getWorkoutDone(dayKey, 2);
+}
+
+function getWorkoutStreak(todayKey: string, maxDays = 365): number {
+  let n = 0;
+  for (let i = 0; i < maxDays; i++) {
+    const k = subDays(todayKey, i);
+    if (!getWorkoutDayDone(k)) break;
+    n++;
+  }
+  return n;
+}
+
 export function PracticePage({ progress }: { progress: Progress }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -84,6 +107,16 @@ export function PracticePage({ progress }: { progress: Progress }) {
   const workout2Done = getWorkoutDone(dayKey, 2);
   const workoutDoneCount = (workout1Done ? 1 : 0) + (workout2Done ? 1 : 0);
 
+  const workoutStreak = getWorkoutStreak(dayKey);
+  const workoutWeek = Array.from({ length: 7 }, (_, i) => {
+    const k = subDays(dayKey, 6 - i);
+    return {
+      key: k,
+      done: getWorkoutDayDone(k),
+      isToday: k === dayKey,
+    };
+  });
+
   const continueId = nextUnlockedIncomplete(progress);
 
   const goal = Math.max(1, progress.dailyGoalXp);
@@ -116,6 +149,30 @@ export function PracticePage({ progress }: { progress: Progress }) {
 
         <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
           Workout progress: <b>{workoutDoneCount}/2</b> done{workoutDoneCount === 2 ? <span style={{ opacity: 0.9 }}> • Nice.</span> : null}
+        </div>
+
+        <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 12, opacity: 0.8 }} title="Counts days with at least 1 workout session done.">
+            Workout streak: <b>{workoutStreak}</b> day{workoutStreak === 1 ? '' : 's'}
+          </div>
+          <div aria-label="workout last 7 days" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            {workoutWeek.map((d) => (
+              <span
+                key={d.key}
+                title={`${d.key}${d.isToday ? ' (today)' : ''}${d.done ? ' ✓' : ''}`}
+                aria-label={`${d.key} ${d.done ? 'done' : 'not done'}`}
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 999,
+                  display: 'inline-block',
+                  background: d.done ? 'rgba(92, 231, 158, 0.92)' : 'rgba(255,255,255,0.18)',
+                  outline: d.isToday ? '2px solid rgba(255,255,255,0.55)' : 'none',
+                  outlineOffset: 2,
+                }}
+              />
+            ))}
+          </div>
         </div>
 
         {(() => {
