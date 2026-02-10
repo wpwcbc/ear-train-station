@@ -106,6 +106,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     if (!Number.isFinite(n)) return 10;
     return Math.max(3, Math.min(30, n));
   })();
+  const nQS = nRaw ? `&n=${sessionN}` : '';
 
   const workoutRaw = (searchParams.get('workout') || '').trim();
   const workoutSession: 1 | 2 | null = workoutRaw === '1' ? 1 : workoutRaw === '2' ? 2 : null;
@@ -200,7 +201,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
         return (a.dueAt ?? a.addedAt) - (b.dueAt ?? b.addedAt);
       })
       .slice(0, sessionN);
-  }, [filtered, warmupMode]);
+  }, [filtered, warmupMode, sessionN]);
 
   const intervalStats = useMemo(() => {
     const map = new Map<number, { semitones: number; count: number; weight: number }>();
@@ -249,7 +250,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     setDrillCorrect(0);
     setDrillWrong(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drillMode, drillSemisRaw, stationFilter]);
+  }, [drillMode, drillSemisRaw, stationFilter, sessionN]);
 
   const drillIlQ = useMemo(() => {
     if (!drillMode) return null;
@@ -692,10 +693,20 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           >
             Manage
           </button>
-          <Link className="pill" to={`/review?drill=1${stationFilter ? `&station=${stationFilter}` : ''}`} state={inheritedState} title="A fast interval drill from your mistakes (wide register: G2+).">
+          <Link
+            className="pill"
+            to={`/review?drill=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
+            state={inheritedState}
+            title="A fast interval drill from your mistakes (wide register: G2+)."
+          >
             Drill
           </Link>
-          <Link className="pill" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}`} state={inheritedState} title="Warm‑up set (even if nothing is due yet)">
+          <Link
+            className="pill"
+            to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
+            state={inheritedState}
+            title="Warm‑up set (even if nothing is due yet)"
+          >
             Warm‑up
           </Link>
         </div>
@@ -706,7 +717,10 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           <span style={{ opacity: 0.9 }}>Quick drills:</span>
           <Link
             className="pill"
-            to={`/review?drill=1&semitones=${intervalStats.slice(0, 3).map((x) => x.semitones).join(',')}${stationFilter ? `&station=${stationFilter}` : ''}`}
+            to={`/review?drill=1&semitones=${intervalStats
+              .slice(0, 3)
+              .map((x) => x.semitones)
+              .join(',')}${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
             state={inheritedState}
           >
             Top misses ({intervalStats
@@ -718,7 +732,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             <Link
               key={x.semitones}
               className="pill"
-              to={`/review?drill=1&semitones=${x.semitones}${stationFilter ? `&station=${stationFilter}` : ''}`}
+              to={`/review?drill=1&semitones=${x.semitones}${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
               state={inheritedState}
             >
               {SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`} ×{x.count}
@@ -957,7 +971,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <Link
                 className="linkBtn"
-                to={`/review?drill=1&semitones=${drillFocusSemitones.join(',')}${stationFilter ? `&station=${stationFilter}` : ''}`}
+                to={`/review?drill=1&semitones=${drillFocusSemitones.join(',')}${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
                 state={inheritedState}
               >
                 Restart drill
@@ -1008,10 +1022,10 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
               {dueCount === 0 ? (
                 <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
-                  <Link className="linkBtn" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}`} state={inheritedState}>
+                  <Link className="linkBtn" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
                     Warm‑up (practice early)
                   </Link>
-                  <Link className="linkBtn" to={`/review?drill=1${stationFilter ? `&station=${stationFilter}` : ''}`} state={inheritedState}>
+                  <Link className="linkBtn" to={`/review?drill=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
                     Drill top misses
                   </Link>
                   <span style={{ fontSize: 12, opacity: 0.75 }}>
