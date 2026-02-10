@@ -77,13 +77,33 @@ export function PracticePage({ progress }: { progress: Progress }) {
           const topDueStation = stationDueCounts[0]?.id ?? null;
 
           // Deterministic-ish daily rotation:
-          // - Review is always “session #1” (most actionable)
+          // - Session #1 is always “Review”, but becomes Warm-up when nothing is due yet.
           // - Session #2 alternates between a Drill and New material (if available)
           const rotate = (Number(dayKey.replaceAll('-', '')) || 0) % 2;
 
-          const reviewTo = topDueStation && rotate === 0 ? `/review?station=${topDueStation}` : '/review';
-          const reviewLabel = topDueStation && rotate === 0 ? `Targeted review (${topDueStation})` : 'Targeted review';
-          const reviewLabelB = topDueStation && rotate === 0 ? `Fix weak spots (${topDueStation})` : 'Fix weak spots';
+          const hasDue = sched.dueNow > 0;
+          const hasQueue = sched.total > 0;
+
+          const reviewBase = hasDue ? '/review' : hasQueue ? '/review?warmup=1' : '/review';
+          const reviewTo = topDueStation && rotate === 0 ? `${reviewBase}${reviewBase.includes('?') ? '&' : '?'}station=${topDueStation}` : reviewBase;
+          const reviewLabel = hasDue
+            ? topDueStation && rotate === 0
+              ? `Review (${sched.dueNow} due · ${topDueStation})`
+              : `Review (${sched.dueNow} due)`
+            : hasQueue
+              ? topDueStation && rotate === 0
+                ? `Warm‑up (${topDueStation})`
+                : 'Warm‑up review'
+              : 'Review';
+          const reviewLabelB = hasDue
+            ? topDueStation && rotate === 0
+              ? `Review now (${topDueStation})`
+              : 'Review now'
+            : hasQueue
+              ? topDueStation && rotate === 0
+                ? `Warm up (${topDueStation})`
+                : 'Warm up'
+              : 'Review';
 
           const hasNew = Boolean(continueId);
           const newTo = continueId ? `/lesson/${continueId}` : '/learn';
@@ -92,7 +112,6 @@ export function PracticePage({ progress }: { progress: Progress }) {
 
           // If the user has a review queue, prioritize a drill. Otherwise, steer to new material.
           // Alternate daily so it feels less repetitive.
-          const hasQueue = sched.total > 0;
           const drillTo = '/review?drill=1';
           const drillLabel = 'Top misses drill';
           const drillLabelB = 'Quick drill';
@@ -109,7 +128,12 @@ export function PracticePage({ progress }: { progress: Progress }) {
 
           return (
             <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <Link className="linkBtn" to={reviewTo} state={{ exitTo: '/practice' }} title={dayKey}>
+              <Link
+                className="linkBtn"
+                to={reviewTo}
+                state={{ exitTo: '/practice' }}
+                title={hasDue ? 'Clear items that are due now' : hasQueue && sched.nextDueAt ? `Nothing due yet — next due in ${msToHuman(sched.nextDueAt - now)}` : hasQueue ? 'A short warm‑up set from your queue (even if nothing is due yet)' : dayKey}
+              >
                 {workoutCopyVariant === 'A' ? reviewLabel : reviewLabelB}
               </Link>
               <Link className="linkBtn" to={second.to} state={{ exitTo: '/practice' }} title={second.title}>
