@@ -348,7 +348,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
           <Link className="linkBtn" to="/review?drill=1" state={{ exitTo: '/practice' }} title="Auto-picks your top 3 missed interval labels">
             Top misses drill
           </Link>
-          <Link className="linkBtn" to="/review?manage=1" state={{ exitTo: '/practice' }} title="Browse and manage your Review queue (on-demand)">
+          <Link className="linkBtn" to="/review?manage=1#manage" state={{ exitTo: '/practice' }} title="Browse and manage your Review queue (on-demand)">
             Manage mistakes
           </Link>
           {sched.total === 0 ? <span style={{ fontSize: 12, opacity: 0.75 }}>No mistakes yet — nice.</span> : null}

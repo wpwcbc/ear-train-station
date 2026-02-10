@@ -75,7 +75,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const warmupMode = warmup === '1' || warmup === 'true' || warmup === 'yes';
 
   const manage = (searchParams.get('manage') || '').trim();
-  const manageMode = manage === '1' || manage === 'true' || manage === 'yes';
+  const manageParam = manage === '1' || manage === 'true' || manage === 'yes';
+  const manageHash = (loc.hash || '').trim().toLowerCase() === '#manage';
+  const manageMode = manageParam || manageHash;
 
   const workoutRaw = (searchParams.get('workout') || '').trim();
   const workoutSession: 1 | 2 | null = workoutRaw === '1' ? 1 : workoutRaw === '2' ? 2 : null;
@@ -698,6 +700,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
       {!drillMode && mistakeKindStats.length > 0 ? (
         <details
+          id="manage"
           ref={manageRef}
           open={manageOpen}
           onToggle={(e) => {
@@ -705,7 +708,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             const el = e.currentTarget as HTMLDetailsElement;
             setManageOpen(!!el.open);
           }}
-          style={{ marginTop: 10 }}
+          style={{ marginTop: 10, scrollMarginTop: 80 }}
         >
           <summary style={{ cursor: 'pointer', fontSize: 12, opacity: 0.85 }}>Manage mistakes</summary>
           <div style={{ marginTop: 8, display: 'grid', gap: 8 }}>
