@@ -27,8 +27,6 @@ export function FocusShell(props: { children?: ReactNode; progress: Progress; se
   const progressPct = topBar.progress == null ? null : Math.round(clamp01(topBar.progress) * 100);
 
   function onExit() {
-    // Debug breadcrumb (can be removed later)
-    console.debug('[FocusShell] exit', { path: loc.pathname, search: loc.search, state: loc.state });
     // Special case: in Review drill mode, "X" should return to the review list
     // (instead of exiting the entire Focus flow).
     if (loc.pathname === '/review') {

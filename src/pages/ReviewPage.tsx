@@ -713,7 +713,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                               className="ghost"
                               onClick={() => {
                                 // Give it breathing room without nuking it from the queue.
+                                const prev = loadMistakes();
                                 snoozeMistake(m.id, 60 * 60_000);
+                                armUndo(prev, 'Snoozed 1 item for 1 hour.');
                                 refresh();
                               }}
                               title="Snooze this item for 1 hour"
