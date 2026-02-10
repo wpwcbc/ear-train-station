@@ -70,14 +70,18 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const [searchParams] = useSearchParams();
   const stationFilter = (searchParams.get('station') || '').trim();
   const drill = (searchParams.get('drill') || '').trim();
-  const drillMode = drill === '1' || drill === 'true' || drill === 'yes';
+  const drillModeRaw = drill === '1' || drill === 'true' || drill === 'yes';
   const warmup = (searchParams.get('warmup') || '').trim();
-  const warmupMode = warmup === '1' || warmup === 'true' || warmup === 'yes';
+  const warmupModeRaw = warmup === '1' || warmup === 'true' || warmup === 'yes';
 
   const manage = (searchParams.get('manage') || '').trim();
   const manageParam = manage === '1' || manage === 'true' || manage === 'yes';
   const manageHash = (loc.hash || '').trim().toLowerCase() === '#manage';
   const manageMode = manageParam || manageHash;
+
+  // Deep-linking into Manage should never be blocked by drill/warm-up query params.
+  const drillMode = drillModeRaw && !manageMode;
+  const warmupMode = warmupModeRaw && !manageMode;
 
   const workoutRaw = (searchParams.get('workout') || '').trim();
   const workoutSession: 1 | 2 | null = workoutRaw === '1' ? 1 : workoutRaw === '2' ? 2 : null;
