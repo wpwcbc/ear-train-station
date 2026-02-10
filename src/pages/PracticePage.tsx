@@ -171,9 +171,26 @@ export function PracticePage({ progress }: { progress: Progress }) {
         ) : null}
 
         <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
-          <Link className="linkBtn" to="/review" state={{ exitTo: '/practice' }}>
-            Review now
-          </Link>
+          {(() => {
+            const hasDue = sched.dueNow > 0;
+            const hasQueue = sched.total > 0;
+            const to = hasDue ? '/review' : hasQueue ? '/review?warmup=1' : '/review';
+            const label = hasDue ? `Review (${sched.dueNow} due)` : hasQueue ? 'Warm‑up review' : 'Review';
+            const title = hasDue
+              ? 'Clear items that are due now'
+              : hasQueue && sched.nextDueAt
+                ? `Nothing due yet — next due in ${msToHuman(sched.nextDueAt - now)}`
+                : hasQueue
+                  ? 'A short warm‑up set from your queue (even if nothing is due yet)'
+                  : 'Review your mistakes as you make them';
+
+            return (
+              <Link className="linkBtn" to={to} state={{ exitTo: '/practice' }} title={title}>
+                {label}
+              </Link>
+            );
+          })()}
+
           <Link className="linkBtn" to="/review?drill=1" state={{ exitTo: '/practice' }} title="Auto-picks your top 3 missed interval labels">
             Top misses drill
           </Link>
