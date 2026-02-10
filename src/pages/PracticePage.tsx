@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { nextUnlockedIncomplete } from '../lib/stations';
-import { mistakeCountForStation, mistakeScheduleSummary } from '../lib/mistakes';
+import { intervalMistakeStatsFrom, loadMistakes, mistakeCountForStation, mistakeScheduleSummary } from '../lib/mistakes';
 import { STATIONS } from '../lib/stations';
+import { SEMITONE_TO_LABEL } from '../exercises/interval';
 import { getABVariant } from '../lib/ab';
 
 function msToHuman(ms: number): string {
@@ -99,6 +100,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
   }, [navigate, searchParams]);
 
   const sched = mistakeScheduleSummary(now);
+  const intervalStatsTop = intervalMistakeStatsFrom(loadMistakes()).slice(0, 3);
 
   const workoutCopyVariant = getABVariant('practice_today_workout_copy_v1');
 
@@ -345,8 +347,26 @@ export function PracticePage({ progress }: { progress: Progress }) {
             );
           })()}
 
-          <Link className="linkBtn" to="/review?drill=1" state={{ exitTo: '/practice' }} title="Auto-picks your top 3 missed interval labels">
+          <Link
+            className="linkBtn"
+            to="/review?drill=1"
+            state={{ exitTo: '/practice' }}
+            title={
+              intervalStatsTop.length
+                ? `Auto-picks your top missed interval labels: ${intervalStatsTop
+                    .map((x) => SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`)
+                    .join(', ')}`
+                : 'Auto-picks your top 3 missed interval labels'
+            }
+          >
             Top misses drill
+            {intervalStatsTop.length ? (
+              <span style={{ marginLeft: 8, fontSize: 12, opacity: 0.8 }}>
+                ({intervalStatsTop
+                  .map((x) => SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`)
+                  .join(', ')})
+              </span>
+            ) : null}
           </Link>
           <Link className="linkBtn" to="/review?manage=1#manage" state={{ exitTo: '/practice' }} title="Browse and manage your Review queue (on-demand)">
             Manage mistakes

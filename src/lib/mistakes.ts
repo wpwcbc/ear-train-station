@@ -301,3 +301,28 @@ export function mistakeCountForStation(sourceStationId: StationId, opts?: { dueO
   const now = opts?.now ?? Date.now();
   return loadMistakes().filter((m) => m.sourceStationId === sourceStationId && (!opts?.dueOnly || (m.dueAt ?? 0) <= now)).length;
 }
+
+export type IntervalMistakeStat = { semitones: number; count: number; weight: number };
+
+/**
+ * Lightweight stats used to power “Top misses” drill affordances.
+ * Weight favors intervals you miss repeatedly.
+ */
+export function intervalMistakeStatsFrom(mistakes: Mistake[]): IntervalMistakeStat[] {
+  const map = new Map<number, IntervalMistakeStat>();
+  for (const m of mistakes) {
+    if (m.kind !== 'intervalLabel') continue;
+    const w = 1 + (m.wrongCount ?? 0) * 2;
+    const cur = map.get(m.semitones) ?? { semitones: m.semitones, count: 0, weight: 0 };
+    cur.count += 1;
+    cur.weight += w;
+    map.set(m.semitones, cur);
+  }
+  return [...map.values()].sort((a, b) => b.weight - a.weight || b.count - a.count || a.semitones - b.semitones);
+}
+
+export function intervalMistakeStats(now = Date.now()): IntervalMistakeStat[] {
+  // now is unused for now but kept for future due-weighting.
+  void now;
+  return intervalMistakeStatsFrom(loadMistakes());
+}
