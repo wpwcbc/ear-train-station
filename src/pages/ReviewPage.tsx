@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useHotkeys } from '../lib/hooks/useHotkeys';
 import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
@@ -64,6 +64,7 @@ function stationLabel(id: string): string {
 
 export function ReviewPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
   const loc = useLocation();
+  const navigate = useNavigate();
   const inheritedState = loc.state;
 
   const [seed, setSeed] = useState(1);
@@ -78,6 +79,19 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const manageParam = manage === '1' || manage === 'true' || manage === 'yes';
   const manageHash = (loc.hash || '').trim().toLowerCase() === '#manage';
   const manageMode = manageParam || manageHash;
+
+  function setManageUrl(open: boolean) {
+    const next = new URLSearchParams(searchParams);
+    if (open) {
+      next.set('manage', '1');
+    } else {
+      next.delete('manage');
+    }
+
+    const qs = next.toString();
+    const hash = open ? '#manage' : '';
+    navigate({ pathname: '/review', search: qs ? `?${qs}` : '', hash }, { replace: true, state: inheritedState });
+  }
 
   // Deep-linking into Manage should never be blocked by drill/warm-up query params.
   const drillMode = drillModeRaw && !manageMode;
@@ -661,6 +675,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             className="pill"
             onClick={() => {
               setManageOpen(true);
+              setManageUrl(true);
               window.setTimeout(() => manageRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 30);
             }}
             title="Browse/remove items in your Review queue"
@@ -708,9 +723,10 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           ref={manageRef}
           open={manageOpen}
           onToggle={(e) => {
-            // Keep React state in sync with the native <details> element.
+            // Keep React state in sync with the native <details> element + URL (so refresh/share keeps state).
             const el = e.currentTarget as HTMLDetailsElement;
             setManageOpen(!!el.open);
+            setManageUrl(!!el.open);
           }}
           style={{ marginTop: 10, scrollMarginTop: 80 }}
         >
