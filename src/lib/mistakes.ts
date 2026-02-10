@@ -216,9 +216,8 @@ export type MistakeScheduleSummary = {
  * Small read-only summary for UI (Practice/Review).
  * Buckets are mutually exclusive.
  */
-export function mistakeScheduleSummary(now = Date.now()): MistakeScheduleSummary {
-  const all = loadMistakes();
-  const total = all.length;
+export function mistakeScheduleSummaryFrom(mistakes: Mistake[], now = Date.now()): MistakeScheduleSummary {
+  const total = mistakes.length;
 
   let dueNow = 0;
   let within1h = 0;
@@ -228,7 +227,7 @@ export function mistakeScheduleSummary(now = Date.now()): MistakeScheduleSummary
 
   let minNext = Number.POSITIVE_INFINITY;
 
-  for (const m of all) {
+  for (const m of mistakes) {
     const dueAt = m.dueAt ?? m.addedAt;
     minNext = Math.min(minNext, dueAt);
 
@@ -249,6 +248,10 @@ export function mistakeScheduleSummary(now = Date.now()): MistakeScheduleSummary
   const nextDueAt = total ? (Number.isFinite(minNext) ? minNext : null) : null;
 
   return { total, dueNow, within1h, today, later, hard, nextDueAt };
+}
+
+export function mistakeScheduleSummary(now = Date.now()): MistakeScheduleSummary {
+  return mistakeScheduleSummaryFrom(loadMistakes(), now);
 }
 
 /**

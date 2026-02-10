@@ -6,6 +6,7 @@ import { applyStudyReward } from '../lib/progress';
 import {
   applyReviewResult,
   loadMistakes,
+  mistakeScheduleSummaryFrom,
   requiredClearStreak,
   saveMistakes,
   snoozeMistake,
@@ -424,12 +425,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
   const dueCount = due.length;
   const totalCount = filtered.length;
-  const nextDue = useMemo(() => {
-    if (filtered.length === 0) return null;
-    let min = Number.POSITIVE_INFINITY;
-    for (const m of filtered) min = Math.min(min, m.dueAt ?? m.addedAt);
-    return Number.isFinite(min) ? min : null;
-  }, [filtered]);
+
+  const sched = useMemo(() => mistakeScheduleSummaryFrom(filtered, now), [filtered, now]);
+  const nextDue = sched.nextDueAt;
 
   useEffect(() => {
     if (nextDue == null) return;
@@ -841,15 +839,45 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             'No mistakes queued. Go do a station and come back if you miss something.'
           ) : (
             <>
-              <div>{nextDue ? `Nothing due yet. Next item due in ${msToHuman(nextDue - now)}.` : 'Nothing due yet.'}</div>
+              <div style={{ fontSize: 14, opacity: 0.9 }}>
+                Due now: <b>{sched.dueNow}</b> / {sched.total}
+                {sched.hard ? (
+                  <span style={{ marginLeft: 8, fontSize: 12, opacity: 0.8 }} title="Hard = items you’ve missed 3+ times (need 3 clears)">
+                    · Hard {sched.hard}
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="row" style={{ marginTop: 10, gap: 8, flexWrap: 'wrap', alignItems: 'baseline' }}>
+                <span className="pill" title="Eligible now">
+                  Now · {sched.dueNow}
+                </span>
+                <span className="pill" title="Becomes eligible within 1 hour">
+                  ≤1h · {sched.within1h}
+                </span>
+                <span className="pill" title="Becomes eligible later today">
+                  Today · {sched.today}
+                </span>
+                <span className="pill" title="Not today">
+                  Later · {sched.later}
+                </span>
+                {sched.dueNow === 0 && sched.nextDueAt ? (
+                  <span style={{ fontSize: 12, opacity: 0.75 }}>Next due in {msToHuman(sched.nextDueAt - now)}</span>
+                ) : null}
+              </div>
+
               {dueCount === 0 ? (
-                <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
                   <Link className="linkBtn" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}`} state={inheritedState}>
                     Warm‑up (practice early)
                   </Link>
                   <Link className="linkBtn" to={`/review?drill=1${stationFilter ? `&station=${stationFilter}` : ''}`} state={inheritedState}>
                     Drill top misses
                   </Link>
+                  <span style={{ fontSize: 12, opacity: 0.75 }}>
+                    {sched.nextDueAt ? `Nothing due right now — next due in ${msToHuman(sched.nextDueAt - now)}.` : 'Nothing due right now.'}
+                    <span style={{ marginLeft: 6, opacity: 0.8 }}>Warm‑up is optional.</span>
+                  </span>
                 </div>
               ) : null}
             </>
