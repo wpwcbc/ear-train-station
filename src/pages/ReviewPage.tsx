@@ -91,6 +91,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const [now, setNow] = useState(() => Date.now());
   const [mistakes, setMistakes] = useState<Mistake[]>(() => loadMistakes());
   const [undo, setUndo] = useState<UndoState | null>(null);
+  const [expandedKinds, setExpandedKinds] = useState<Record<string, boolean>>({});
 
   // Keep the review queue reactive: update on focus/storage, and wake up when the next item becomes due.
   useEffect(() => {
@@ -528,7 +529,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           ) : null}
           {stationFilter ? (
             <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
-              Filter: <b>{stationFilter}</b> · <Link to="/review">Show all</Link>
+              Filter: <b title={stationFilter}>{stationLabel(stationFilter)}</b> · <Link to="/review">Show all</Link>
             </div>
           ) : null}
         </div>
@@ -665,6 +666,13 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                 functionFamily: 'Function families',
               };
 
+              const expanded = !!expandedKinds[s.kind];
+              const maxItems = expanded ? 12 : 3;
+              const kindItems = filtered
+                .filter((m) => m.kind === s.kind)
+                .slice()
+                .sort((a, b) => (a.dueAt ?? a.addedAt) - (b.dueAt ?? b.addedAt) || b.addedAt - a.addedAt);
+
               return (
                 <div key={s.kind} style={{ display: 'grid', gap: 6, padding: '6px 0' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -672,6 +680,15 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                       <b>{kindLabel[s.kind] ?? s.kind}</b> — {s.due} due / {s.total} total
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {kindItems.length > 3 ? (
+                        <button
+                          className="ghost"
+                          onClick={() => setExpandedKinds((m) => ({ ...m, [s.kind]: !expanded }))}
+                          title={expanded ? 'Show fewer items' : 'Show more items'}
+                        >
+                          {expanded ? 'Show less' : `Show more (+${kindItems.length - 3})`}
+                        </button>
+                      ) : null}
                       <button
                         className="ghost"
                         onClick={() => {
@@ -696,12 +713,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                   </div>
 
                   <div style={{ display: 'grid', gap: 6 }}>
-                    {filtered
-                      .filter((m) => m.kind === s.kind)
-                      .slice()
-                      .sort((a, b) => (a.dueAt ?? a.addedAt) - (b.dueAt ?? b.addedAt) || b.addedAt - a.addedAt)
-                      .slice(0, 3)
-                      .map((m) => (
+                    {kindItems.slice(0, maxItems).map((m) => (
                         <div
                           key={m.id}
                           style={{
