@@ -51,13 +51,15 @@ export function PracticePage({ progress }: { progress: Progress }) {
   const pct = Math.min(100, Math.round((today / goal) * 100));
 
   // Surface the most actionable review sources first.
-  const stationDueCounts = STATIONS.map((s) => ({
+  // If nothing is due right now, still show where your queue is concentrated.
+  const stationCounts = STATIONS.map((s) => ({
     id: s.id,
     title: s.title,
     due: mistakeCountForStation(s.id, { dueOnly: true }),
+    queued: mistakeCountForStation(s.id),
   }))
-    .filter((x) => x.due > 0)
-    .sort((a, b) => b.due - a.due);
+    .filter((x) => (sched.dueNow > 0 ? x.due > 0 : x.queued > 0))
+    .sort((a, b) => b.due - a.due || b.queued - a.queued);
 
   return (
     <div className="page">
@@ -74,7 +76,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
 
         {(() => {
           const dayKey = localDayKey();
-          const topDueStation = stationDueCounts[0]?.id ?? null;
+          const topDueStation = stationCounts[0]?.id ?? null;
 
           // Deterministic-ish daily rotation:
           // - Session #1 is always “Review”, but becomes Warm-up when nothing is due yet.
@@ -241,15 +243,21 @@ export function PracticePage({ progress }: { progress: Progress }) {
           {sched.total === 0 ? <span style={{ fontSize: 12, opacity: 0.75 }}>No mistakes yet — nice.</span> : null}
         </div>
 
-        {stationDueCounts.length ? (
+        {stationCounts.length ? (
           <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>Most due by station</div>
+            <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>{sched.dueNow > 0 ? 'Most due by station' : 'Most queued by station'}</div>
             <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-              {stationDueCounts.slice(0, 6).map((s) => (
-                <Link key={s.id} className="pill" to={`/review?station=${s.id}`} state={{ exitTo: '/practice' }}>
-                  {s.id} · {s.due}
-                </Link>
-              ))}
+              {stationCounts.slice(0, 6).map((s) => {
+                const hasDue = sched.dueNow > 0;
+                const base = hasDue ? '/review' : '/review?warmup=1';
+                const to = `${base}${base.includes('?') ? '&' : '?'}station=${s.id}`;
+                const count = hasDue ? s.due : s.queued;
+                return (
+                  <Link key={s.id} className="pill" to={to} state={{ exitTo: '/practice' }} title={s.title}>
+                    {s.id} · {count}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         ) : (
