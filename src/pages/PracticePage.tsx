@@ -146,6 +146,9 @@ export function PracticePage({ progress }: { progress: Progress }) {
             </span>
           ) : null}
         </div>
+        <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+          Review unlocks by spaced repetition — warm‑up is optional.
+        </div>
 
         {sched.total ? (
           <div className="row" style={{ marginTop: 10, gap: 8, flexWrap: 'wrap', alignItems: 'baseline' }}>
