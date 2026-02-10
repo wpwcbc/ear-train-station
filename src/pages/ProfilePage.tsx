@@ -26,7 +26,7 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
               <div style={{ fontSize: 22, fontWeight: 850 }}>{progress.xp}</div>
             </div>
             <div style={{ border: '3px solid var(--ink)', borderRadius: 16, padding: 12, background: 'var(--card)' }}>
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>Streak</div>
+              <div style={{ fontSize: 12, color: 'var(--muted)' }}>XP streak</div>
               <div style={{ fontSize: 22, fontWeight: 850 }}>
                 {progress.streakDays} day{progress.streakDays === 1 ? '' : 's'}
               </div>

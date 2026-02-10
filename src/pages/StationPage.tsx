@@ -3964,7 +3964,7 @@ reviewHref={(t7Index >= T7_TOTAL || t7Wrong >= HEARTS) && stationMistakeCount > 
         <div style={{ minWidth: 220 }}>
           <div style={{ fontWeight: 800 }}>Station completed</div>
           <div style={{ fontSize: 12, opacity: 0.9, marginTop: 4 }}>
-            Today: <b>{Math.max(0, progress.dailyXpToday || 0)}</b>/<b>{Math.max(1, progress.dailyGoalXp || 0)}</b> XP · Streak:{' '}
+            Today: <b>{Math.max(0, progress.dailyXpToday || 0)}</b>/<b>{Math.max(1, progress.dailyGoalXp || 0)}</b> XP · XP streak:{' '}
             <b>{progress.streakDays}</b> day{progress.streakDays === 1 ? '' : 's'} · Total XP: <b>{progress.xp}</b>
           </div>
           <div style={{ fontSize: 12, opacity: 0.75, marginTop: 6 }}>

@@ -47,7 +47,7 @@ export function MapPage({
               }}
             />
           </div>
-          <div style={{ marginTop: 6 }}>Streak: {progress.streakDays} day(s)</div>
+          <div style={{ marginTop: 6 }}>XP streak: {progress.streakDays} day(s)</div>
         </div>
       </div>
 
