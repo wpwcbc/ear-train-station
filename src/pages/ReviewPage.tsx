@@ -26,6 +26,7 @@ import { makeMajorScaleDegreeReviewQuestion } from '../exercises/majorScale';
 import { makeFunctionFamilyQuestion, type FunctionFamily } from '../exercises/functionFamily';
 import { MAJOR_KEYS } from '../lib/theory/major';
 import { DEFAULT_WIDE_REGISTER_MAX_MIDI, WIDE_REGISTER_MIN_MIDI } from '../lib/registerPolicy';
+import { STATIONS } from '../lib/stations';
 
 function msToHuman(ms: number): string {
   if (ms <= 0) return 'now';
@@ -52,6 +53,13 @@ function mistakeShortLabel(m: Mistake): string {
   if (m.kind === 'scaleDegreeName') return `Scale degree: ${m.key} — ${m.degree}`;
   if (m.kind === 'majorScaleDegree') return `Major scale: ${m.key} — ${m.degree}`;
   return `Function: ${m.key} — ${m.degree}`;
+}
+
+function stationLabel(id: string): string {
+  const s = STATIONS.find((x) => x.id === id);
+  if (!s) return id;
+  // Keep labels compact in Review.
+  return s.title.replace(/^Station\s+/, 'S').replace(/^Test\s+/, 'T').replace(/^Mid-test\s+/, 'T').replace(/^\w+\s+Exam\s+—\s+/, 'Exam — ');
 }
 
 export function ReviewPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
@@ -605,6 +613,18 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
         Hotkeys: Space/Enter = Play • 1–9 = Answer • Backspace = Skip
       </div>
 
+      {stationFilter ? (
+        <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontSize: 12, opacity: 0.85 }}>Filtered:</span>
+          <span className="pill" style={{ fontSize: 12 }} title={stationFilter}>
+            {stationLabel(stationFilter)}
+          </span>
+          <Link className="pill" to="/review" state={inheritedState} style={{ fontSize: 12 }} title="Clear station filter">
+            Clear
+          </Link>
+        </div>
+      ) : null}
+
       {!drillMode && intervalStats.length > 0 ? (
         <div style={{ marginTop: 10, fontSize: 12, opacity: 0.85, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={{ opacity: 0.9 }}>Quick drills:</span>
@@ -698,7 +718,16 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                         >
                           <div style={{ fontSize: 12, opacity: 0.85 }}>
                             {mistakeShortLabel(m)}
-                            <span style={{ marginLeft: 8, opacity: 0.75 }}>• from {m.sourceStationId}</span>
+                            <span style={{ marginLeft: 8, opacity: 0.75 }}>• from </span>
+                            <Link
+                              className="pill"
+                              to={`/review?station=${encodeURIComponent(m.sourceStationId)}`}
+                              state={inheritedState}
+                              style={{ fontSize: 12, padding: '1px 8px' }}
+                              title="Filter Review to this station"
+                            >
+                              {stationLabel(m.sourceStationId)}
+                            </Link>
                             <span style={{ marginLeft: 8, opacity: 0.75 }}>
                               • {(m.dueAt ?? 0) <= now ? 'due' : `due in ${msToHuman((m.dueAt ?? m.addedAt) - now)}`}
                             </span>
@@ -745,13 +774,19 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               );
             })}
 
-            <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
-              Tip: “Hard” items need 3 clears (a clean 3/3 streak) before they disappear.
+            <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75, display: 'grid', gap: 4 }}>
+              <div>Tip: Tap a station pill to filter Review to that station.</div>
+              <div>“Hard” items need 3 clears (a clean 3/3 streak) before they disappear.</div>
             </div>
 
             {active ? (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 6 }}>
-                <div style={{ fontSize: 12, opacity: 0.82 }}>Current: <b>{active.kind}</b> from <b>{active.sourceStationId}</b></div>
+                <div style={{ fontSize: 12, opacity: 0.82, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span>Current: <b>{active.kind}</b> from</span>
+                  <Link className="pill" to={`/review?station=${encodeURIComponent(active.sourceStationId)}`} state={inheritedState} style={{ fontSize: 12, padding: '1px 8px' }}>
+                    {stationLabel(active.sourceStationId)}
+                  </Link>
+                </div>
                 <button
                   className="ghost"
                   onClick={() => {
