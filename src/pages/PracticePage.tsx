@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { nextUnlockedIncomplete } from '../lib/stations';
 import { mistakeCountForStation, mistakeScheduleSummary } from '../lib/mistakes';
@@ -26,7 +26,30 @@ function localDayKey(ts = Date.now()): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function workoutLsKey(dayKey: string, session: 1 | 2): string {
+  return `kuku:practiceWorkout:${dayKey}:${session}`;
+}
+
+function getWorkoutDone(dayKey: string, session: 1 | 2): boolean {
+  try {
+    return window.localStorage.getItem(workoutLsKey(dayKey, session)) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function setWorkoutDone(dayKey: string, session: 1 | 2) {
+  try {
+    window.localStorage.setItem(workoutLsKey(dayKey, session), '1');
+  } catch {
+    // ignore
+  }
+}
+
 export function PracticePage({ progress }: { progress: Progress }) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     function bump() {
@@ -40,9 +63,26 @@ export function PracticePage({ progress }: { progress: Progress }) {
     };
   }, []);
 
+  // If we return from Focus routes with a workout completion flag, persist it for today
+  // and clean the URL (so refresh doesn't re-apply).
+  useEffect(() => {
+    const raw = (searchParams.get('workoutDone') || '').trim();
+    const session = raw === '1' ? 1 : raw === '2' ? 2 : null;
+    if (!session) return;
+
+    const dayKey = localDayKey();
+    setWorkoutDone(dayKey, session);
+    navigate('/practice', { replace: true });
+  }, [navigate, searchParams]);
+
   const sched = mistakeScheduleSummary(now);
 
   const workoutCopyVariant = getABVariant('practice_today_workout_copy_v1');
+
+  const dayKey = localDayKey(now);
+  const workout1Done = getWorkoutDone(dayKey, 1);
+  const workout2Done = getWorkoutDone(dayKey, 2);
+  const workoutDoneCount = (workout1Done ? 1 : 0) + (workout2Done ? 1 : 0);
 
   const continueId = nextUnlockedIncomplete(progress);
 
@@ -74,8 +114,11 @@ export function PracticePage({ progress }: { progress: Progress }) {
             : 'Two quick sessions picked for you — rotates daily.'}
         </div>
 
+        <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
+          Workout progress: <b>{workoutDoneCount}/2</b> done{workoutDoneCount === 2 ? <span style={{ opacity: 0.9 }}> • Nice.</span> : null}
+        </div>
+
         {(() => {
-          const dayKey = localDayKey();
           const topDueStation = stationCounts[0]?.id ?? null;
 
           // Deterministic-ish daily rotation:
@@ -86,8 +129,14 @@ export function PracticePage({ progress }: { progress: Progress }) {
           const hasDue = sched.dueNow > 0;
           const hasQueue = sched.total > 0;
 
+          const withWorkout = (to: string, session: 1 | 2) => {
+            if (!to.startsWith('/review')) return to;
+            return `${to}${to.includes('?') ? '&' : '?'}workout=${session}`;
+          };
+
           const reviewBase = hasDue ? '/review' : hasQueue ? '/review?warmup=1' : '/review';
-          const reviewTo = topDueStation && rotate === 0 ? `${reviewBase}${reviewBase.includes('?') ? '&' : '?'}station=${topDueStation}` : reviewBase;
+          const reviewToBase = topDueStation && rotate === 0 ? `${reviewBase}${reviewBase.includes('?') ? '&' : '?'}station=${topDueStation}` : reviewBase;
+          const reviewTo = withWorkout(reviewToBase, 1);
           const reviewLabel = hasDue
             ? topDueStation && rotate === 0
               ? `Review (${sched.dueNow} due · ${topDueStation})`
@@ -127,6 +176,8 @@ export function PracticePage({ progress }: { progress: Progress }) {
           };
 
           const second = pickSecond();
+          const secondTo = withWorkout(second.to, 2);
+          const secondExitTo = second.to.startsWith('/lesson/') ? '/practice?workoutDone=2' : '/practice';
 
           return (
             <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -136,10 +187,10 @@ export function PracticePage({ progress }: { progress: Progress }) {
                 state={{ exitTo: '/practice' }}
                 title={hasDue ? 'Clear items that are due now' : hasQueue && sched.nextDueAt ? `Nothing due yet — next due in ${msToHuman(sched.nextDueAt - now)}` : hasQueue ? 'A short warm‑up set from your queue (even if nothing is due yet)' : dayKey}
               >
-                {workoutCopyVariant === 'A' ? reviewLabel : reviewLabelB}
+                {workoutCopyVariant === 'A' ? reviewLabel : reviewLabelB}{workout1Done ? ' ✓' : ''}
               </Link>
-              <Link className="linkBtn" to={second.to} state={{ exitTo: '/practice' }} title={second.title}>
-                {workoutCopyVariant === 'A' ? second.labelA : second.labelB}
+              <Link className="linkBtn" to={secondTo} state={{ exitTo: secondExitTo }} title={second.title}>
+                {workoutCopyVariant === 'A' ? second.labelA : second.labelB}{workout2Done ? ' ✓' : ''}
               </Link>
             </div>
           );

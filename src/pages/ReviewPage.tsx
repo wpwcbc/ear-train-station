@@ -73,6 +73,11 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const drillMode = drill === '1' || drill === 'true' || drill === 'yes';
   const warmup = (searchParams.get('warmup') || '').trim();
   const warmupMode = warmup === '1' || warmup === 'true' || warmup === 'yes';
+
+  const workoutRaw = (searchParams.get('workout') || '').trim();
+  const workoutSession: 1 | 2 | null = workoutRaw === '1' ? 1 : workoutRaw === '2' ? 2 : null;
+  const practiceDoneTo = workoutSession ? `/practice?workoutDone=${workoutSession}` : null;
+
   const drillSemisRaw = (searchParams.get('semitones') || '').trim();
   const drillSemitones = drillSemisRaw
     ? drillSemisRaw
@@ -876,6 +881,11 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               >
                 Restart drill
               </Link>
+              {practiceDoneTo ? (
+                <Link className="linkBtn primaryLink" to={practiceDoneTo}>
+                  Back to practice
+                </Link>
+              ) : null}
               <Link className="linkBtn" to={stationFilter ? `/review?station=${stationFilter}` : '/review'} state={inheritedState}>
                 Back to review
               </Link>
@@ -927,6 +937,15 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                     {sched.nextDueAt ? `Nothing due right now — next due in ${msToHuman(sched.nextDueAt - now)}.` : 'Nothing due right now.'}
                     <span style={{ marginLeft: 6, opacity: 0.8 }}>Warm‑up is optional.</span>
                   </span>
+                </div>
+              ) : null}
+
+              {practiceDoneTo && doneCount > 0 ? (
+                <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
+                  <Link className="linkBtn primaryLink" to={practiceDoneTo}>
+                    Back to practice
+                  </Link>
+                  <span style={{ fontSize: 12, opacity: 0.75 }}>Workout complete.</span>
                 </div>
               ) : null}
             </>
