@@ -76,24 +76,44 @@ export function PracticePage({ progress }: { progress: Progress }) {
           const dayKey = localDayKey();
           const topDueStation = stationDueCounts[0]?.id ?? null;
 
-          // Deterministic-ish daily rotation: alternate the “top due station” suggestion
-          // with a general review, so it doesn’t feel stuck forever.
+          // Deterministic-ish daily rotation:
+          // - Review is always “session #1” (most actionable)
+          // - Session #2 alternates between a Drill and New material (if available)
           const rotate = (Number(dayKey.replaceAll('-', '')) || 0) % 2;
+
           const reviewTo = topDueStation && rotate === 0 ? `/review?station=${topDueStation}` : '/review';
           const reviewLabel = topDueStation && rotate === 0 ? `Targeted review (${topDueStation})` : 'Targeted review';
           const reviewLabelB = topDueStation && rotate === 0 ? `Fix weak spots (${topDueStation})` : 'Fix weak spots';
 
+          const hasNew = Boolean(continueId);
+          const newTo = continueId ? `/lesson/${continueId}` : '/learn';
           const newLabel = continueId ? 'New material (continue)' : 'New material (pick a section)';
           const newLabelB = continueId ? 'Learn something new (continue)' : 'Learn something new';
-          const newTo = continueId ? `/lesson/${continueId}` : '/learn';
+
+          // If the user has a review queue, prioritize a drill. Otherwise, steer to new material.
+          // Alternate daily so it feels less repetitive.
+          const hasQueue = sched.total > 0;
+          const drillTo = '/review?drill=1';
+          const drillLabel = 'Top misses drill';
+          const drillLabelB = 'Quick drill';
+
+          const pickSecond = () => {
+            if (!hasQueue) return { to: newTo, labelA: newLabel, labelB: newLabelB, title: 'Learn something new' };
+            if (rotate === 0) return { to: drillTo, labelA: drillLabel, labelB: drillLabelB, title: 'A fast interval drill from your mistakes (wide register: G2+).' };
+            // Rotate to “new material” even when you have a queue, so the app doesn’t nag forever.
+            if (hasNew) return { to: newTo, labelA: newLabel, labelB: newLabelB, title: 'Keep moving forward — you can always Review after.' };
+            return { to: drillTo, labelA: drillLabel, labelB: drillLabelB, title: 'A fast interval drill from your mistakes (wide register: G2+).' };
+          };
+
+          const second = pickSecond();
 
           return (
             <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <Link className="linkBtn" to={reviewTo} state={{ exitTo: '/practice' }} title={dayKey}>
                 {workoutCopyVariant === 'A' ? reviewLabel : reviewLabelB}
               </Link>
-              <Link className="linkBtn" to={newTo} state={{ exitTo: '/practice' }}>
-                {workoutCopyVariant === 'A' ? newLabel : newLabelB}
+              <Link className="linkBtn" to={second.to} state={{ exitTo: '/practice' }} title={second.title}>
+                {workoutCopyVariant === 'A' ? second.labelA : second.labelB}
               </Link>
             </div>
           );
