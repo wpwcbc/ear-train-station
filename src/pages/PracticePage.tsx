@@ -193,7 +193,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
             return `${to}${to.includes('?') ? '&' : '?'}workout=${session}`;
           };
 
-          const reviewBase = hasDue ? '/review' : hasQueue ? '/review?warmup=1' : '/review';
+          const reviewBase = hasDue ? '/review' : hasQueue ? '/review?warmup=1&n=5' : '/review';
           const reviewToBase = topDueStation && rotate === 0 ? `${reviewBase}${reviewBase.includes('?') ? '&' : '?'}station=${topDueStation}` : reviewBase;
           const reviewTo = withWorkout(reviewToBase, 1);
           const reviewLabel = hasDue
@@ -330,7 +330,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
           {(() => {
             const hasDue = sched.dueNow > 0;
             const hasQueue = sched.total > 0;
-            const to = hasDue ? '/review' : hasQueue ? '/review?warmup=1' : '/review';
+            const to = hasDue ? '/review' : hasQueue ? '/review?warmup=1&n=5' : '/review';
             const label = hasDue ? `Review (${sched.dueNow} due)` : hasQueue ? 'Warm‑up review' : 'Review';
             const title = hasDue
               ? 'Clear items that are due now'
@@ -380,7 +380,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
             <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
               {stationCounts.slice(0, 6).map((s) => {
                 const hasDue = sched.dueNow > 0;
-                const base = hasDue ? '/review' : '/review?warmup=1';
+                const base = hasDue ? '/review' : '/review?warmup=1&n=5';
                 const to = `${base}${base.includes('?') ? '&' : '?'}station=${s.id}`;
                 const count = hasDue ? s.due : s.queued;
                 return (

@@ -97,6 +97,16 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const drillMode = drillModeRaw && !manageMode;
   const warmupMode = warmupModeRaw && !manageMode;
 
+  // Optional session length (e.g. “quick warm‑up”):
+  // - Default stays 10 (Duolingo-ish mistakes sessions often cap at ~10 items).
+  // - Clamp to avoid huge accidental values.
+  const nRaw = (searchParams.get('n') || '').trim();
+  const sessionN = (() => {
+    const n = parseInt(nRaw, 10);
+    if (!Number.isFinite(n)) return 10;
+    return Math.max(3, Math.min(30, n));
+  })();
+
   const workoutRaw = (searchParams.get('workout') || '').trim();
   const workoutSession: 1 | 2 | null = workoutRaw === '1' ? 1 : workoutRaw === '2' ? 2 : null;
   const practiceDoneTo = workoutSession ? `/practice?workoutDone=${workoutSession}` : null;
@@ -189,7 +199,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
         if (bw !== aw) return bw - aw;
         return (a.dueAt ?? a.addedAt) - (b.dueAt ?? b.addedAt);
       })
-      .slice(0, 10);
+      .slice(0, sessionN);
   }, [filtered, warmupMode]);
 
   const intervalStats = useMemo(() => {
@@ -227,7 +237,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     return intervalStats.slice(0, 3).map((x) => x.semitones);
   }, [drillMode, drillSemitones, intervalStats]);
 
-  const DRILL_TOTAL = 10;
+  const DRILL_TOTAL = sessionN;
   const [drillIndex, setDrillIndex] = useState(0);
   const [drillCorrect, setDrillCorrect] = useState(0);
   const [drillWrong, setDrillWrong] = useState(0);
