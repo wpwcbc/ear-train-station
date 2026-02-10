@@ -190,7 +190,12 @@ export function PracticePage({ progress }: { progress: Progress }) {
           </div>
         ) : (
           <div style={{ marginTop: 12, fontSize: 12, opacity: 0.75 }}>
-            No items due. Miss something in a lesson/test and it’ll show up here.
+            {sched.total === 0
+              ? 'No mistakes queued yet. Miss something in a lesson/test and it’ll show up here.'
+              : sched.nextDueAt
+                ? `Nothing due right now — next due in ${msToHuman(sched.nextDueAt - now)}.`
+                : 'Nothing due right now.'}
+            {sched.total > 0 ? <span style={{ marginLeft: 6, opacity: 0.8 }}>Warm‑up is optional.</span> : null}
           </div>
         )}
       </div>
