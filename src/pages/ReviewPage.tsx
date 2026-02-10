@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useHotkeys } from '../lib/hooks/useHotkeys';
 import type { Progress } from '../lib/progress';
@@ -74,6 +74,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const warmup = (searchParams.get('warmup') || '').trim();
   const warmupMode = warmup === '1' || warmup === 'true' || warmup === 'yes';
 
+  const manage = (searchParams.get('manage') || '').trim();
+  const manageMode = manage === '1' || manage === 'true' || manage === 'yes';
+
   const workoutRaw = (searchParams.get('workout') || '').trim();
   const workoutSession: 1 | 2 | null = workoutRaw === '1' ? 1 : workoutRaw === '2' ? 2 : null;
   const practiceDoneTo = workoutSession ? `/practice?workoutDone=${workoutSession}` : null;
@@ -97,6 +100,20 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const [mistakes, setMistakes] = useState<Mistake[]>(() => loadMistakes());
   const [undo, setUndo] = useState<UndoState | null>(null);
   const [expandedKinds, setExpandedKinds] = useState<Record<string, boolean>>({});
+
+  const manageRef = useRef<HTMLDetailsElement | null>(null);
+  const [manageOpen, setManageOpen] = useState<boolean>(() => manageMode);
+
+  useEffect(() => {
+    if (!manageMode) return;
+    // If we were deep-linked here, ensure it’s open and visible.
+    setManageOpen(true);
+    // Let layout settle before scrolling.
+    const t = window.setTimeout(() => {
+      manageRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [manageMode]);
 
   // Keep the review queue reactive: update on focus/storage, and wake up when the next item becomes due.
   useEffect(() => {
@@ -631,6 +648,28 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
         </div>
       ) : null}
 
+      {!drillMode ? (
+        <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontSize: 12, opacity: 0.75 }}>On‑demand:</span>
+          <button
+            className="pill"
+            onClick={() => {
+              setManageOpen(true);
+              window.setTimeout(() => manageRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 30);
+            }}
+            title="Browse/remove items in your Review queue"
+          >
+            Manage
+          </button>
+          <Link className="pill" to={`/review?drill=1${stationFilter ? `&station=${stationFilter}` : ''}`} state={inheritedState} title="A fast interval drill from your mistakes (wide register: G2+).">
+            Drill
+          </Link>
+          <Link className="pill" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}`} state={inheritedState} title="Warm‑up set (even if nothing is due yet)">
+            Warm‑up
+          </Link>
+        </div>
+      ) : null}
+
       {!drillMode && intervalStats.length > 0 ? (
         <div style={{ marginTop: 10, fontSize: 12, opacity: 0.85, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={{ opacity: 0.9 }}>Quick drills:</span>
@@ -658,7 +697,16 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       ) : null}
 
       {!drillMode && mistakeKindStats.length > 0 ? (
-        <details style={{ marginTop: 10 }}>
+        <details
+          ref={manageRef}
+          open={manageOpen}
+          onToggle={(e) => {
+            // Keep React state in sync with the native <details> element.
+            const el = e.currentTarget as HTMLDetailsElement;
+            setManageOpen(!!el.open);
+          }}
+          style={{ marginTop: 10 }}
+        >
           <summary style={{ cursor: 'pointer', fontSize: 12, opacity: 0.85 }}>Manage mistakes</summary>
           <div style={{ marginTop: 8, display: 'grid', gap: 8 }}>
             {mistakeKindStats.map((s) => {
