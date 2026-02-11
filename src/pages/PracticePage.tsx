@@ -415,6 +415,11 @@ export function PracticePage({ progress }: { progress: Progress }) {
           </Link>
           <Link className="linkBtn" to="/review?manage=1#manage" state={{ exitTo: '/practice' }} title="Browse and manage your Review queue (on-demand)">
             Manage mistakes
+            {sched.total ? (
+              <span style={{ marginLeft: 8, fontSize: 12, opacity: 0.8 }} aria-label={`review queue ${sched.dueNow} due now out of ${sched.total} queued`}>
+                ({sched.dueNow} due / {sched.total})
+              </span>
+            ) : null}
           </Link>
           {sched.total === 0 ? <span style={{ fontSize: 12, opacity: 0.75 }}>No mistakes yet — nice.</span> : null}
         </div>
