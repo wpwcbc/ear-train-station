@@ -16,6 +16,13 @@ npm run build
 npm run preview
 ```
 
+## Quality checks
+
+```bash
+npm run lint
+npm run audit:register
+```
+
 ## Pedagogy notes (current)
 
 ### Chord prompts: arpeggios first, block chords for checks
