@@ -109,6 +109,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
 
   const sched = mistakeScheduleSummary(now);
   const intervalStatsTop = intervalMistakeStatsFrom(loadMistakes()).slice(0, 3);
+  const hasIntervalMistakes = intervalStatsTop.length > 0;
 
   const workoutCopyVariant = getABVariant('practice_today_workout_copy_v1');
 
@@ -250,18 +251,23 @@ export function PracticePage({ progress }: { progress: Progress }) {
           const newLabel = continueId ? 'New material (continue)' : 'New material (pick a section)';
           const newLabelB = continueId ? 'Learn something new (continue)' : 'Learn something new';
 
-          // If the user has a review queue, prioritize a drill. Otherwise, steer to new material.
+          // If the user has a review queue, prioritize a drill.
+          // BUT: only if they actually have interval mistakes — otherwise the drill would be empty.
           // Alternate daily so it feels less repetitive.
-          const drillTo = '/review?drill=1';
-          const drillLabel = 'Top misses drill';
-          const drillLabelB = 'Quick drill';
+          const drillTo = hasIntervalMistakes ? '/review?drill=1' : '/review?warmup=1&n=5';
+          const drillLabel = hasIntervalMistakes ? 'Top misses drill' : 'Quick warm‑up';
+          const drillLabelB = hasIntervalMistakes ? 'Quick drill' : 'Warm up';
+
+          const drillTitle = hasIntervalMistakes
+            ? 'A fast interval drill from your mistakes (wide register: G2+).'
+            : 'No interval mistakes yet — do a quick warm‑up from your queue instead.';
 
           const pickSecond = () => {
             if (!hasQueue) return { to: newTo, labelA: newLabel, labelB: newLabelB, title: 'Learn something new' };
-            if (rotate === 0) return { to: drillTo, labelA: drillLabel, labelB: drillLabelB, title: 'A fast interval drill from your mistakes (wide register: G2+).' };
+            if (rotate === 0) return { to: drillTo, labelA: drillLabel, labelB: drillLabelB, title: drillTitle };
             // Rotate to “new material” even when you have a queue, so the app doesn’t nag forever.
             if (hasNew) return { to: newTo, labelA: newLabel, labelB: newLabelB, title: 'Keep moving forward — you can always Review after.' };
-            return { to: drillTo, labelA: drillLabel, labelB: drillLabelB, title: 'A fast interval drill from your mistakes (wide register: G2+).' };
+            return { to: drillTo, labelA: drillLabel, labelB: drillLabelB, title: drillTitle };
           };
 
           const second = pickSecond();
@@ -388,18 +394,18 @@ export function PracticePage({ progress }: { progress: Progress }) {
 
           <Link
             className="linkBtn"
-            to="/review?drill=1"
+            to={hasIntervalMistakes ? '/review?drill=1' : '/review?warmup=1&n=5'}
             state={{ exitTo: '/practice' }}
             title={
-              intervalStatsTop.length
+              hasIntervalMistakes
                 ? `Auto-picks your top missed interval labels: ${intervalStatsTop
                     .map((x) => SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`)
                     .join(', ')}`
-                : 'Auto-picks your top 3 missed interval labels'
+                : 'No interval mistakes yet — warm‑up is the fastest way to practice your queue.'
             }
           >
-            Top misses drill
-            {intervalStatsTop.length ? (
+            {hasIntervalMistakes ? 'Top misses drill' : 'Quick warm‑up'}
+            {hasIntervalMistakes && intervalStatsTop.length ? (
               <span style={{ marginLeft: 8, fontSize: 12, opacity: 0.8 }}>
                 ({intervalStatsTop
                   .map((x) => SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`)
