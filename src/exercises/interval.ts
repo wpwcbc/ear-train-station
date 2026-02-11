@@ -1,5 +1,5 @@
 import { mulberry32 } from '../lib/rng';
-import { DEFAULT_WIDE_REGISTER_MAX_MIDI } from '../lib/registerPolicy';
+import { STABLE_REGISTER_MAX_MIDI, STABLE_REGISTER_MIN_MIDI } from '../lib/registerPolicy';
 
 export type IntervalQuestion = {
   id: string;
@@ -85,7 +85,7 @@ export function makeIntervalQuestion(opts: {
   minSemitones?: number;
   maxSemitones?: number;
 }): IntervalQuestion {
-  const rootMidi = opts.rootMidi ?? 60; // C4
+  const rootMidi = opts.rootMidi ?? STABLE_REGISTER_MIN_MIDI; // stable (C4 by default)
   const min = opts.minSemitones ?? 0;
   const max = opts.maxSemitones ?? 12;
   const rng = mulberry32(opts.seed);
@@ -147,8 +147,8 @@ export function makeIntervalLabelQuestion(opts: {
 }): IntervalLabelQuestion {
   const rng = mulberry32(opts.seed);
 
-  const rootMin = opts.rootMinMidi ?? 60;
-  const rootMax = opts.rootMaxMidi ?? DEFAULT_WIDE_REGISTER_MAX_MIDI;
+  const rootMin = opts.rootMinMidi ?? STABLE_REGISTER_MIN_MIDI;
+  const rootMax = opts.rootMaxMidi ?? Math.max(rootMin, STABLE_REGISTER_MAX_MIDI);
   const rootSpan = Math.max(1, rootMax - rootMin + 1);
   const rootMidi = rootMin + Math.floor(rng() * rootSpan);
 

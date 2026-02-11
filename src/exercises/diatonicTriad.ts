@@ -1,5 +1,5 @@
 import { mulberry32, shuffle } from '../lib/rng';
-import { DEFAULT_WIDE_REGISTER_MAX_MIDI, WIDE_REGISTER_MIN_MIDI } from '../lib/registerPolicy';
+import { DEFAULT_WIDE_REGISTER_MAX_MIDI, WIDE_REGISTER_MIN_MIDI, stableTonicMidi } from '../lib/registerPolicy';
 import { MAJOR_KEYS, MAJOR_OFFSETS, PC } from '../lib/theory/major';
 import type { TriadQuality } from './triad';
 
@@ -85,7 +85,7 @@ export function makeDiatonicTriadQualityQuestion(opts: {
     const base = minBase + Math.floor(rng() * span);
     tonicMidi = base + tonicPc;
   } else {
-    tonicMidi = opts.stableTonicMidi ?? 60 + tonicPc; // stable: C4..B4
+    tonicMidi = opts.stableTonicMidi ?? stableTonicMidi(tonicPc); // stable: C4..B4
   }
 
   const rootName = k.scale[degree - 1];

@@ -1,4 +1,5 @@
 import { mulberry32, shuffle, uniq } from '../lib/rng';
+import { STABLE_REGISTER_MIN_MIDI } from '../lib/registerPolicy';
 
 export type NoteSpelling = {
   sharp: string;
@@ -93,7 +94,7 @@ export function makeNoteNameReviewQuestion(opts: { seed: number; midi: number; c
 export function makeNoteNameQuestionFromMidis(opts: { seed: number; midis: number[]; choiceCount?: number }): NoteNameQuestion {
   const choiceCount = opts.choiceCount ?? 4;
   const rng = mulberry32(opts.seed);
-  const midis = opts.midis.length > 0 ? opts.midis : [60];
+  const midis = opts.midis.length > 0 ? opts.midis : [STABLE_REGISTER_MIN_MIDI];
   const midi = midis[Math.floor(rng() * midis.length)];
   const pc = ((midi % 12) + 12) % 12;
 

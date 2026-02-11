@@ -33,6 +33,8 @@ Quick definitions (nice phrasing from Theta Music Trainer): arpeggios are chord 
 
 Source of truth lives in `src/lib/registerPolicy.ts`:
 - `STABLE_REGISTER_MIN_MIDI` / `STABLE_REGISTER_MAX_MIDI`
+- `stableTonicMidi(tonicPc)` (lesson tonic aligned to stable register)
+- `stableRegisterWhiteMidis()` (for beginner-friendly note-name lessons)
 - `WIDE_REGISTER_MIN_MIDI` (G2)
 
 Rule of thumb: avoid hardcoding `60–71` or other magic MIDI ranges inside stations/exercises; import the policy constants instead.

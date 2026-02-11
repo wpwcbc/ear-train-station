@@ -1,4 +1,5 @@
 import { mulberry32, shuffle } from '../lib/rng';
+import { stableTonicMidi } from '../lib/registerPolicy';
 import { MAJOR_KEYS, PC } from '../lib/theory/major';
 import { buildDiatonicTriadMidis } from './diatonicTriad';
 
@@ -77,7 +78,7 @@ export function makeFunctionFamilyQuestion(opts: {
           const aligned = base + ((tonicPc - (base % 12) + 12) % 12);
           return aligned > max ? aligned - 12 : aligned;
         })()
-      : opts.stableTonicMidi ?? 60 + tonicPc); // stable: C4..B4
+      : opts.stableTonicMidi ?? stableTonicMidi(tonicPc)); // stable: C4..B4
 
   const quality = DEGREE_QUALITY[degree];
   const roman = degreeToRoman(degree, quality);

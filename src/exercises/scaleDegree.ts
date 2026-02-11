@@ -1,3 +1,4 @@
+import { stableTonicMidi } from '../lib/registerPolicy';
 import { MAJOR_KEYS, MAJOR_OFFSETS, PC, pickTestTonicMidi } from '../lib/theory/major';
 import { mulberry32, shuffle } from '../lib/rng';
 
@@ -65,7 +66,7 @@ export function makeScaleDegreeNameQuestion(opts: {
 
   const tonicPc = PC[key.key];
   const tonicMidi =
-    opts.mode === 'test' ? pickTestTonicMidi(tonicPc, rng) : 60 + tonicPc; // stable register for lessons
+    opts.mode === 'test' ? pickTestTonicMidi(tonicPc, rng) : stableTonicMidi(tonicPc); // stable register for lessons
 
   const targetMidi = tonicMidi + MAJOR_OFFSETS[degree - 1];
 

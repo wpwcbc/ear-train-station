@@ -19,6 +19,7 @@ import {
   STABLE_REGISTER_MAX_MIDI,
   STABLE_REGISTER_MIN_MIDI,
   WIDE_REGISTER_MIN_MIDI,
+  stableRegisterWhiteMidis,
 } from '../lib/registerPolicy';
 import { PianoKeyboard } from '../components/PianoKeyboard';
 import { StaffNote } from '../components/StaffNote';
@@ -203,14 +204,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   // Station 1: note-name question (stable register, *white keys only* for beginner clarity)
   // Derived from the stable register policy to avoid hardcoded drift.
-  const WHITE_MIDIS = useMemo(() => {
-    const WHITE_PCS = new Set([0, 2, 4, 5, 7, 9, 11]);
-    const midis: number[] = [];
-    for (let m = STABLE_REGISTER_MIN_MIDI; m <= STABLE_REGISTER_MAX_MIDI; m++) {
-      if (WHITE_PCS.has(m % 12)) midis.push(m);
-    }
-    return midis;
-  }, []);
+  const WHITE_MIDIS = useMemo(() => stableRegisterWhiteMidis(), []);
 
   const noteQ = useMemo(
     () =>
@@ -2663,7 +2657,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                   <StaffNote midi={noteQ.midi} spelling={noteQ.displaySpelling} showLegend={false} />
                   <div style={{ flex: 1, minWidth: 240 }}>
                     <PianoKeyboard
-                      startMidi={60}
+                      startMidi={STABLE_REGISTER_MIN_MIDI}
                       octaves={1}
                       onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
                       highlighted={highlighted}
@@ -2795,7 +2789,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                   <StaffNote midi={s1bQ.midi} spelling={s1bQ.displaySpelling} showLegend={false} />
                   <div style={{ flex: 1, minWidth: 240 }}>
                     <PianoKeyboard
-                      startMidi={60}
+                      startMidi={STABLE_REGISTER_MIN_MIDI}
                       octaves={1}
                       onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
                       highlighted={highlighted}
@@ -2939,7 +2933,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                   <StaffNote midi={s1cQ.midi} spelling={s1cQ.displaySpelling} showLegend={false} />
                   <div style={{ flex: 1, minWidth: 240 }}>
                     <PianoKeyboard
-                      startMidi={60}
+                      startMidi={STABLE_REGISTER_MIN_MIDI}
                       octaves={1}
                       onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
                       highlighted={highlighted}
@@ -3035,7 +3029,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             <StaffNote midi={t1bQ.midi} spelling={t1bQ.displaySpelling} showLegend={false} />
             <div style={{ flex: 1, minWidth: 240 }}>
               <PianoKeyboard
-                startMidi={60}
+                startMidi={STABLE_REGISTER_MIN_MIDI}
                 octaves={1}
                 onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
                 highlighted={highlighted}

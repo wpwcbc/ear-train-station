@@ -1,4 +1,5 @@
 import { mulberry32, shuffle, uniq } from '../lib/rng';
+import { stableTonicMidi } from '../lib/registerPolicy';
 import { MAJOR_KEYS, MAJOR_OFFSETS, PC, pickTestTonicMidi } from '../lib/theory/major';
 
 // Sound-first major scale work, but with correct spelling (letters ascend).
@@ -64,7 +65,7 @@ export function makeMajorScaleSession(opts: { seed: number }): MajorScaleSession
   const i = Math.floor(rng() * MAJOR_KEYS.length);
   const k = MAJOR_KEYS[i];
   const tonicPc = PC[k.key];
-  const tonicMidi = 60 + tonicPc; // stable: C4..B4
+  const tonicMidi = stableTonicMidi(tonicPc); // stable: C4..B4
 
   return { key: k.key, scale: k.scale.slice(), tonicPc, tonicMidi };
 }
