@@ -865,19 +865,28 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                             <span style={{ marginLeft: 8, opacity: 0.75 }}>• wrongs {m.wrongCount ?? 0}</span>
                           </div>
                           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                            <button
-                              className="ghost"
-                              onClick={() => {
-                                // Give it breathing room without nuking it from the queue.
-                                const prev = loadMistakes();
-                                snoozeMistake(m.id, 60 * 60_000);
-                                armUndo(prev, 'Snoozed 1 item for 1 hour.');
-                                refresh();
-                              }}
-                              title="Snooze this item for 1 hour"
-                            >
-                              Snooze 1h
-                            </button>
+                            {(
+                              [
+                                { label: 'Snooze 1h', ms: 60 * 60_000, title: 'Snooze this item for 1 hour', undo: 'Snoozed 1 item for 1 hour.' },
+                                { label: 'Snooze 6h', ms: 6 * 60 * 60_000, title: 'Snooze this item for 6 hours', undo: 'Snoozed 1 item for 6 hours.' },
+                                { label: 'Snooze 1d', ms: 24 * 60 * 60_000, title: 'Snooze this item for 1 day', undo: 'Snoozed 1 item for 1 day.' },
+                              ] as const
+                            ).map((s) => (
+                              <button
+                                key={s.label}
+                                className="ghost"
+                                onClick={() => {
+                                  // Give it breathing room without nuking it from the queue.
+                                  const prev = loadMistakes();
+                                  snoozeMistake(m.id, s.ms);
+                                  armUndo(prev, s.undo);
+                                  refresh();
+                                }}
+                                title={s.title}
+                              >
+                                {s.label}
+                              </button>
+                            ))}
                             <button
                               className="ghost"
                               onClick={() => {
@@ -903,6 +912,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
             <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75, display: 'grid', gap: 4 }}>
               <div>Tip: Tap a station pill to filter Review to that station.</div>
+              <div>Snooze = “skip for now” (1h / 6h / 1d) without removing the item.</div>
               <div>“Hard” items need 3 clears (a clean 3/3 streak) before they disappear.</div>
             </div>
 
