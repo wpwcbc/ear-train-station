@@ -110,6 +110,16 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   })();
   const nQS = nRaw ? `&n=${sessionN}` : '';
 
+  // Convenience: quick deep-link session sizes (knowledge-only; no UI settings).
+  const reviewLinkWithN = (n: number) => {
+    const next = new URLSearchParams(searchParams);
+    // Avoid accidentally forcing Manage open when the user is just changing set size.
+    next.delete('manage');
+    next.set('n', String(n));
+    const qs = next.toString();
+    return `/review${qs ? `?${qs}` : ''}`;
+  };
+
   const workoutRaw = (searchParams.get('workout') || '').trim();
   const workoutSession: 1 | 2 | null = workoutRaw === '1' ? 1 : workoutRaw === '2' ? 2 : null;
   const practiceDoneTo = workoutSession ? `/practice?workoutDone=${workoutSession}` : null;
@@ -681,6 +691,27 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
       <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
         Hotkeys: Space/Enter = Play • 1–9 = Answer • Backspace = Skip
+      </div>
+
+      <div style={{ marginTop: 6, fontSize: 12, opacity: 0.78, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <span title="Deep-link override: ?n=5 (or 3–30) to change the session length.">Session size:</span>
+        {[5, 10, 20].map((n) => (
+          <Link
+            key={n}
+            className="pill"
+            to={reviewLinkWithN(n)}
+            state={inheritedState}
+            style={{ fontSize: 12 }}
+            title={`Start a ${n}-item set (shareable link)`}
+          >
+            {n}{sessionN === n ? ' ✓' : ''}
+          </Link>
+        ))}
+        {nRaw ? (
+          <span style={{ opacity: 0.85 }} title="You’re currently using a custom n=… in the URL.">
+            (n={sessionN})
+          </span>
+        ) : null}
       </div>
 
       {stationFilter ? (
