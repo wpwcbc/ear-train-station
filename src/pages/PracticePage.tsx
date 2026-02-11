@@ -87,6 +87,8 @@ export function PracticePage({ progress }: { progress: Progress }) {
     };
   }, []);
 
+  const [workoutToast, setWorkoutToast] = useState<null | { session: 1 | 2; at: number }>(null);
+
   // If we return from Focus routes with a workout completion flag, persist it for today
   // and clean the URL (so refresh doesn't re-apply).
   useEffect(() => {
@@ -96,7 +98,13 @@ export function PracticePage({ progress }: { progress: Progress }) {
 
     const dayKey = localDayKey();
     setWorkoutDone(dayKey, session);
+
+    // Small Duolingo-ish reinforcement: show a quick “done” toast.
+    setWorkoutToast({ session, at: Date.now() });
+    const t = window.setTimeout(() => setWorkoutToast(null), 4500);
+
     navigate('/practice', { replace: true });
+    return () => window.clearTimeout(t);
   }, [navigate, searchParams]);
 
   const sched = mistakeScheduleSummary(now);
@@ -140,6 +148,28 @@ export function PracticePage({ progress }: { progress: Progress }) {
     <div className="page">
       <h1 className="h1">Practice</h1>
       <p className="sub">Daily workout + spaced review (Duolingo-ish).</p>
+
+      {workoutToast ? (
+        <div
+          className="card"
+          role="status"
+          aria-live="polite"
+          style={{
+            marginTop: 12,
+            border: '1px solid rgba(92, 231, 158, 0.35)',
+            background: 'linear-gradient(180deg, rgba(92,231,158,0.14), rgba(255,255,255,0.02))',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
+            <div>
+              <b>Workout session {workoutToast.session} complete.</b> Nice.
+            </div>
+            <button className="ghost" onClick={() => setWorkoutToast(null)} title="Dismiss">
+              Dismiss
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="card" style={{ marginTop: 12 }} data-ab={workoutCopyVariant}>
         <h2 className="h2">{workoutCopyVariant === 'A' ? 'Today’s workout' : 'Daily drills'}</h2>
