@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { ConfigDrawer } from './ConfigDrawer';
 
@@ -22,6 +22,7 @@ export function NavShell({
 }) {
   const [configOpen, setConfigOpen] = useState(false);
   const loc = useLocation();
+  const navigate = useNavigate();
 
   const activeTab = useMemo(() => {
     // Match by prefix, so /learn/section/* still maps to Learn.
@@ -39,9 +40,19 @@ export function NavShell({
               <div className="brandName">Ear Train Station</div>
               <div className="brandSub">scales • intervals • chords</div>
             </div>
-            <button className="configBtn" onClick={() => setConfigOpen(true)} aria-label="Open settings">
-              ⚙
-            </button>
+            <div className="brandActions" aria-label="quick actions">
+              <button
+                className="quickPracticeBtn"
+                onClick={() => navigate('/review?warmup=1&n=5')}
+                aria-label="Quick practice"
+                title="Quick practice (warm‑up, 5 items)"
+              >
+                ❤
+              </button>
+              <button className="configBtn" onClick={() => setConfigOpen(true)} aria-label="Open settings">
+                ⚙
+              </button>
+            </div>
           </div>
         </div>
         <nav className="navList">

@@ -37,6 +37,23 @@
   gap: 10px;
 }
 
+.brandActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.quickPracticeBtn {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 14px;
+  border: 3px solid rgba(92, 231, 158, 0.85);
+  background: linear-gradient(180deg, rgba(92, 231, 158, 0.18), rgba(255, 255, 255, 0.02));
+  font-weight: 900;
+  cursor: pointer;
+}
+
 .configBtn {
   width: 44px;
   height: 44px;
