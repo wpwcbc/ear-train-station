@@ -6,6 +6,7 @@ import { intervalMistakeStatsFrom, loadMistakes, mistakeCountForStation, mistake
 import { STATIONS } from '../lib/stations';
 import { SEMITONE_TO_LABEL } from '../exercises/interval';
 import { getABVariant } from '../lib/ab';
+import { getWorkoutDayDone, getWorkoutDone, getWorkoutStreak, localDayKey, setWorkoutDone, subDays } from '../lib/workout';
 
 function msToHuman(ms: number): string {
   if (ms <= 0) return 'now';
@@ -19,56 +20,7 @@ function msToHuman(ms: number): string {
   return `${d}d`;
 }
 
-function localDayKey(ts = Date.now()): string {
-  const d = new Date(ts);
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-function workoutLsKey(dayKey: string, session: 1 | 2): string {
-  return `kuku:practiceWorkout:${dayKey}:${session}`;
-}
-
-function getWorkoutDone(dayKey: string, session: 1 | 2): boolean {
-  try {
-    return window.localStorage.getItem(workoutLsKey(dayKey, session)) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function setWorkoutDone(dayKey: string, session: 1 | 2) {
-  try {
-    window.localStorage.setItem(workoutLsKey(dayKey, session), '1');
-  } catch {
-    // ignore
-  }
-}
-
-function subDays(dayKey: string, days: number): string {
-  const [y, m, d] = dayKey.split('-').map((x) => Number(x));
-  const dt = new Date(y, (m || 1) - 1, d || 1);
-  dt.setDate(dt.getDate() - days);
-  return localDayKey(dt.getTime());
-}
-
-function getWorkoutDayDone(dayKey: string): boolean {
-  // Treat 1+ sessions as “done for the day” (Duolingo-like: forgiving).
-  // The per-session checkmarks still preserve the 2-session “workout” framing.
-  return getWorkoutDone(dayKey, 1) || getWorkoutDone(dayKey, 2);
-}
-
-function getWorkoutStreak(todayKey: string, maxDays = 365): number {
-  let n = 0;
-  for (let i = 0; i < maxDays; i++) {
-    const k = subDays(todayKey, i);
-    if (!getWorkoutDayDone(k)) break;
-    n++;
-  }
-  return n;
-}
+// workout helpers moved to src/lib/workout.ts
 
 export function PracticePage({ progress }: { progress: Progress }) {
   const navigate = useNavigate();

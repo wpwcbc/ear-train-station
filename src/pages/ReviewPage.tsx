@@ -16,6 +16,7 @@ import {
 import { bumpReviewAttempt, bumpReviewClear } from '../lib/quests';
 import { SETTINGS_EVENT, loadSettings } from '../lib/settings';
 import { promptSpeedFactors } from '../lib/promptTiming';
+import { localDayKey, setWorkoutDone } from '../lib/workout';
 import { piano } from '../audio/piano';
 import { playIntervalPrompt, playRootThenChordPrompt, playTonicTargetPrompt } from '../audio/prompts';
 import { makeNoteNameReviewQuestion } from '../exercises/noteName';
@@ -490,6 +491,20 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
   const sched = useMemo(() => mistakeScheduleSummaryFrom(filtered, now), [filtered, now]);
   const nextDue = sched.nextDueAt;
+
+  // If Review was launched as a “workout session” from Practice Hub,
+  // mark it as done once the user reaches a natural completion state.
+  // (So the Practice Hub checkmark doesn't depend on a specific exit link.)
+  const workoutComplete =
+    (drillMode && drillFocusSemitones.length > 0 && drillIndex >= DRILL_TOTAL && !drillIlQ) ||
+    (!drillMode && warmupMode && !active && warmupQueue.length > 0 && doneCount > 0) ||
+    (!drillMode && !warmupMode && !active && dueCount === 0 && doneCount > 0);
+
+  useEffect(() => {
+    if (!workoutSession) return;
+    if (!workoutComplete) return;
+    setWorkoutDone(localDayKey(), workoutSession);
+  }, [workoutComplete, workoutSession]);
 
   useEffect(() => {
     if (nextDue == null) return;
