@@ -28,8 +28,14 @@ Quick definitions (nice phrasing from Theta Music Trainer): arpeggios are chord 
 
 ### Register rules
 
-- **Lessons:** stable register.
-- **Tests / exams / drills:** wider register (>= G2).
+- **Lessons:** stable register (one octave around middle C).
+- **Tests / exams / drills:** wider register (and **never below G2**).
+
+Source of truth lives in `src/lib/registerPolicy.ts`:
+- `STABLE_REGISTER_MIN_MIDI` / `STABLE_REGISTER_MAX_MIDI`
+- `WIDE_REGISTER_MIN_MIDI` (G2)
+
+Rule of thumb: avoid hardcoding `60–71` or other magic MIDI ranges inside stations/exercises; import the policy constants instead.
 
 ## UI constraints
 

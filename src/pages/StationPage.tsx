@@ -14,7 +14,12 @@ import { SECTIONS } from '../lib/sections';
 import { stationCopy } from '../lib/stationCopy';
 import { loadSettings } from '../lib/settings';
 import { promptSpeedFactors } from '../lib/promptTiming';
-import { DEFAULT_WIDE_REGISTER_MAX_MIDI, WIDE_REGISTER_MIN_MIDI } from '../lib/registerPolicy';
+import {
+  DEFAULT_WIDE_REGISTER_MAX_MIDI,
+  STABLE_REGISTER_MAX_MIDI,
+  STABLE_REGISTER_MIN_MIDI,
+  WIDE_REGISTER_MIN_MIDI,
+} from '../lib/registerPolicy';
 import { PianoKeyboard } from '../components/PianoKeyboard';
 import { StaffNote } from '../components/StaffNote';
 import { TestHeader } from '../components/TestHeader';
@@ -147,7 +152,13 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   // Station 3: interval question (deterministic per seed)
   const intervalQ = useMemo(
-    () => makeIntervalQuestion({ seed: seed * 1000 + 3, rootMidi: 60, minSemitones: 0, maxSemitones: 12 }),
+    () =>
+      makeIntervalQuestion({
+        seed: seed * 1000 + 3,
+        rootMidi: STABLE_REGISTER_MIN_MIDI,
+        minSemitones: 0,
+        maxSemitones: 12,
+      }),
     [seed],
   );
   const [s3Correct, setS3Correct] = useState(0);
@@ -191,7 +202,15 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   );
 
   // Station 1: note-name question (stable register, *white keys only* for beginner clarity)
-  const WHITE_MIDIS = [60, 62, 64, 65, 67, 69, 71]; // C D E F G A B (one octave)
+  // Derived from the stable register policy to avoid hardcoded drift.
+  const WHITE_MIDIS = useMemo(() => {
+    const WHITE_PCS = new Set([0, 2, 4, 5, 7, 9, 11]);
+    const midis: number[] = [];
+    for (let m = STABLE_REGISTER_MIN_MIDI; m <= STABLE_REGISTER_MAX_MIDI; m++) {
+      if (WHITE_PCS.has(m % 12)) midis.push(m);
+    }
+    return midis;
+  }, []);
 
   const noteQ = useMemo(
     () =>
@@ -490,8 +509,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     () =>
       makeNoteNameQuestion({
         seed: seed * 1000 + 1120,
-        minMidi: 60,
-        maxMidi: 71,
+        minMidi: STABLE_REGISTER_MIN_MIDI,
+        maxMidi: STABLE_REGISTER_MAX_MIDI,
         choiceCount: 6,
       }),
     [seed],
@@ -510,8 +529,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     () =>
       makeNoteNameQuestion({
         seed: seed * 1000 + 1121 + s1bTwistIndex,
-        minMidi: 60,
-        maxMidi: 71,
+        minMidi: STABLE_REGISTER_MIN_MIDI,
+        maxMidi: STABLE_REGISTER_MAX_MIDI,
         choiceCount: 6,
       }),
     [seed, s1bTwistIndex],
