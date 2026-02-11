@@ -1033,14 +1033,22 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           <div className="result r_idle">No interval mistakes yet. Do a test/exam, miss something, then come back for a drill.</div>
         ) : (
           <div className="result r_correct">
-            Drill complete — {drillCorrect}/{DRILL_TOTAL} correct.
-            <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 14, opacity: 0.95 }}>
+              Drill complete — {drillCorrect}/{DRILL_TOTAL} correct.
+            </div>
+            <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
               <Link
                 className="linkBtn"
                 to={`/review?drill=1&semitones=${drillFocusSemitones.join(',')}${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
                 state={inheritedState}
               >
                 Restart drill
+              </Link>
+              <Link className="linkBtn" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
+                Warm‑up
+              </Link>
+              <Link className="linkBtn" to={`/review?manage=1${stationFilter ? `&station=${stationFilter}` : ''}#manage`} state={inheritedState}>
+                Manage mistakes
               </Link>
               {practiceDoneTo ? (
                 <Link className="linkBtn primaryLink" to={practiceDoneTo}>
@@ -1050,6 +1058,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               <Link className="linkBtn" to={stationFilter ? `/review?station=${stationFilter}` : '/review'} state={inheritedState}>
                 Back to review
               </Link>
+            </div>
+            <div style={{ marginTop: 8, fontSize: 12, opacity: 0.78 }}>
+              {sched.nextDueAt ? `Next due in ${msToHuman(sched.nextDueAt - now)}.` : 'Nothing due right now.'}
             </div>
           </div>
         )
