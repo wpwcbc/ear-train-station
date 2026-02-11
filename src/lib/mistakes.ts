@@ -187,6 +187,24 @@ export function snoozeMistake(id: string, snoozeMs = 5 * 60_000, now = Date.now(
   updateMistake(id, (m) => ({ ...m, dueAt: now + snoozeMs }));
 }
 
+/**
+ * Bulk snooze helper (avoids repeated localStorage load/save loops).
+ * Returns how many items were updated.
+ */
+export function snoozeMistakes(ids: string[], snoozeMs = 5 * 60_000, now = Date.now()): number {
+  if (!ids.length) return 0;
+  const set = new Set(ids);
+  const existing = loadMistakes();
+  let changed = 0;
+  const next = existing.map((m) => {
+    if (!set.has(m.id)) return m;
+    changed += 1;
+    return { ...m, dueAt: now + snoozeMs };
+  });
+  if (changed > 0) saveMistakes(next);
+  return changed;
+}
+
 export function dueMistakes(now = Date.now()): Mistake[] {
   const all = loadMistakes();
   return all

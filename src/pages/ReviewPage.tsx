@@ -10,6 +10,7 @@ import {
   requiredClearStreak,
   saveMistakes,
   snoozeMistake,
+  snoozeMistakes,
   updateMistake,
   type Mistake,
 } from '../lib/mistakes';
@@ -804,6 +805,38 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                           {expanded ? 'Show less' : `Show more (+${kindItems.length - 3})`}
                         </button>
                       ) : null}
+
+                      {(() => {
+                        const dueIds = kindItems.filter((m) => (m.dueAt ?? 0) <= now).map((m) => m.id);
+                        if (dueIds.length === 0) return null;
+                        return (
+                          <>
+                            {(
+                              [
+                                { label: 'Snooze due 1h', ms: 60 * 60_000 },
+                                { label: 'Snooze due 6h', ms: 6 * 60 * 60_000 },
+                                { label: 'Snooze due 1d', ms: 24 * 60 * 60_000 },
+                              ] as const
+                            ).map((x) => (
+                              <button
+                                key={x.label}
+                                className="ghost"
+                                onClick={() => {
+                                  const prev = loadMistakes();
+                                  const changed = snoozeMistakes(dueIds, x.ms);
+                                  if (changed <= 0) return;
+                                  armUndo(prev, `Snoozed ${changed} due item${changed === 1 ? '' : 's'} for ${x.label.replace('Snooze due ', '')}.`);
+                                  refresh();
+                                }}
+                                title={`Snooze all due ${kindLabel[s.kind] ?? s.kind} items (respecting your current filters)`}
+                              >
+                                {x.label}
+                              </button>
+                            ))}
+                          </>
+                        );
+                      })()}
+
                       <button
                         className="ghost"
                         onClick={() => {
