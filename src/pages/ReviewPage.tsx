@@ -988,9 +988,34 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           </div>
         )
       ) : !active ? (
-        <div className="result r_idle">
+        <div className={`result ${warmupMode && warmupQueue.length > 0 && doneCount > 0 ? 'r_correct' : 'r_idle'}`}>
           {totalCount === 0 ? (
             'No mistakes queued. Go do a station and come back if you miss something.'
+          ) : warmupMode && warmupQueue.length > 0 && doneCount > 0 ? (
+            <>
+              <div style={{ fontSize: 14, opacity: 0.95 }}>
+                Warm‑up complete — cleared <b>{Math.min(doneCount, warmupQueue.length)}</b> / {warmupQueue.length}.
+              </div>
+              <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
+                <Link className="linkBtn" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
+                  Restart warm‑up
+                </Link>
+                <Link className="linkBtn" to={`/review?drill=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
+                  Drill top misses
+                </Link>
+                <Link className="linkBtn" to={`/review?manage=1${stationFilter ? `&station=${stationFilter}` : ''}#manage`} state={inheritedState}>
+                  Manage mistakes
+                </Link>
+                {practiceDoneTo ? (
+                  <Link className="linkBtn primaryLink" to={practiceDoneTo}>
+                    Back to practice
+                  </Link>
+                ) : null}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 12, opacity: 0.78 }}>
+                {sched.nextDueAt ? `Next due in ${msToHuman(sched.nextDueAt - now)}.` : 'Nothing due right now.'}
+              </div>
+            </>
           ) : (
             <>
               <div style={{ fontSize: 14, opacity: 0.9 }}>
