@@ -1,3 +1,4 @@
+import { STABLE_REGISTER_MAX_MIDI, STABLE_REGISTER_MIN_MIDI } from '../lib/registerPolicy';
 import { mulberry32, shuffle } from '../lib/rng';
 
 export type TriadQuality = 'major' | 'minor' | 'diminished';
@@ -41,9 +42,11 @@ export function makeTriadQualityQuestion(opts: {
 }): TriadQuestion {
   const rng = mulberry32(opts.seed);
 
-  // Stable mid register (around C4) by default.
-  const minRootMidi = opts.minRootMidi ?? 57; // A3
-  const maxRootMidi = opts.maxRootMidi ?? 65; // F4
+  // Stable lesson register by default.
+  // Keep the whole triad inside the stable register (root..root+7).
+  const maxTriadInterval = 7;
+  const minRootMidi = opts.minRootMidi ?? STABLE_REGISTER_MIN_MIDI;
+  const maxRootMidi = opts.maxRootMidi ?? Math.max(minRootMidi, STABLE_REGISTER_MAX_MIDI - maxTriadInterval);
   const span = Math.max(1, maxRootMidi - minRootMidi + 1);
   const rootMidi = minRootMidi + Math.floor(rng() * span);
 
