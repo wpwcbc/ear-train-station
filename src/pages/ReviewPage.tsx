@@ -830,7 +830,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                                 }}
                                 title={`Snooze all due ${kindLabel[s.kind] ?? s.kind} items (respecting your current filters)`}
                               >
-                                {x.label}
+                                {x.label} ({dueIds.length})
                               </button>
                             ))}
                           </>
@@ -847,15 +847,23 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                             if (stationFilter && m.sourceStationId !== stationFilter) return true;
                             return false;
                           });
-                          if (next.length === prev.length) return;
+                          const removed = prev.length - next.length;
+                          if (removed <= 0) return;
+
+                          // Extra guard for bulk destructive actions (Undo is available either way).
+                          if (removed >= 6) {
+                            const ok = window.confirm(`Remove ${removed} ${(kindLabel[s.kind] ?? s.kind).toLowerCase()} item${removed === 1 ? '' : 's'} from Review?\n\n(You can Undo right after.)`);
+                            if (!ok) return;
+                          }
+
                           saveMistakes(next);
                           setMistakes(next);
-                          armUndo(prev, `Removed ${kindLabel[s.kind] ?? s.kind}.`);
+                          armUndo(prev, `Removed ${removed} ${(kindLabel[s.kind] ?? s.kind).toLowerCase()} item${removed === 1 ? '' : 's'}.`);
                           refresh();
                         }}
                         title="Remove items of this kind from your Review queue"
                       >
-                        Remove
+                        Remove ({kindItems.length})
                       </button>
                     </div>
                   </div>
