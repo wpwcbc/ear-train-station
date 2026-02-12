@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import type { Progress } from '../lib/progress';
+import type { Progress, StationId } from '../lib/progress';
 import { ConfigDrawer } from './ConfigDrawer';
 import { FocusUIContext, type FocusUIContextValue, type FocusTopBarState } from './focusUI';
 
@@ -114,7 +114,17 @@ export function FocusShell(props: { children?: ReactNode; progress: Progress; se
           <Outlet />
         </main>
 
-        <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} progress={props.progress} setProgress={props.setProgress} />
+        <ConfigDrawer
+          open={configOpen}
+          onClose={() => setConfigOpen(false)}
+          progress={props.progress}
+          setProgress={props.setProgress}
+          stationId={(() => {
+            const m = loc.pathname.match(/^\/lesson\/([^/?#]+)/);
+            // Route guarantees this is a valid StationId; keep runtime simple.
+            return m?.[1] ? (decodeURIComponent(m[1]) as unknown as StationId) : null;
+          })()}
+        />
       </div>
     </FocusUIContext.Provider>
   );

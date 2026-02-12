@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { Progress } from '../lib/progress';
+import type { Progress, StationId } from '../lib/progress';
 import { defaultProgress, loadProgress, saveProgress } from '../lib/progress';
 import { defaultSettings, loadSettings, saveSettings, type Settings } from '../lib/settings';
+import { clearIntervalMissHistogram, loadIntervalMissHistogram } from '../lib/intervalStats';
+import { intervalLabel } from '../exercises/interval';
 import {
   clearPianoSoundfontCache,
   getPianoContextState,
@@ -26,6 +28,8 @@ export function ConfigDrawer(props: {
   onClose: () => void;
   progress: Progress;
   setProgress: (p: Progress) => void;
+  /** When opened from a lesson, allows station-scoped tools (kept behind ⚙️). */
+  stationId?: StationId | null;
 }) {
   const [draft, setDraft] = useState<Settings>(() => loadSettings());
 
@@ -119,6 +123,21 @@ export function ConfigDrawer(props: {
     [],
   );
 
+  const intervalMissSummary = useMemo(() => {
+    const sid = props.stationId;
+    if (!sid) return null;
+    if (!sid.includes('INTERVALS')) return null;
+
+    const hist = loadIntervalMissHistogram(sid);
+    if (hist.size === 0) return { stationId: sid, top: [] as Array<{ label: string; count: number }> };
+
+    const rows = Array.from(hist.entries())
+      .map(([semi, count]) => ({ label: intervalLabel(semi), count }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+
+    return { stationId: sid, top: rows.slice(0, 5) };
+  }, [props.stationId, props.open]);
+
   if (!props.open) return null;
 
   const s = draft ?? defaultSettings();
@@ -201,6 +220,39 @@ export function ConfigDrawer(props: {
             Tip: main pages are read-only; tweak this in ⚙️.
           </div>
         </div>
+
+        {intervalMissSummary ? (
+          <div className="configSection">
+            <div className="configH">Practice tools</div>
+
+            <div className="configRow">
+              <span className="configLabel">Interval miss stats</span>
+              <span className="configValue" style={{ justifySelf: 'start' }}>
+                {intervalMissSummary.top.length
+                  ? `Top misses: ${intervalMissSummary.top.map((x) => `${x.label}×${x.count}`).join(' · ')}`
+                  : 'No interval miss stats recorded yet.'}
+              </span>
+              <button
+                className="ghost"
+                disabled={intervalMissSummary.top.length === 0}
+                onClick={() => {
+                  const ok = window.confirm('Clear interval miss stats for this station? (This only affects targeted mix weighting.)');
+                  if (!ok) return;
+                  clearIntervalMissHistogram(intervalMissSummary.stationId);
+                  // Trigger re-render while panel is open.
+                  setDraft((d) => ({ ...(d ?? defaultSettings()) }));
+                }}
+                aria-label="Clear interval miss stats"
+              >
+                Clear
+              </button>
+            </div>
+
+            <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
+              Tip: use this if your targeted mix feels stale after you’ve improved.
+            </div>
+          </div>
+        ) : null}
 
         <div className="configSection">
           <div className="configH">Audio</div>
