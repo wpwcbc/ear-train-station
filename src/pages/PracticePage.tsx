@@ -353,11 +353,15 @@ export function PracticePage({ progress }: { progress: Progress }) {
 
           <Link
             className="linkBtn"
-            to={hasIntervalMistakes ? '/review?drill=1' : '/review?warmup=1&n=5'}
+            to={
+              hasIntervalMistakes
+                ? `/review?drill=1&semitones=${encodeURIComponent(intervalStatsTop.map((x) => x.semitones).join(','))}`
+                : '/review?warmup=1&n=5'
+            }
             state={{ exitTo: '/practice' }}
             title={
               hasIntervalMistakes
-                ? `Auto-picks your top missed interval labels: ${intervalStatsTop
+                ? `Drill focuses your top missed interval labels: ${intervalStatsTop
                     .map((x) => SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`)
                     .join(', ')}`
                 : 'No interval mistakes yet — warm‑up is the fastest way to practice your queue.'
@@ -372,6 +376,27 @@ export function PracticePage({ progress }: { progress: Progress }) {
               </span>
             ) : null}
           </Link>
+
+          {hasIntervalMistakes && intervalStatsTop.length ? (
+            <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontSize: 12, opacity: 0.75 }}>Drill shortcuts:</span>
+              {intervalStatsTop.map((x) => {
+                const label = SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`;
+                return (
+                  <Link
+                    key={x.semitones}
+                    className="pill"
+                    to={`/review?drill=1&semitones=${encodeURIComponent(String(x.semitones))}`}
+                    state={{ exitTo: '/practice' }}
+                    title={`Drill ${label} only (wide register: G2+)`}
+                  >
+                    {label}
+                  </Link>
+                );
+              })}
+            </div>
+          ) : null}
+
           <Link className="linkBtn" to="/review?manage=1#manage" state={{ exitTo: '/practice' }} title="Browse and manage your Review queue (on-demand)">
             Manage mistakes
             {sched.total ? (
