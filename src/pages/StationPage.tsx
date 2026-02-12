@@ -18,7 +18,9 @@ import {
   DEFAULT_WIDE_REGISTER_MAX_MIDI,
   STABLE_REGISTER_MAX_MIDI,
   STABLE_REGISTER_MIN_MIDI,
+  STABLE_REGISTER_RANGE_TEXT,
   WIDE_REGISTER_MIN_MIDI,
+  WIDE_REGISTER_RANGE_TEXT,
   stableRegisterWhiteMidis,
 } from '../lib/registerPolicy';
 import { PianoKeyboard } from '../components/PianoKeyboard';
@@ -2706,7 +2708,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                 </div>
 
                 <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
-                  Lessons stay in a stable register; tests can roam wider (G2+).
+                  Lessons stay in a stable register ({STABLE_REGISTER_RANGE_TEXT}); tests can roam wider (≥ {WIDE_REGISTER_RANGE_TEXT}).
                 </div>
               </>
             }
@@ -3140,7 +3142,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
 
           <div style={{ marginTop: 10 }}>
             <PianoKeyboard
-              startMidi={36}
+              startMidi={43} // G2 — tests should never surface below this register
               octaves={4}
               onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
               highlighted={highlighted}
@@ -3534,7 +3536,8 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                   {
                     title: 'Then: find the target note',
                     body:
-                      'We\'ll play root → target. Tap the target key.\n\nAfter you clear the stable lesson, we\'ll do a short Twist test (hearts on) across a wider register (G2+).',
+                      `We'll play root → target. Tap the target key.\n\nAfter you clear the stable lesson (${STABLE_REGISTER_RANGE_TEXT}), we'll do a short Twist test (hearts on) across a wider register (≥ ${WIDE_REGISTER_RANGE_TEXT}).`,
+
                   },
                 ]}
                 doneLabel="Start"
@@ -3634,7 +3637,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                 </div>
 
                 <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
-                  Lessons stay in a stable register; tests roam wider (G2+).
+                  Lessons stay in a stable register ({STABLE_REGISTER_RANGE_TEXT}); tests roam wider (≥ {WIDE_REGISTER_RANGE_TEXT}).
                 </div>
               </>
             }
@@ -3776,7 +3779,7 @@ reviewHref={(t6Index >= T6_TOTAL || t6Wrong >= HEARTS) && stationMistakeCount > 
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
-            Tip: tests roam across a bigger register (G2+); lessons stay in a stable register.
+            Tip: tests roam across a bigger register (≥ {WIDE_REGISTER_RANGE_TEXT}); lessons stay in a stable register ({STABLE_REGISTER_RANGE_TEXT}).
           </div>
         </>
       ) : id === 'S6_FUNCTIONS' ? (
@@ -3846,7 +3849,7 @@ reviewHref={(t7Index >= T7_TOTAL || t7Wrong >= HEARTS) && stationMistakeCount > 
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
-            Tip: listen for rest vs move vs tension. (Range is wider: G2+)
+            Tip: listen for rest vs move vs tension. (Range is wider: ≥ {WIDE_REGISTER_RANGE_TEXT})
           </div>
         </>
       ) : id === 'S7_DEGREES' ? (
