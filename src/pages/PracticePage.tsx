@@ -52,11 +52,18 @@ export function PracticePage({ progress }: { progress: Progress }) {
     setWorkoutDone(dayKey, session);
 
     // Small Duolingo-ish reinforcement: show a quick “done” toast.
-    setWorkoutToast({ session, at: Date.now() });
-    const t = window.setTimeout(() => setWorkoutToast(null), 4500);
+    // (Defer state updates to avoid cascading renders inside effects.)
+    let t1: number | undefined;
+    const t0 = window.setTimeout(() => {
+      setWorkoutToast({ session, at: Date.now() });
+      t1 = window.setTimeout(() => setWorkoutToast(null), 4500);
+    }, 0);
 
     navigate('/practice', { replace: true });
-    return () => window.clearTimeout(t);
+    return () => {
+      window.clearTimeout(t0);
+      if (t1) window.clearTimeout(t1);
+    };
   }, [navigate, searchParams]);
 
   const sched = mistakeScheduleSummary(now);

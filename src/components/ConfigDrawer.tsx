@@ -151,6 +151,7 @@ export function ConfigDrawer(props: {
       localStorage.removeItem('ets_settings_v2');
       localStorage.removeItem('ets_settings_v3');
       localStorage.removeItem('ets_settings_v4');
+      localStorage.removeItem('ets_settings_v5');
     } catch {
       // ignore
     }
@@ -386,6 +387,20 @@ export function ConfigDrawer(props: {
               <option value="fast">Fast</option>
             </select>
           </label>
+
+          <label className="configRow">
+            <span className="configLabel">Key primer (scale degrees)</span>
+            <span className="configValue" style={{ justifySelf: 'start' }}>
+              {s.playKeyPrimer ? 'On' : 'Off'}
+            </span>
+            <button className={s.playKeyPrimer ? 'primary' : 'ghost'} onClick={() => commit({ ...s, playKeyPrimer: !s.playKeyPrimer })}>
+              Toggle
+            </button>
+          </label>
+
+          <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
+            Tip: this plays a quick tonic triad before the target note, to make the key feel more “real”.
+          </div>
         </div>
 
         <div className="configSection">

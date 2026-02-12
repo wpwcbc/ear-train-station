@@ -88,7 +88,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   };
 
   useEffect(() => {
-    setMistakesThisVisit(0);
+    const t = window.setTimeout(() => setMistakesThisVisit(0), 0);
+    return () => window.clearTimeout(t);
   }, [id]);
 
   useEffect(() => {
@@ -1221,8 +1222,30 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({});
   }
 
+  async function playKeyPrimerTriad(tonicMidi: number) {
+    // A quick “this is the key” outline: do–mi–sol–do.
+    // Kept intentionally short so it doesn't feel like extra waiting.
+    setHighlighted({ [tonicMidi]: 'active' });
+    await piano.playMidi(tonicMidi, { durationSec: dur(0.35), velocity: 0.86 });
+    await new Promise((r) => setTimeout(r, gap(110)));
+    setHighlighted({ [tonicMidi + 4]: 'active' });
+    await piano.playMidi(tonicMidi + 4, { durationSec: dur(0.32), velocity: 0.86 });
+    await new Promise((r) => setTimeout(r, gap(110)));
+    setHighlighted({ [tonicMidi + 7]: 'active' });
+    await piano.playMidi(tonicMidi + 7, { durationSec: dur(0.32), velocity: 0.86 });
+    await new Promise((r) => setTimeout(r, gap(110)));
+    setHighlighted({ [tonicMidi + 12]: 'active' });
+    await piano.playMidi(tonicMidi + 12, { durationSec: dur(0.34), velocity: 0.86 });
+    await new Promise((r) => setTimeout(r, gap(170)));
+  }
+
   async function playPromptS7() {
     setResult('idle');
+
+    if (settings.playKeyPrimer) {
+      await playKeyPrimerTriad(degreeQ.tonicMidi);
+    }
+
     setHighlighted({ [degreeQ.tonicMidi]: 'active' });
     await piano.playMidi(degreeQ.tonicMidi, { durationSec: dur(0.7), velocity: 0.9 });
     await new Promise((r) => setTimeout(r, gap(260)));
@@ -1277,6 +1300,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   async function playPromptT4() {
     setResult('idle');
     setHighlighted({});
+
+    if (settings.playKeyPrimer) {
+      await playKeyPrimerTriad(t4Q.tonicMidi);
+    }
+
     await playTonicTargetPrompt(t4Q.tonicMidi, t4Q.targetMidi, {
       gapMs: gap(260),
       targetDurationSec: dur(0.9),
