@@ -3231,6 +3231,68 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
             Checkpoint vibe: play again anytime — no hearts here.
           </div>
+
+          {t3bDone ? (
+            <div className="callout" style={{ marginTop: 10 }}>
+              <div style={{ fontWeight: 700 }}>Checkpoint complete</div>
+              <div style={{ marginTop: 4, opacity: 0.85 }}>
+                Score: {t3bCorrect}/{T3B_TOTAL} (need {T3B_PASS}).
+              </div>
+
+              {topIntervalMisses.length > 0 ? (
+                <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
+                  Most missed: {topIntervalMisses.map((x) => `${x.label}×${x.count}`).join(' · ')}
+                </div>
+              ) : null}
+
+              {topIntervalMisses.length > 0 ? (
+                <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {topIntervalMisses.map((x) => (
+                    <button
+                      key={x.label}
+                      className="pillBtn"
+                      onClick={() => {
+                        setPractice(true);
+                        setPracticeFocusIntervals([x.label]);
+                        resetT3B();
+                      }}
+                      title={`Practice ${x.label} only`}
+                    >
+                      Practice {x.label}
+                    </button>
+                  ))}
+                  <button
+                    className="pillBtn"
+                    onClick={() => {
+                      setPractice(true);
+                      setPracticeFocusIntervals(topIntervalMisses.map((x) => x.label));
+                      resetT3B();
+                    }}
+                    title="Practice your top misses"
+                  >
+                    Practice top misses
+                  </button>
+                </div>
+              ) : null}
+
+              <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {stationMistakeCount > 0 ? (
+                  <Link className="linkBtn" to={`/review?station=${id}`}>
+                    Review mistakes ({stationMistakeCount})
+                  </Link>
+                ) : null}
+                <button
+                  className="linkBtn"
+                  onClick={() => {
+                    setPracticeFocusIntervals(null);
+                    resetT3B();
+                  }}
+                >
+                  Restart
+                </button>
+              </div>
+            </div>
+          ) : null}
         </>
       ) : id === 'T3_INTERVALS' ? (
         <>
