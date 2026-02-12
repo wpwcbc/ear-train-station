@@ -361,7 +361,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     [seed],
   );
   const [s7Correct, setS7Correct] = useState(0);
+  const [s7PrimerPlayed, setS7PrimerPlayed] = useState(false);
   const S7_GOAL = 7;
+
+  // Don’t force the key primer to replay every time the user taps “Hear degree” on the same question.
+  // (They can still replay it explicitly via the UI.)
+  useEffect(() => {
+    setS7PrimerPlayed(false);
+  }, [degreeQ.tonicMidi, degreeQ.targetMidi]);
 
   // Test 4: degree names across a wider register (G2 and above).
   const [t4Index, setT4Index] = useState(0);
@@ -1125,6 +1132,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   function next() {
     setResult('idle');
     setHighlighted({});
+    if (id === 'S7_DEGREES') setS7PrimerPlayed(false);
     setSeed((x) => x + 1);
   }
 
@@ -1242,7 +1250,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   async function playPromptS7() {
     setResult('idle');
 
-    if (settings.playKeyPrimer) {
+    if (settings.playKeyPrimer && !s7PrimerPlayed) {
+      setS7PrimerPlayed(true);
       await playKeyPrimerTriad(degreeQ.tonicMidi);
     }
 
@@ -1252,6 +1261,12 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({ [degreeQ.targetMidi]: 'active' });
     await piano.playMidi(degreeQ.targetMidi, { durationSec: dur(0.9), velocity: 0.92 });
     setHighlighted({});
+  }
+
+  async function playKeyHintS7() {
+    setResult('idle');
+    setS7PrimerPlayed(true);
+    await playKeyPrimerTriad(degreeQ.tonicMidi);
   }
 
   async function chooseS7(choice: ScaleDegreeName) {
@@ -3877,6 +3892,9 @@ reviewHref={(t7Index >= T7_TOTAL || t7Wrong >= HEARTS) && stationMistakeCount > 
         <>
           <div className="row">
             <button className="primary" onClick={playPromptS7}>Hear degree</button>
+            <button className="ghost" onClick={playKeyHintS7} title="Hint: hear the key (do–mi–sol–do)">
+              Hear key
+            </button>
             <button className="ghost" onClick={next}>Next</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Progress: {Math.min(s7Correct, S7_GOAL)}/{S7_GOAL}
