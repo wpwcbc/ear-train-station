@@ -154,6 +154,37 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     return practiceFocusIntervals.map((l) => LABEL_TO_SEMITONE[l]);
   }, [practiceFocusIntervals, practiceWeightedSemitones]);
 
+  function exitPractice() {
+    setPractice(false);
+    setPracticeFocusIntervals(null);
+    setPracticeWeightedSemitones(null);
+  }
+
+  function clearPracticeFocus() {
+    setPracticeFocusIntervals(null);
+    setPracticeWeightedSemitones(null);
+  }
+
+  const practiceLeftExtras = practice ? (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      <div style={{ fontSize: 12, opacity: 0.85 }}>
+        {practiceWeightedSemitones?.length
+          ? 'Practice: targeted (weighted to your misses)'
+          : practiceFocusIntervals?.length
+            ? `Practice: focused (${practiceFocusIntervals.join(', ')})`
+            : 'Practice: all intervals'}
+      </div>
+      {practiceFocusIntervals?.length || practiceWeightedSemitones?.length ? (
+        <button className="ghost" onClick={clearPracticeFocus} title="Clear focused/targeted practice">
+          Clear focus
+        </button>
+      ) : null}
+      <button className="ghost" onClick={exitPractice} title="Exit practice mode">
+        Exit practice
+      </button>
+    </div>
+  ) : null;
+
   // Tiny celebration when the user crosses their daily goal threshold.
   const [toast, setToast] = useState<null | { text: string }>(null);
   useEffect(() => {
@@ -3301,27 +3332,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             playLabel="Hear interval"
             onPlay={playPromptT3B}
             onRestart={resetT3B}
-            leftExtras={
-              practice && (practiceFocusIntervals?.length || practiceWeightedSemitones?.length) ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <div style={{ fontSize: 12, opacity: 0.85 }}>
-                    {practiceWeightedSemitones?.length
-                      ? 'Targeted: top misses (weighted)'
-                      : `Focused: ${practiceFocusIntervals?.join(', ')}`}
-                  </div>
-                  <button
-                    className="ghost"
-                    onClick={() => {
-                      setPracticeFocusIntervals(null);
-                      setPracticeWeightedSemitones(null);
-                    }}
-                    title="Clear focused practice"
-                  >
-                    Clear focus
-                  </button>
-                </div>
-              ) : null
-            }
+            leftExtras={practiceLeftExtras}
             reviewHref={t3bDone && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
             reviewLabel={`Review mistakes (${stationMistakeCount})`}
             rightStatus={`Q: ${Math.min(t3bIndex + 1, T3B_TOTAL)}/${T3B_TOTAL} · Correct: ${t3bCorrect}/${T3B_TOTAL} (need ${T3B_PASS}) · Wrong: ${t3bWrong}`}
@@ -3432,27 +3443,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             playLabel="Hear interval"
             onPlay={playPromptT3}
             onRestart={resetT3}
-            leftExtras={
-              practice && (practiceFocusIntervals?.length || practiceWeightedSemitones?.length) ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <div style={{ fontSize: 12, opacity: 0.85 }}>
-                    {practiceWeightedSemitones?.length
-                      ? 'Targeted: top misses (weighted)'
-                      : `Focused: ${practiceFocusIntervals?.join(', ')}`}
-                  </div>
-                  <button
-                    className="ghost"
-                    onClick={() => {
-                      setPracticeFocusIntervals(null);
-                      setPracticeWeightedSemitones(null);
-                    }}
-                    title="Clear focused practice"
-                  >
-                    Clear focus
-                  </button>
-                </div>
-              ) : null
-            }
+            leftExtras={practiceLeftExtras}
             reviewHref={t3Done && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
             reviewLabel={`Review mistakes (${stationMistakeCount})`}
             rightStatus={`Q: ${Math.min(t3Index + 1, T3_TOTAL)}/${T3_TOTAL} · Correct: ${t3Correct}/${T3_TOTAL} (need ${T3_PASS}) · Lives: ${Math.max(0, HEARTS - t3Wrong)}/${HEARTS}`}
@@ -3566,27 +3557,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             playLabel="Hear interval"
             onPlay={playPromptE3}
             onRestart={resetE3}
-            leftExtras={
-              practice && (practiceFocusIntervals?.length || practiceWeightedSemitones?.length) ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <div style={{ fontSize: 12, opacity: 0.85 }}>
-                    {practiceWeightedSemitones?.length
-                      ? 'Targeted: top misses (weighted)'
-                      : `Focused: ${practiceFocusIntervals?.join(', ')}`}
-                  </div>
-                  <button
-                    className="ghost"
-                    onClick={() => {
-                      setPracticeFocusIntervals(null);
-                      setPracticeWeightedSemitones(null);
-                    }}
-                    title="Clear focused practice"
-                  >
-                    Clear focus
-                  </button>
-                </div>
-              ) : null
-            }
+            leftExtras={practiceLeftExtras}
             reviewHref={e3Done && stationMistakeCount > 0 ? `/review?station=${id}` : undefined}
             reviewLabel={`Review mistakes (${stationMistakeCount})`}
             rightStatus={`Q: ${Math.min(e3Index + 1, E3_TOTAL)}/${E3_TOTAL} · Correct: ${e3Correct}/${E3_TOTAL} (need ${E3_PASS}) · Lives: ${Math.max(0, HEARTS - e3Wrong)}/${HEARTS}`}
