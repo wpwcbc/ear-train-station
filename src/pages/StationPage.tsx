@@ -25,6 +25,7 @@ import {
 } from '../lib/registerPolicy';
 import { PianoKeyboard } from '../components/PianoKeyboard';
 import { StaffNote } from '../components/StaffNote';
+import { RegisterPolicyNote } from '../components/RegisterPolicyNote';
 import { TestHeader } from '../components/TestHeader';
 import { ChoiceGrid } from '../components/ChoiceGrid';
 import { DuoBottomBar } from '../components/DuoBottomBar';
@@ -2707,9 +2708,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                   <StaffNote midi={s1TwistQ.midi} spelling={s1TwistQ.displaySpelling} showLegend={false} />
                 </div>
 
-                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
-                  Lessons stay in a stable register ({STABLE_REGISTER_RANGE_TEXT}); tests can roam wider (≥ {WIDE_REGISTER_RANGE_TEXT}).
-                </div>
+                <RegisterPolicyNote mode="both" />
               </>
             }
           />
@@ -3228,9 +3227,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             <ChoiceGrid choices={t3Q.choices} onChoose={chooseT3} />
           </div>
 
-          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
-            Tip: tests roam; lessons stay in a stable register.
-          </div>
+          <RegisterPolicyNote mode="both" />
 
           {t3Done ? (
             <div className="callout" style={{ marginTop: 10 }}>
@@ -3636,9 +3633,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                   <ChoiceGrid choices={s3TwistQ.choices} onChoose={chooseS3Twist} renderChoice={intervalLongName} />
                 </div>
 
-                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
-                  Lessons stay in a stable register ({STABLE_REGISTER_RANGE_TEXT}); tests roam wider (≥ {WIDE_REGISTER_RANGE_TEXT}).
-                </div>
+                <RegisterPolicyNote mode="both" />
               </>
             }
           />
@@ -3778,9 +3773,7 @@ reviewHref={(t6Index >= T6_TOTAL || t6Wrong >= HEARTS) && stationMistakeCount > 
             <ChoiceGrid choices={t6Q.choices} onChoose={chooseT6} renderChoice={triadQualityLabel} />
           </div>
 
-          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
-            Tip: tests roam across a bigger register (≥ {WIDE_REGISTER_RANGE_TEXT}); lessons stay in a stable register ({STABLE_REGISTER_RANGE_TEXT}).
-          </div>
+          <RegisterPolicyNote mode="both" />
         </>
       ) : id === 'S6_FUNCTIONS' ? (
         <>
@@ -3849,8 +3842,9 @@ reviewHref={(t7Index >= T7_TOTAL || t7Wrong >= HEARTS) && stationMistakeCount > 
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
-            Tip: listen for rest vs move vs tension. (Range is wider: ≥ {WIDE_REGISTER_RANGE_TEXT})
+            Tip: listen for rest vs move vs tension.
           </div>
+          <RegisterPolicyNote mode="test" />
         </>
       ) : id === 'S7_DEGREES' ? (
         <>
