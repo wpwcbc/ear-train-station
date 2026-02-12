@@ -6,6 +6,7 @@ import { useFocusUI } from '../components/focusUI';
 import type { StationId, Progress } from '../lib/progress';
 import { applyStudyReward, markStationDone } from '../lib/progress';
 import { hasShownDailyGoalReachedToast, markDailyGoalReachedToastShown } from '../lib/dailyGoalToast';
+import { loadIntervalMissHistogram, recordIntervalMiss } from '../lib/intervalStats';
 import { addMistake, loadMistakes, mistakeCountForStation } from '../lib/mistakes';
 import { bumpStationCompleted } from '../lib/quests';
 import { STATIONS, nextStationId, isStationUnlocked } from '../lib/stations';
@@ -112,12 +113,23 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     // Show a small “what you missed most” breakdown for interval-label stations.
     if (id !== 'T3B_INTERVALS' && id !== 'T3_INTERVALS' && id !== 'E3_INTERVALS') return [] as { label: IntervalLabel; count: number }[];
 
-    const all = loadMistakes().filter((m) => m.sourceStationId === id);
+    // Prefer a persistent histogram (not capped/de-duped like the review mistake queue).
+    // Fallback: also consider current mistake queue so the UI still works if stats are empty.
     const counts = new Map<IntervalLabel, number>();
-    for (const m of all) {
-      if (m.kind !== 'intervalLabel') continue;
-      const l = intervalLabel(m.semitones);
-      counts.set(l, (counts.get(l) ?? 0) + 1);
+
+    const hist = loadIntervalMissHistogram(id);
+    for (const [semi, count] of hist.entries()) {
+      const l = intervalLabel(semi);
+      counts.set(l, (counts.get(l) ?? 0) + count);
+    }
+
+    if (counts.size === 0) {
+      const all = loadMistakes().filter((m) => m.sourceStationId === id);
+      for (const m of all) {
+        if (m.kind !== 'intervalLabel') continue;
+        const l = intervalLabel(m.semitones);
+        counts.set(l, (counts.get(l) ?? 0) + 1);
+      }
     }
 
     return Array.from(counts.entries())
@@ -1631,6 +1643,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       trackMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: t3bQ.rootMidi, semitones: t3bQ.semitones });
+      recordIntervalMiss(id, t3bQ.semitones);
 
       // Immediate correction loop: replay the correct interval once after a miss.
       // (Keeps the flow, but still teaches the ear what “right” sounds like.)
@@ -1694,6 +1707,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       trackMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: t3Q.rootMidi, semitones: t3Q.semitones });
+      recordIntervalMiss(id, t3Q.semitones);
 
       // Immediate correction loop: replay the correct interval once after a miss.
       await queueCorrectionReplay(t3Q.rootMidi, t3Q.targetMidi);
@@ -1769,6 +1783,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       trackMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: e3Q.rootMidi, semitones: e3Q.semitones });
+      recordIntervalMiss(id, e3Q.semitones);
 
       // Immediate correction loop: replay the correct interval once after a miss.
       await queueCorrectionReplay(e3Q.rootMidi, e3Q.targetMidi);

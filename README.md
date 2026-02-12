@@ -71,6 +71,10 @@ Comparable patterns / references:
 - Duolingo on learning science (active recall + spaced repetition):
   - https://blog.duolingo.com/spaced-repetition-for-learning/
 
+Implementation notes:
+- Interval stations keep a lightweight **miss histogram** in `localStorage` (separate from the capped/de-duped review queue).
+- This powers the end-of-test “most missed” summary and the **Targeted mix** (weighted practice) so it stays meaningful across sessions.
+
 ### Register rules
 
 - **Lessons:** stable register (one octave around middle C).
