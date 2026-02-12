@@ -5,8 +5,9 @@ export type Settings = {
   /** Master volume multiplier applied to prompt playback. */
   volume: number; // 0..1
   /**
-   * Optional key primer used on some functional prompts (e.g. scale degrees):
+   * Optional key primer used on some lesson-style functional prompts (e.g. S7 scale degrees):
    * a quick tonic-triad outline before the target.
+   * (Deliberately not used in tests/exams by default.)
    */
   playKeyPrimer: boolean;
 };

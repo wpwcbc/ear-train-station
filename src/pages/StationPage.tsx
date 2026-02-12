@@ -1301,9 +1301,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult('idle');
     setHighlighted({});
 
-    if (settings.playKeyPrimer) {
-      await playKeyPrimerTriad(t4Q.tonicMidi);
-    }
+    // Tests should feel a bit more “cold start” than lessons.
+    // (Key primer stays in lessons like S7; settings remain knowledge-only behind ⚙️.)
 
     await playTonicTargetPrompt(t4Q.tonicMidi, t4Q.targetMidi, {
       gapMs: gap(260),

@@ -399,7 +399,7 @@ export function ConfigDrawer(props: {
           </label>
 
           <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
-            Tip: this plays a quick tonic triad before the target note, to make the key feel more “real”.
+            Tip: this plays a quick tonic triad before the target note in lesson-style scale degree prompts (tests stay “cold”).
           </div>
         </div>
 
