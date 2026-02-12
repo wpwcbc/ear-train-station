@@ -131,11 +131,15 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [practice, setPractice] = useState(false);
   // Optional “focused practice” (e.g. practice only your most-missed intervals).
   const [practiceFocusIntervals, setPracticeFocusIntervals] = useState<IntervalLabel[] | null>(null);
+  // “Targeted review” a la Duolingo Practice Hub: weight the RNG toward what you missed most.
+  // We implement weighting by duplicating semitone values in the allowlist (simple + deterministic).
+  const [practiceWeightedSemitones, setPracticeWeightedSemitones] = useState<number[] | null>(null);
 
   const practiceAllowedSemitones = useMemo(() => {
+    if (practiceWeightedSemitones?.length) return practiceWeightedSemitones;
     if (!practiceFocusIntervals?.length) return undefined;
     return practiceFocusIntervals.map((l) => LABEL_TO_SEMITONE[l]);
-  }, [practiceFocusIntervals]);
+  }, [practiceFocusIntervals, practiceWeightedSemitones]);
 
   // Tiny celebration when the user crosses their daily goal threshold.
   const [toast, setToast] = useState<null | { text: string }>(null);
@@ -2607,7 +2611,10 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
               onClick={() => {
                 setPractice((p) => {
                   const next = !p;
-                  if (!next) setPracticeFocusIntervals(null);
+                  if (!next) {
+                    setPracticeFocusIntervals(null);
+                    setPracticeWeightedSemitones(null);
+                  }
                   return next;
                 });
               }}
@@ -3201,10 +3208,21 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             onPlay={playPromptT3B}
             onRestart={resetT3B}
             leftExtras={
-              practice && practiceFocusIntervals?.length ? (
+              practice && (practiceFocusIntervals?.length || practiceWeightedSemitones?.length) ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <div style={{ fontSize: 12, opacity: 0.85 }}>Focused: {practiceFocusIntervals.join(', ')}</div>
-                  <button className="ghost" onClick={() => setPracticeFocusIntervals(null)} title="Clear focused practice">
+                  <div style={{ fontSize: 12, opacity: 0.85 }}>
+                    {practiceWeightedSemitones?.length
+                      ? 'Targeted: top misses (weighted)'
+                      : `Focused: ${practiceFocusIntervals?.join(', ')}`}
+                  </div>
+                  <button
+                    className="ghost"
+                    onClick={() => {
+                      setPracticeFocusIntervals(null);
+                      setPracticeWeightedSemitones(null);
+                    }}
+                    title="Clear focused practice"
+                  >
                     Clear focus
                   </button>
                 </div>
@@ -3253,6 +3271,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                       className="pillBtn"
                       onClick={() => {
                         setPractice(true);
+                        setPracticeWeightedSemitones(null);
                         setPracticeFocusIntervals([x.label]);
                         resetT3B();
                       }}
@@ -3265,12 +3284,30 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                     className="pillBtn"
                     onClick={() => {
                       setPractice(true);
+                      setPracticeWeightedSemitones(null);
                       setPracticeFocusIntervals(topIntervalMisses.map((x) => x.label));
                       resetT3B();
                     }}
                     title="Practice your top misses"
                   >
                     Practice top misses
+                  </button>
+                  <button
+                    className="pillBtn"
+                    onClick={() => {
+                      // Bias question sampling toward your worst offenders.
+                      // Implementation: duplicate semitone values in the allowlist (higher frequency = more likely).
+                      const weighted = topIntervalMisses.flatMap((x) =>
+                        Array(Math.min(6, Math.max(2, x.count))).fill(LABEL_TO_SEMITONE[x.label]),
+                      );
+                      setPractice(true);
+                      setPracticeFocusIntervals(null);
+                      setPracticeWeightedSemitones(weighted.length ? weighted : null);
+                      resetT3B();
+                    }}
+                    title="Practice a targeted mix weighted toward your misses"
+                  >
+                    Targeted mix
                   </button>
                 </div>
               ) : null}
@@ -3285,6 +3322,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                   className="linkBtn"
                   onClick={() => {
                     setPracticeFocusIntervals(null);
+                    setPracticeWeightedSemitones(null);
                     resetT3B();
                   }}
                 >
@@ -3301,10 +3339,21 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             onPlay={playPromptT3}
             onRestart={resetT3}
             leftExtras={
-              practice && practiceFocusIntervals?.length ? (
+              practice && (practiceFocusIntervals?.length || practiceWeightedSemitones?.length) ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <div style={{ fontSize: 12, opacity: 0.85 }}>Focused: {practiceFocusIntervals.join(', ')}</div>
-                  <button className="ghost" onClick={() => setPracticeFocusIntervals(null)} title="Clear focused practice">
+                  <div style={{ fontSize: 12, opacity: 0.85 }}>
+                    {practiceWeightedSemitones?.length
+                      ? 'Targeted: top misses (weighted)'
+                      : `Focused: ${practiceFocusIntervals?.join(', ')}`}
+                  </div>
+                  <button
+                    className="ghost"
+                    onClick={() => {
+                      setPracticeFocusIntervals(null);
+                      setPracticeWeightedSemitones(null);
+                    }}
+                    title="Clear focused practice"
+                  >
                     Clear focus
                   </button>
                 </div>
@@ -3354,6 +3403,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                       className="pillBtn"
                       onClick={() => {
                         setPractice(true);
+                        setPracticeWeightedSemitones(null);
                         setPracticeFocusIntervals([x.label]);
                         resetT3();
                       }}
@@ -3366,12 +3416,28 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                     className="pillBtn"
                     onClick={() => {
                       setPractice(true);
+                      setPracticeWeightedSemitones(null);
                       setPracticeFocusIntervals(topIntervalMisses.map((x) => x.label));
                       resetT3();
                     }}
                     title="Practice your top misses"
                   >
                     Practice top misses
+                  </button>
+                  <button
+                    className="pillBtn"
+                    onClick={() => {
+                      const weighted = topIntervalMisses.flatMap((x) =>
+                        Array(Math.min(6, Math.max(2, x.count))).fill(LABEL_TO_SEMITONE[x.label]),
+                      );
+                      setPractice(true);
+                      setPracticeFocusIntervals(null);
+                      setPracticeWeightedSemitones(weighted.length ? weighted : null);
+                      resetT3();
+                    }}
+                    title="Practice a targeted mix weighted toward your misses"
+                  >
+                    Targeted mix
                   </button>
                 </div>
               ) : null}
@@ -3386,6 +3452,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                   className="linkBtn"
                   onClick={() => {
                     setPracticeFocusIntervals(null);
+                    setPracticeWeightedSemitones(null);
                     resetT3();
                   }}
                 >
@@ -3402,10 +3469,21 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             onPlay={playPromptE3}
             onRestart={resetE3}
             leftExtras={
-              practice && practiceFocusIntervals?.length ? (
+              practice && (practiceFocusIntervals?.length || practiceWeightedSemitones?.length) ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <div style={{ fontSize: 12, opacity: 0.85 }}>Focused: {practiceFocusIntervals.join(', ')}</div>
-                  <button className="ghost" onClick={() => setPracticeFocusIntervals(null)} title="Clear focused practice">
+                  <div style={{ fontSize: 12, opacity: 0.85 }}>
+                    {practiceWeightedSemitones?.length
+                      ? 'Targeted: top misses (weighted)'
+                      : `Focused: ${practiceFocusIntervals?.join(', ')}`}
+                  </div>
+                  <button
+                    className="ghost"
+                    onClick={() => {
+                      setPracticeFocusIntervals(null);
+                      setPracticeWeightedSemitones(null);
+                    }}
+                    title="Clear focused practice"
+                  >
                     Clear focus
                   </button>
                 </div>
@@ -3459,6 +3537,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                       className="pillBtn"
                       onClick={() => {
                         setPractice(true);
+                        setPracticeWeightedSemitones(null);
                         setPracticeFocusIntervals([x.label]);
                         resetE3();
                       }}
@@ -3471,12 +3550,28 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                     className="pillBtn"
                     onClick={() => {
                       setPractice(true);
+                      setPracticeWeightedSemitones(null);
                       setPracticeFocusIntervals(topIntervalMisses.map((x) => x.label));
                       resetE3();
                     }}
                     title="Practice your top misses"
                   >
                     Practice top misses
+                  </button>
+                  <button
+                    className="pillBtn"
+                    onClick={() => {
+                      const weighted = topIntervalMisses.flatMap((x) =>
+                        Array(Math.min(6, Math.max(2, x.count))).fill(LABEL_TO_SEMITONE[x.label]),
+                      );
+                      setPractice(true);
+                      setPracticeFocusIntervals(null);
+                      setPracticeWeightedSemitones(weighted.length ? weighted : null);
+                      resetE3();
+                    }}
+                    title="Practice a targeted mix weighted toward your misses"
+                  >
+                    Targeted mix
                   </button>
                 </div>
               ) : null}
@@ -3491,6 +3586,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                   className="linkBtn"
                   onClick={() => {
                     setPracticeFocusIntervals(null);
+                    setPracticeWeightedSemitones(null);
                     resetE3();
                   }}
                 >
