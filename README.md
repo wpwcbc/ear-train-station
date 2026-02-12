@@ -1,5 +1,7 @@
 # Ear Train Station
 
+[![CI](https://github.com/wpwcbc/ear-train-station/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/wpwcbc/ear-train-station/actions/workflows/ci.yml)
+
 A small web ear‑training app built with **React + TypeScript + Vite**.
 
 ## Dev
@@ -21,6 +23,23 @@ npm run preview
 ```bash
 npm run lint
 npm run audit:register
+```
+
+## CI (GitHub Actions)
+
+The CI workflow runs on every push/PR:
+- `npm ci`
+- `npm run lint`
+- `npm run audit:register`
+- `npm run build`
+
+To reproduce locally:
+
+```bash
+npm ci
+npm run lint
+npm run audit:register
+npm run build
 ```
 
 ## Pedagogy notes (current)

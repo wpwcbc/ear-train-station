@@ -6,6 +6,9 @@
 export const STABLE_REGISTER_MIN_MIDI = 60; // C4
 export const STABLE_REGISTER_MAX_MIDI = 71; // B4
 
+// Human-facing labels (use in UI copy / docs to avoid drift)
+export const STABLE_REGISTER_RANGE_TEXT = 'C4–B4';
+
 export function stableTonicMidi(tonicPc: number) {
   // Aligns pitch-class to the stable lesson register (C4..B4).
   return STABLE_REGISTER_MIN_MIDI + (Math.round(tonicPc) % 12);
@@ -25,6 +28,7 @@ export function stableRegisterWhiteMidis() {
 // Wide register: tests/exams/drills should not go below this.
 // MIDI 43 == G2
 export const WIDE_REGISTER_MIN_MIDI = 43;
+export const WIDE_REGISTER_RANGE_TEXT = 'G2+';
 
 // Keep some headroom for wider prompts while staying realistic on small speakers.
 // (Not a strict rule; stations can tighten max as needed.)
