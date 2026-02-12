@@ -3637,7 +3637,14 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                   {result === 'wrong' && 'Not quite. Listen again.'}
                 </div>
 
-                <PianoKeyboard startMidi={48} octaves={2} onPress={onPressS3} highlighted={highlighted} />
+                <PianoKeyboard
+                  startMidi={48}
+                  octaves={2}
+                  onPress={onPressS3}
+                  highlighted={highlighted}
+                  minMidi={STABLE_REGISTER_MIN_MIDI}
+                  maxMidi={STABLE_REGISTER_MAX_MIDI}
+                />
 
                 {s3TestComplete ? (
                   <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>

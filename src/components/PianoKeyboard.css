@@ -37,3 +37,14 @@
 
 .whiteKey.k_wrong { background: #ffd7d7; }
 .blackKey.k_wrong { background: #7b1f1f; }
+
+.whiteKey.k_disabled,
+.blackKey.k_disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.whiteKey:disabled,
+.blackKey:disabled {
+  pointer-events: none;
+}
