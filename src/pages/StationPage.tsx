@@ -80,6 +80,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   const [now, setNow] = useState(() => Date.now());
   const [settings, setSettings] = useState(() => loadSettings());
+  const [lessonRetryKey, setLessonRetryKey] = useState<string | null>(null);
 
   const [mistakesThisVisit, setMistakesThisVisit] = useState(0);
 
@@ -806,11 +807,20 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult(ok ? 'correct' : 'wrong');
 
     if (!ok) {
+      const key = `${id}:S3_TWIST:${s3TwistIndex}`;
+      if (station?.kind === 'lesson' && settings.lessonRetryOnce && lessonRetryKey !== key) {
+        setLessonRetryKey(key);
+        return;
+      }
+
+      setLessonRetryKey(null);
       trackMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: s3TwistQ.rootMidi, semitones: s3TwistQ.semitones });
       setS3TwistWrong((n) => n + 1);
       setS3TwistIndex((i) => i + 1);
       return;
     }
+
+    setLessonRetryKey(null);
 
     setS3TwistCorrect((n) => n + 1);
     commitProgress(applyStudyReward(progress, 3));
@@ -829,6 +839,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setS3TwistWrong(0);
     setResult('idle');
     setHighlighted({});
+    setLessonRetryKey(null);
     setSeed((x) => x + 1);
   }
 
@@ -885,11 +896,20 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({ [s1TwistQ.midi]: ok ? 'correct' : 'wrong' });
 
     if (!ok) {
+      const key = `${id}:S1_TWIST:${s1TwistIndex}`;
+      if (station?.kind === 'lesson' && settings.lessonRetryOnce && lessonRetryKey !== key) {
+        setLessonRetryKey(key);
+        return;
+      }
+
+      setLessonRetryKey(null);
       trackMistake({ kind: 'noteName', sourceStationId: id, midi: s1TwistQ.midi });
       setS1TwistWrong((n) => n + 1);
       setS1TwistIndex((i) => i + 1);
       return;
     }
+
+    setLessonRetryKey(null);
 
     setS1TwistCorrect((n) => n + 1);
     commitProgress(applyStudyReward(progress, 3));
@@ -909,6 +929,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setS1TwistWrong(0);
     setResult('idle');
     setHighlighted({});
+    setLessonRetryKey(null);
     setSeed((x) => x + 1);
   }
 
@@ -949,11 +970,20 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({ [s1bTwistQ.midi]: ok ? 'correct' : 'wrong' });
 
     if (!ok) {
+      const key = `${id}:S1B_TWIST:${s1bTwistIndex}`;
+      if (station?.kind === 'lesson' && settings.lessonRetryOnce && lessonRetryKey !== key) {
+        setLessonRetryKey(key);
+        return;
+      }
+
+      setLessonRetryKey(null);
       trackMistake({ kind: 'noteName', sourceStationId: id, midi: s1bTwistQ.midi });
       setS1bTwistWrong((n) => n + 1);
       setS1bTwistIndex((i) => i + 1);
       return;
     }
+
+    setLessonRetryKey(null);
 
     setS1bTwistCorrect((n) => n + 1);
     commitProgress(applyStudyReward(progress, 3));
@@ -972,6 +1002,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setS1bTwistWrong(0);
     setResult('idle');
     setHighlighted({});
+    setLessonRetryKey(null);
     setSeed((x) => x + 1);
   }
 
@@ -1044,11 +1075,20 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({ [s1cTwistQ.midi]: ok ? 'correct' : 'wrong' });
 
     if (!ok) {
+      const key = `${id}:S1C_TWIST:${s1cTwistIndex}`;
+      if (station?.kind === 'lesson' && settings.lessonRetryOnce && lessonRetryKey !== key) {
+        setLessonRetryKey(key);
+        return;
+      }
+
+      setLessonRetryKey(null);
       trackMistake({ kind: 'noteName', sourceStationId: id, midi: s1cTwistQ.midi });
       setS1cTwistWrong((n) => n + 1);
       setS1cTwistIndex((i) => i + 1);
       return;
     }
+
+    setLessonRetryKey(null);
 
     setS1cTwistCorrect((n) => n + 1);
     commitProgress(applyStudyReward(progress, 3));
@@ -1067,6 +1107,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setS1cTwistWrong(0);
     setResult('idle');
     setHighlighted({});
+    setLessonRetryKey(null);
     setSeed((x) => x + 1);
   }
 
@@ -2799,7 +2840,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                 <div className={`result r_${result}`}>
                   {result === 'idle' && (s1TwistDone ? (s1TwistPassed ? 'Passed — lesson complete. (+10 bonus XP)' : 'Failed twist — hit Restart to try again.') : 'Twist: 10 questions. Need 8/10 to pass.')}
                   {result === 'correct' && `Correct — +3 XP. (${s1TwistQ.promptLabel})`}
-                  {result === 'wrong' && `Not quite — it was ${s1TwistQ.promptLabel}.`}
+                  {result === 'wrong' && (lessonRetryKey === `${id}:S1_TWIST:${s1TwistIndex}` ? 'Not quite — try once more.' : `Not quite — it was ${s1TwistQ.promptLabel}.`)}
                 </div>
 
                 <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
@@ -2942,7 +2983,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                         : 'Failed twist — hit Restart to try again.'
                       : 'Twist: 10 questions. Need 8/10 to pass.')}
                   {result === 'correct' && `Correct — +3 XP. (${s1bTwistQ.promptLabel})`}
-                  {result === 'wrong' && `Not quite — it was ${s1bTwistQ.promptLabel}.`}
+                  {result === 'wrong' && (lessonRetryKey === `${id}:S1B_TWIST:${s1bTwistIndex}` ? 'Not quite — try once more.' : `Not quite — it was ${s1bTwistQ.promptLabel}.`)}
                 </div>
 
                 <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
@@ -3078,7 +3119,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                         : 'Failed twist — hit Restart to try again.'
                       : 'Twist: 10 questions. Need 8/10 to pass.')}
                   {result === 'correct' && `Correct — +3 XP. (${s1cTwistQ.promptLabel})`}
-                  {result === 'wrong' && `Not quite — it was ${s1cTwistQ.promptLabel}.`}
+                  {result === 'wrong' && (lessonRetryKey === `${id}:S1C_TWIST:${s1cTwistIndex}` ? 'Not quite — try once more.' : `Not quite — it was ${s1cTwistQ.promptLabel}.`)}
                 </div>
 
                 <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
@@ -3890,7 +3931,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                         : `Failed twist — hit Restart to try again. Score: ${s3TwistCorrect}/${S3_TWIST_TOTAL}.`
                       : 'Twist: 10 questions. Need 8/10 to pass.')}
                   {result === 'correct' && `Correct — +3 XP. (${intervalLongName(s3TwistQ.correct)})`}
-                  {result === 'wrong' && `Not quite — it was ${s3TwistQ.correct} (${intervalLongName(s3TwistQ.correct)}).`}
+                  {result === 'wrong' && (lessonRetryKey === `${id}:S3_TWIST:${s3TwistIndex}` ? 'Not quite — try once more.' : `Not quite — it was ${s3TwistQ.correct} (${intervalLongName(s3TwistQ.correct)}).`)}
                 </div>
 
                 <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>

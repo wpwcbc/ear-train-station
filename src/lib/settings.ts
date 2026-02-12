@@ -1,5 +1,5 @@
 export type Settings = {
-  version: 5;
+  version: 6;
   /** Overall prompt timing. */
   promptSpeed: 'slow' | 'normal' | 'fast';
   /** Master volume multiplier applied to prompt playback. */
@@ -10,6 +10,11 @@ export type Settings = {
    * (Deliberately not used in tests/exams by default.)
    */
   playKeyPrimer: boolean;
+  /**
+   * Lessons-only: if you miss a Twist item, allow one immediate retry before we reveal the answer and move on.
+   * (Never applies to standalone tests/exams.)
+   */
+  lessonRetryOnce: boolean;
 };
 
 type SettingsV2 = {
@@ -25,14 +30,28 @@ type SettingsV3 = {
   volume: number;
 };
 
-const KEY = 'ets_settings_v5';
+type SettingsV4 = {
+  version: 4;
+  promptSpeed: Settings['promptSpeed'];
+  volume: number;
+};
+
+type SettingsV5 = {
+  version: 5;
+  promptSpeed: Settings['promptSpeed'];
+  volume: number;
+  playKeyPrimer: boolean;
+};
+
+const KEY = 'ets_settings_v6';
+const KEY_V5 = 'ets_settings_v5';
 const KEY_V4 = 'ets_settings_v4';
 const KEY_V3 = 'ets_settings_v3';
 const KEY_V2 = 'ets_settings_v2';
 const KEY_V1 = 'ets_settings_v1';
 
 export function defaultSettings(): Settings {
-  return { version: 5, promptSpeed: 'normal', volume: 0.9, playKeyPrimer: true };
+  return { version: 6, promptSpeed: 'normal', volume: 0.9, playKeyPrimer: true, lessonRetryOnce: false };
 }
 
 function clamp01(n: number) {
@@ -49,28 +68,45 @@ export function loadSettings(): Settings {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<Settings>;
-      if (parsed?.version !== 5) return defaultSettings();
+      if (parsed?.version !== 6) return defaultSettings();
       const promptSpeed = normalizePromptSpeed(parsed.promptSpeed);
       const volume = clamp01(typeof parsed.volume === 'number' ? parsed.volume : 0.9);
       const playKeyPrimer = typeof parsed.playKeyPrimer === 'boolean' ? parsed.playKeyPrimer : true;
-      return { ...defaultSettings(), ...parsed, promptSpeed, volume, playKeyPrimer } as Settings;
+      const lessonRetryOnce = typeof parsed.lessonRetryOnce === 'boolean' ? parsed.lessonRetryOnce : false;
+      return { ...defaultSettings(), ...parsed, promptSpeed, volume, playKeyPrimer, lessonRetryOnce } as Settings;
     }
 
-    // Migrate v4 → v5 (add playKeyPrimer)
-    const v4raw = localStorage.getItem(KEY_V4);
-    if (v4raw) {
-      const v4 = JSON.parse(v4raw) as Partial<{ version: 4; promptSpeed: Settings['promptSpeed']; volume: number }>;
+    // Migrate v5 → v6 (add lessonRetryOnce)
+    const v5raw = localStorage.getItem(KEY_V5);
+    if (v5raw) {
+      const v5 = JSON.parse(v5raw) as Partial<SettingsV5>;
       const migrated: Settings = {
         ...defaultSettings(),
-        promptSpeed: normalizePromptSpeed(v4.promptSpeed),
-        volume: clamp01(typeof v4.volume === 'number' ? v4.volume : 0.9),
-        playKeyPrimer: true,
+        promptSpeed: normalizePromptSpeed(v5.promptSpeed),
+        volume: clamp01(typeof v5.volume === 'number' ? v5.volume : 0.9),
+        playKeyPrimer: typeof v5.playKeyPrimer === 'boolean' ? v5.playKeyPrimer : true,
+        lessonRetryOnce: false,
       };
       saveSettings(migrated);
       return migrated;
     }
 
-    // Migrate v3 → v5 (drop chordPlayback)
+    // Migrate v4 → v6 (add playKeyPrimer + lessonRetryOnce)
+    const v4raw = localStorage.getItem(KEY_V4);
+    if (v4raw) {
+      const v4 = JSON.parse(v4raw) as Partial<SettingsV4>;
+      const migrated: Settings = {
+        ...defaultSettings(),
+        promptSpeed: normalizePromptSpeed(v4.promptSpeed),
+        volume: clamp01(typeof v4.volume === 'number' ? v4.volume : 0.9),
+        playKeyPrimer: true,
+        lessonRetryOnce: false,
+      };
+      saveSettings(migrated);
+      return migrated;
+    }
+
+    // Migrate v3 → v6 (drop chordPlayback)
     const v3raw = localStorage.getItem(KEY_V3);
     if (v3raw) {
       const v3 = JSON.parse(v3raw) as Partial<SettingsV3>;
@@ -79,12 +115,13 @@ export function loadSettings(): Settings {
         promptSpeed: normalizePromptSpeed(v3.promptSpeed),
         volume: clamp01(typeof v3.volume === 'number' ? v3.volume : 0.9),
         playKeyPrimer: true,
+        lessonRetryOnce: false,
       };
       saveSettings(migrated);
       return migrated;
     }
 
-    // Migrate v2 → v5
+    // Migrate v2 → v6
     const v2raw = localStorage.getItem(KEY_V2);
     if (v2raw) {
       const v2 = JSON.parse(v2raw) as Partial<SettingsV2>;
@@ -92,12 +129,13 @@ export function loadSettings(): Settings {
         ...defaultSettings(),
         promptSpeed: normalizePromptSpeed(v2.promptSpeed),
         playKeyPrimer: true,
+        lessonRetryOnce: false,
       };
       saveSettings(migrated);
       return migrated;
     }
 
-    // Migrate v1 → v5
+    // Migrate v1 → v6
     const v1raw = localStorage.getItem(KEY_V1);
     if (v1raw) {
       const migrated = defaultSettings();

@@ -401,6 +401,20 @@ export function ConfigDrawer(props: {
           <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
             Tip: this plays a quick tonic triad before the target note in lesson-style scale degree prompts (tests stay “cold”).
           </div>
+
+          <label className="configRow" style={{ marginTop: 12 }}>
+            <span className="configLabel">Lessons: retry once on mistakes</span>
+            <span className="configValue" style={{ justifySelf: 'start' }}>
+              {s.lessonRetryOnce ? 'On' : 'Off'}
+            </span>
+            <button className={s.lessonRetryOnce ? 'primary' : 'ghost'} onClick={() => commit({ ...s, lessonRetryOnce: !s.lessonRetryOnce })}>
+              Toggle
+            </button>
+          </label>
+
+          <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
+            Tip: on lesson Twist items, a first miss will prompt one retry before we reveal the answer and move on.
+          </div>
         </div>
 
         <div className="configSection">
