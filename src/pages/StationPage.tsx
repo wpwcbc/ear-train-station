@@ -1606,6 +1606,21 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       trackMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: t3bQ.rootMidi, semitones: t3bQ.semitones });
+
+      // Immediate correction loop: replay the correct interval once after a miss.
+      // (Keeps the flow, but still teaches the ear what “right” sounds like.)
+      const rootMidi = t3bQ.rootMidi;
+      const targetMidi = t3bQ.targetMidi;
+      void (async () => {
+        await new Promise((r) => setTimeout(r, gap(240)));
+        await playIntervalPrompt(rootMidi, targetMidi, {
+          gapMs: gap(260),
+          rootDurationSec: dur(0.6),
+          targetDurationSec: dur(0.85),
+          velocity: 0.88,
+        });
+      })();
+
       setT3bWrong((n) => n + 1);
 
       const nextIndex = t3bIndex + 1;
@@ -1663,6 +1678,19 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       trackMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: t3Q.rootMidi, semitones: t3Q.semitones });
+
+      // Immediate correction loop: replay the correct interval once after a miss.
+      const rootMidi = t3Q.rootMidi;
+      const targetMidi = t3Q.targetMidi;
+      void (async () => {
+        await new Promise((r) => setTimeout(r, gap(240)));
+        await playIntervalPrompt(rootMidi, targetMidi, {
+          gapMs: gap(260),
+          rootDurationSec: dur(0.6),
+          targetDurationSec: dur(0.85),
+          velocity: 0.88,
+        });
+      })();
 
       const nextWrong = t3Wrong + 1;
       setT3Wrong(nextWrong);
@@ -1734,6 +1762,19 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     if (!ok) {
       trackMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: e3Q.rootMidi, semitones: e3Q.semitones });
+
+      // Immediate correction loop: replay the correct interval once after a miss.
+      const rootMidi = e3Q.rootMidi;
+      const targetMidi = e3Q.targetMidi;
+      void (async () => {
+        await new Promise((r) => setTimeout(r, gap(240)));
+        await playIntervalPrompt(rootMidi, targetMidi, {
+          gapMs: gap(260),
+          rootDurationSec: dur(0.6),
+          targetDurationSec: dur(0.85),
+          velocity: 0.88,
+        });
+      })();
 
       const nextWrong = e3Wrong + 1;
       setE3Wrong(nextWrong);
@@ -3247,7 +3288,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
-            Checkpoint vibe: play again anytime — no hearts here.
+            Checkpoint vibe: play again anytime — no hearts here. If you miss, the app replays the correct interval once.
           </div>
 
           {t3bDone ? (
@@ -3382,6 +3423,10 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
 
           <RegisterPolicyNote mode="both" />
 
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
+            Misses auto-replay the correct interval once (fast correction loop).
+          </div>
+
           {t3Done ? (
             <div className="callout" style={{ marginTop: 10 }}>
               <div style={{ fontWeight: 700 }}>Test complete</div>
@@ -3513,7 +3558,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
-            Section exam: hearts on; pass = test out.
+            Section exam: hearts on; pass = test out. Misses auto-replay the correct interval once.
           </div>
 
           {e3Done && !progress.stationDone['E3_INTERVALS'] ? (
