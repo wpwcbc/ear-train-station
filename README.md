@@ -23,6 +23,7 @@ npm run preview
 ```bash
 npm run lint
 npm run audit:register
+npm test
 ```
 
 ## CI (GitHub Actions)
@@ -31,6 +32,7 @@ The CI workflow runs on every push/PR:
 - `npm ci`
 - `npm run lint`
 - `npm run audit:register`
+- `npm test`
 - `npm run build`
 
 To reproduce locally:
@@ -39,6 +41,7 @@ To reproduce locally:
 npm ci
 npm run lint
 npm run audit:register
+npm test
 npm run build
 ```
 

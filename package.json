@@ -7,6 +7,7 @@
     "gen:buildinfo": "node scripts/gen-build-info.mjs",
     "gen:icons": "node scripts/gen-icons.mjs",
     "audit:register": "node scripts/audit-register-policy.mjs",
+    "test": "node --test",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

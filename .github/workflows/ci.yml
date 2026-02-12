@@ -32,5 +32,8 @@ jobs:
       - name: Register policy audit
         run: npm run audit:register
 
+      - name: Tests
+        run: npm test
+
       - name: Build
         run: npm run build
