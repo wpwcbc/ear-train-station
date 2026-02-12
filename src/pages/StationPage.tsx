@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 /* eslint-disable react-hooks/preserve-manual-memoization */
@@ -156,6 +156,30 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const timing = useMemo(() => promptSpeedFactors(speed), [speed]);
   const dur = (sec: number) => sec * timing.dur;
   const gap = (ms: number) => Math.round(ms * timing.gap);
+
+  // When we schedule a short “correction replay” after a miss, we want it to be
+  // cancelable (so it won't overlap if the user triggers another prompt).
+  const correctionReplayTokenRef = useRef(0);
+  useEffect(() => {
+    // Bump token on station change + unmount to invalidate any pending async work.
+    correctionReplayTokenRef.current += 1;
+    return () => {
+      correctionReplayTokenRef.current += 1;
+    };
+  }, [id]);
+
+  async function queueCorrectionReplay(rootMidi: number, targetMidi: number) {
+    const token = ++correctionReplayTokenRef.current;
+    await new Promise((r) => setTimeout(r, gap(240)));
+    if (token !== correctionReplayTokenRef.current) return;
+
+    await playIntervalPrompt(rootMidi, targetMidi, {
+      gapMs: gap(260),
+      rootDurationSec: dur(0.6),
+      targetDurationSec: dur(0.85),
+      velocity: 0.88,
+    });
+  }
 
   const HEARTS = 3;
 
@@ -1589,6 +1613,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   }
 
   async function playPromptT3B() {
+    correctionReplayTokenRef.current += 1;
     setResult('idle');
     setHighlighted({});
     await playIntervalPrompt(t3bQ.rootMidi, t3bQ.targetMidi, {
@@ -1609,17 +1634,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
       // Immediate correction loop: replay the correct interval once after a miss.
       // (Keeps the flow, but still teaches the ear what “right” sounds like.)
-      const rootMidi = t3bQ.rootMidi;
-      const targetMidi = t3bQ.targetMidi;
-      void (async () => {
-        await new Promise((r) => setTimeout(r, gap(240)));
-        await playIntervalPrompt(rootMidi, targetMidi, {
-          gapMs: gap(260),
-          rootDurationSec: dur(0.6),
-          targetDurationSec: dur(0.85),
-          velocity: 0.88,
-        });
-      })();
+      await queueCorrectionReplay(t3bQ.rootMidi, t3bQ.targetMidi);
 
       setT3bWrong((n) => n + 1);
 
@@ -1664,6 +1679,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   }
 
   async function playPromptT3() {
+    correctionReplayTokenRef.current += 1;
     setResult('idle');
     setHighlighted({});
     await playIntervalPrompt(t3Q.rootMidi, t3Q.targetMidi, { gapMs: gap(320), rootDurationSec: dur(0.7), targetDurationSec: dur(0.95) });
@@ -1680,17 +1696,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       trackMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: t3Q.rootMidi, semitones: t3Q.semitones });
 
       // Immediate correction loop: replay the correct interval once after a miss.
-      const rootMidi = t3Q.rootMidi;
-      const targetMidi = t3Q.targetMidi;
-      void (async () => {
-        await new Promise((r) => setTimeout(r, gap(240)));
-        await playIntervalPrompt(rootMidi, targetMidi, {
-          gapMs: gap(260),
-          rootDurationSec: dur(0.6),
-          targetDurationSec: dur(0.85),
-          velocity: 0.88,
-        });
-      })();
+      await queueCorrectionReplay(t3Q.rootMidi, t3Q.targetMidi);
 
       const nextWrong = t3Wrong + 1;
       setT3Wrong(nextWrong);
@@ -1744,6 +1750,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   }
 
   async function playPromptE3() {
+    correctionReplayTokenRef.current += 1;
     setResult('idle');
     setHighlighted({});
     await playIntervalPrompt(e3Q.rootMidi, e3Q.targetMidi, {
@@ -1764,17 +1771,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       trackMistake({ kind: 'intervalLabel', sourceStationId: id, rootMidi: e3Q.rootMidi, semitones: e3Q.semitones });
 
       // Immediate correction loop: replay the correct interval once after a miss.
-      const rootMidi = e3Q.rootMidi;
-      const targetMidi = e3Q.targetMidi;
-      void (async () => {
-        await new Promise((r) => setTimeout(r, gap(240)));
-        await playIntervalPrompt(rootMidi, targetMidi, {
-          gapMs: gap(260),
-          rootDurationSec: dur(0.6),
-          targetDurationSec: dur(0.85),
-          velocity: 0.88,
-        });
-      })();
+      await queueCorrectionReplay(e3Q.rootMidi, e3Q.targetMidi);
 
       const nextWrong = e3Wrong + 1;
       setE3Wrong(nextWrong);

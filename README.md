@@ -55,6 +55,22 @@ npm run build
 Quick definitions (nice phrasing from Theta Music Trainer): arpeggios are chord tones played one after another; block chords are all notes at once.
 - https://trainer.thetamusic.com/en/content/arpeggios
 
+### Immediate correction replay (interval stations)
+
+When you miss an interval identification item (tests/exams/drills), the app **auto-replays the correct interval once** after a short delay.
+
+Why:
+- Fast error-correction loop: the ear immediately hears the “right” reference, not just a red X.
+- Keeps the surface knowledge-only (no extra modals), but still nudges learning.
+
+Comparable patterns / references:
+- GuitarOrb interval trainer mentions a mode to “play your mistake then tell you the correct answer”:
+  - https://www.guitarorb.com/interval-ear-trainer
+- EarMaster emphasizes real-time feedback and targeted practice:
+  - https://www.earmaster.com/
+- Duolingo on learning science (active recall + spaced repetition):
+  - https://blog.duolingo.com/spaced-repetition-for-learning/
+
 ### Register rules
 
 - **Lessons:** stable register (one octave around middle C).
