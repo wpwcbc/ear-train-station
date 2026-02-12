@@ -59,6 +59,36 @@ import { makeFunctionFamilyQuestion, type FunctionFamily } from '../exercises/fu
 import { degreeMeaning, makeScaleDegreeNameQuestion, type ScaleDegreeName } from '../exercises/scaleDegree';
 import { makeDegreeIntervalQuestion } from '../exercises/degreeInterval';
 
+function computeIntervalMissCounts(stationId: StationId): Map<IntervalLabel, number> {
+  const counts = new Map<IntervalLabel, number>();
+
+  // Prefer a persistent histogram (not capped/de-duped like the review mistake queue).
+  const hist = loadIntervalMissHistogram(stationId);
+  for (const [semi, count] of hist.entries()) {
+    const l = intervalLabel(semi);
+    counts.set(l, (counts.get(l) ?? 0) + count);
+  }
+
+  // Fallback: also consider current mistake queue so the UI still works if stats are empty.
+  if (counts.size === 0) {
+    const all = loadMistakes().filter((m) => m.sourceStationId === stationId);
+    for (const m of all) {
+      if (m.kind !== 'intervalLabel') continue;
+      const l = intervalLabel(m.semitones);
+      counts.set(l, (counts.get(l) ?? 0) + 1);
+    }
+  }
+
+  return counts;
+}
+
+function intervalMissList(stationId: StationId): { label: IntervalLabel; count: number }[] {
+  const counts = computeIntervalMissCounts(stationId);
+  return Array.from(counts.entries())
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+}
+
 export function StationPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
   const navigate = useNavigate();
   const { stationId } = useParams();
@@ -110,34 +140,12 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const stationMistakeCount = mistakeCountForStation(id);
   const stationMistakeDue = mistakeCountForStation(id, { dueOnly: true, now });
 
-  const topIntervalMisses = useMemo(() => {
-    // Show a small “what you missed most” breakdown for interval-label stations.
+  const allIntervalMisses = useMemo(() => {
     if (id !== 'T3B_INTERVALS' && id !== 'T3_INTERVALS' && id !== 'E3_INTERVALS') return [] as { label: IntervalLabel; count: number }[];
-
-    // Prefer a persistent histogram (not capped/de-duped like the review mistake queue).
-    // Fallback: also consider current mistake queue so the UI still works if stats are empty.
-    const counts = new Map<IntervalLabel, number>();
-
-    const hist = loadIntervalMissHistogram(id);
-    for (const [semi, count] of hist.entries()) {
-      const l = intervalLabel(semi);
-      counts.set(l, (counts.get(l) ?? 0) + count);
-    }
-
-    if (counts.size === 0) {
-      const all = loadMistakes().filter((m) => m.sourceStationId === id);
-      for (const m of all) {
-        if (m.kind !== 'intervalLabel') continue;
-        const l = intervalLabel(m.semitones);
-        counts.set(l, (counts.get(l) ?? 0) + 1);
-      }
-    }
-
-    return Array.from(counts.entries())
-      .map(([label, count]) => ({ label, count }))
-      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
-      .slice(0, 3);
+    return intervalMissList(id);
   }, [id, now]);
+
+  const topIntervalMisses = useMemo(() => allIntervalMisses.slice(0, 3), [allIntervalMisses]);
 
   const [seed, setSeed] = useState(1);
   // If a station is already completed, default to a “summary” view with an optional practice toggle.
@@ -184,6 +192,46 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       </button>
     </div>
   ) : null;
+
+  function renderIntervalMissStats(reset: () => void) {
+    if (allIntervalMisses.length === 0) return null;
+
+    const top = allIntervalMisses.slice(0, 3);
+    const moreCount = Math.max(0, allIntervalMisses.length - top.length);
+
+    return (
+      <div style={{ marginTop: 8 }}>
+        <div style={{ fontSize: 12, opacity: 0.85 }}>
+          Most missed: {top.map((x) => `${x.label}×${x.count}`).join(' · ')}
+          {moreCount ? ` · +${moreCount} more` : ''}
+        </div>
+
+        <details style={{ marginTop: 6 }}>
+          <summary style={{ cursor: 'pointer', fontSize: 12, opacity: 0.9 }}>All miss stats</summary>
+          <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {allIntervalMisses.slice(0, 12).map((x) => (
+              <button
+                key={x.label}
+                className="pillBtn"
+                onClick={() => {
+                  setPractice(true);
+                  setPracticeWeightedSemitones(null);
+                  setPracticeFocusIntervals([x.label]);
+                  reset();
+                }}
+                title={`Practice ${x.label} only`}
+              >
+                {x.label}×{x.count}
+              </button>
+            ))}
+            {allIntervalMisses.length > 12 ? (
+              <div style={{ fontSize: 12, opacity: 0.75, alignSelf: 'center' }}>Showing top 12.</div>
+            ) : null}
+          </div>
+        </details>
+      </div>
+    );
+  }
 
   // Tiny celebration when the user crosses their daily goal threshold.
   const [toast, setToast] = useState<null | { text: string }>(null);
@@ -3362,11 +3410,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                 Score: {t3bCorrect}/{T3B_TOTAL} (need {T3B_PASS}).
               </div>
 
-              {topIntervalMisses.length > 0 ? (
-                <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
-                  Most missed: {topIntervalMisses.map((x) => `${x.label}×${x.count}`).join(' · ')}
-                </div>
-              ) : null}
+              {renderIntervalMissStats(resetT3B)}
 
               {topIntervalMisses.length > 0 ? (
                 <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -3478,11 +3522,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                 Score: {t3Correct}/{T3_TOTAL} (need {T3_PASS}).
               </div>
 
-              {topIntervalMisses.length > 0 ? (
-                <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
-                  Most missed: {topIntervalMisses.map((x) => `${x.label}×${x.count}`).join(' · ')}
-                </div>
-              ) : null}
+              {renderIntervalMissStats(resetT3)}
 
               {topIntervalMisses.length > 0 ? (
                 <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -3592,11 +3632,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                 Score: {e3Correct}/{E3_TOTAL} (need {E3_PASS}).
               </div>
 
-              {topIntervalMisses.length > 0 ? (
-                <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
-                  Most missed: {topIntervalMisses.map((x) => `${x.label}×${x.count}`).join(' · ')}
-                </div>
-              ) : null}
+              {renderIntervalMissStats(resetE3)}
 
               {topIntervalMisses.length > 0 ? (
                 <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>

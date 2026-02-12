@@ -74,6 +74,7 @@ Comparable patterns / references:
 Implementation notes:
 - Interval stations keep a lightweight **miss histogram** in `localStorage` (separate from the capped/de-duped review queue).
 - This powers the end-of-test “most missed” summary and the **Targeted mix** (weighted practice) so it stays meaningful across sessions.
+- End-of-test now also has an **All miss stats** expander: one-tap drill any interval you’ve missed (top 12 shown).
 - When you enter practice from the end-of-test summary, the header shows what mode you’re in (focused vs targeted) + gives you **Clear focus** and **Exit practice**.
 - If the weighting feels stale after you improve, you can **clear interval miss stats** from ⚙️ (station-scoped).
 
