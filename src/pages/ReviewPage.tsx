@@ -344,12 +344,14 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
     const intervalPromptMode = settings.intervalPromptMode;
     const intervalHarmonicAlsoMelodic = settings.intervalHarmonicAlsoMelodic;
+    const intervalHarmonicHelperDelayMs = settings.intervalHarmonicHelperDelayMs;
 
     if (drillMode) {
       if (!drillIlQ) return;
       await playIntervalPrompt(drillIlQ.rootMidi, drillIlQ.targetMidi, {
         mode: intervalPromptMode,
         harmonicAlsoMelodic: intervalHarmonicAlsoMelodic,
+        harmonicHelperDelayMs: gap(intervalHarmonicHelperDelayMs),
         gapMs: gap(320),
         rootDurationSec: dur(0.7),
         targetDurationSec: dur(0.95),
@@ -368,6 +370,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       await playIntervalPrompt(active.rootMidi, active.rootMidi + active.semitones, {
         mode: intervalPromptMode,
         harmonicAlsoMelodic: intervalHarmonicAlsoMelodic,
+        harmonicHelperDelayMs: gap(intervalHarmonicHelperDelayMs),
         gapMs: gap(320),
         rootDurationSec: dur(0.7),
         targetDurationSec: dur(0.95),

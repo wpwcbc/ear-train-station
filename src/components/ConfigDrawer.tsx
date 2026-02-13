@@ -175,6 +175,7 @@ export function ConfigDrawer(props: {
       localStorage.removeItem('ets_settings_v7');
       localStorage.removeItem('ets_settings_v8');
       localStorage.removeItem('ets_settings_v9');
+      localStorage.removeItem('ets_settings_v10');
     } catch {
       // ignore
     }
@@ -526,6 +527,30 @@ export function ConfigDrawer(props: {
 
           <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
             Tip: when prompt style is Harmonic, this will follow up with a quick melodic replay (trainer-style).
+          </div>
+
+
+          <label className="configRow" style={{ marginTop: 12 }}>
+            <span className="configLabel">Harmonic helper delay</span>
+            <span className="configValue" style={{ justifySelf: 'start' }}>{Math.round(s.intervalHarmonicHelperDelayMs)} ms</span>
+            <select
+              className="configSelect"
+              value={String(Math.round(s.intervalHarmonicHelperDelayMs))}
+              onChange={(e) => commit({ ...s, intervalHarmonicHelperDelayMs: Math.max(0, Math.min(1200, parseInt(e.target.value || '260', 10) || 260)) })}
+              aria-label="Harmonic helper delay"
+            >
+              <option value="0">0 ms (immediate)</option>
+              <option value="120">120 ms</option>
+              <option value="200">200 ms</option>
+              <option value="260">260 ms (default)</option>
+              <option value="320">320 ms</option>
+              <option value="420">420 ms</option>
+              <option value="520">520 ms</option>
+            </select>
+          </label>
+
+          <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
+            Tip: if the melodic replay feels rushed after the chord, bump this up a little.
           </div>
         </div>
 

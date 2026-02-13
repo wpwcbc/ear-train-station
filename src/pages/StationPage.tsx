@@ -331,6 +331,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const intervalPromptMode = settings.intervalPromptMode;
   const intervalPromptModeLabel = intervalPromptMode === 'harmonic' ? 'Harmonic' : 'Melodic';
   const intervalHarmonicAlsoMelodic = settings.intervalHarmonicAlsoMelodic;
+  const intervalHarmonicHelperDelayMs = settings.intervalHarmonicHelperDelayMs;
 
   async function queueCorrectionReplay(rootMidi: number, targetMidi: number) {
     const token = ++correctionReplayTokenRef.current;
@@ -340,6 +341,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     await playIntervalPrompt(rootMidi, targetMidi, {
       mode: intervalPromptMode,
       harmonicAlsoMelodic: intervalHarmonicAlsoMelodic,
+      harmonicHelperDelayMs: gap(intervalHarmonicHelperDelayMs),
       gapMs: gap(260),
       rootDurationSec: dur(0.6),
       targetDurationSec: dur(0.85),

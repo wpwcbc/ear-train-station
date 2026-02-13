@@ -67,9 +67,13 @@ Optional (⚙️): you can choose **interval prompt style**:
 
 Optional (⚙️): **Harmonic helper** — when prompt style is Harmonic, also play a quick melodic version after the chord (a common “bridge” pattern in interval trainers).
 
+Optional (⚙️): **Harmonic helper delay** — control the pause between the harmonic chord and the melodic replay (helps if it feels rushed).
+
 Comparable exercises:
 - ToneDear interval ID (melodic/harmonic variants are common):
   - https://tonedear.com/ear-training/intervals
+- ToneGym interval exercise (ascending/descending/harmonic/mix):
+  - https://www.tonegym.co/exercise/intervals
 
 Why:
 - Fast error-correction loop: the ear immediately hears the “right” reference, not just a red X.

@@ -6,6 +6,8 @@ export async function playNoteSequence(
     durationSec?: number;
     velocity?: number;
     gapMs?: number;
+    /** When mode=harmonic and harmonicAlsoMelodic=true: delay before the melodic replay. */
+    harmonicHelperDelayMs?: number;
   },
 ) {
   const durationSec = opts?.durationSec ?? 0.55;
@@ -32,6 +34,8 @@ export async function playIntervalPrompt(
     targetDurationSec?: number;
     velocity?: number;
     gapMs?: number;
+    /** When mode=harmonic and harmonicAlsoMelodic=true: delay before the melodic replay. */
+    harmonicHelperDelayMs?: number;
   },
 ) {
   const mode = opts?.mode ?? 'melodic';
@@ -39,6 +43,7 @@ export async function playIntervalPrompt(
   const targetDurationSec = opts?.targetDurationSec ?? 0.95;
   const velocity = opts?.velocity ?? 0.9;
   const gapMs = opts?.gapMs ?? 320;
+  const harmonicHelperDelayMs = opts?.harmonicHelperDelayMs ?? gapMs;
 
   if (mode === 'harmonic') {
     // Harmonic interval: play both notes at once.
@@ -47,7 +52,7 @@ export async function playIntervalPrompt(
     if (opts?.harmonicAlsoMelodic) {
       // Many learners find it easier to “hear” the distance melodically first.
       // This helper keeps harmonic training grounded by following up with the melodic shape.
-      await new Promise((r) => setTimeout(r, gapMs));
+      await new Promise((r) => setTimeout(r, harmonicHelperDelayMs));
       await piano.playMidi(rootMidi, { durationSec: rootDurationSec, velocity });
       await new Promise((r) => setTimeout(r, gapMs));
       await piano.playMidi(targetMidi, { durationSec: targetDurationSec, velocity });
