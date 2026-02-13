@@ -520,14 +520,24 @@ export function ConfigDrawer(props: {
             </span>
             <button
               className={s.intervalHarmonicAlsoMelodic ? 'primary' : 'ghost'}
-              onClick={() => commit({ ...s, intervalHarmonicAlsoMelodic: !s.intervalHarmonicAlsoMelodic })}
+              onClick={() => {
+                const nextOn = !s.intervalHarmonicAlsoMelodic;
+                // “Harmonic helper” only makes sense when prompt style is Harmonic,
+                // so turning it on implicitly switches the prompt style.
+                commit({
+                  ...s,
+                  intervalPromptMode: nextOn ? 'harmonic' : s.intervalPromptMode,
+                  intervalHarmonicAlsoMelodic: nextOn,
+                });
+              }}
             >
               Toggle
             </button>
           </label>
 
           <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
-            Tip: when prompt style is Harmonic, this will follow up with a quick melodic replay (trainer-style).
+            Tip: this is a trainer-style “bridge”: play Harmonic, then a quick Melodic version to lock in the distance.
+            (Turning this on will also switch Intervals → prompt style to Harmonic.)
           </div>
 
           <label className="configRow" style={{ marginTop: 12 }}>
@@ -563,6 +573,7 @@ export function ConfigDrawer(props: {
               value={String(Math.round(s.intervalHarmonicHelperDelayMs))}
               onChange={(e) => commit({ ...s, intervalHarmonicHelperDelayMs: Math.max(0, Math.min(1200, parseInt(e.target.value || '260', 10) || 260)) })}
               aria-label="Harmonic helper delay"
+              disabled={!s.intervalHarmonicAlsoMelodic}
             >
               <option value="0">0 ms (immediate)</option>
               <option value="120">120 ms</option>
