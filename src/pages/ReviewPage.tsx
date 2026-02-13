@@ -646,7 +646,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button className="primary" disabled={drillMode ? !drillIlQ : !active} onClick={playPrompt}>
-            Play
+            {drillMode || active?.kind === 'intervalLabel' ? `Play (${settings.intervalPromptMode === 'harmonic' ? 'Harmonic' : 'Melodic'})` : 'Play'}
           </button>
           <div style={{ fontSize: 12, opacity: 0.78, display: 'inline-flex', alignItems: 'center' }}>
             Settings live behind ⚙️

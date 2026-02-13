@@ -66,7 +66,7 @@ Optional (⚙️): you can choose **interval prompt style**:
 - **Harmonic** (both notes together)
 
 Comparable exercises:
-- ToneDeaf / ToneDear style interval ID (melodic/harmonic variants are common):
+- ToneDear interval ID (melodic/harmonic variants are common):
   - https://tonedear.com/ear-training/intervals
 
 Why:
@@ -79,7 +79,9 @@ Comparable patterns / references:
   - https://www.guitarorb.com/interval-ear-trainer
 - EarMaster emphasizes real-time feedback and targeted practice:
   - https://www.earmaster.com/
-- Musical U interval drills: hear the correct answer + get a chance to hear the interval again:
+- Musical U: tips for getting better at **harmonic** intervals (incl. the idea of “very short melodic” as a bridge):
+  - https://www.musical-u.com/learn/how-can-i-improve-at-harmonic-intervals/
+- Musical U interval drills overview:
   - https://www.musical-u.com/learn/topic/ear-training/intervals/
 - Duolingo on learning science (active recall + spaced repetition):
   - https://blog.duolingo.com/spaced-repetition-for-learning/

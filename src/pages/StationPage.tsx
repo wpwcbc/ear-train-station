@@ -329,6 +329,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   }, [id]);
 
   const intervalPromptMode = settings.intervalPromptMode;
+  const intervalPromptModeLabel = intervalPromptMode === 'harmonic' ? 'Harmonic' : 'Melodic';
 
   async function queueCorrectionReplay(rootMidi: number, targetMidi: number) {
     const token = ++correctionReplayTokenRef.current;
@@ -3502,7 +3503,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
       ) : id === 'T3B_INTERVALS' ? (
         <>
           <TestHeader
-            playLabel="Hear interval"
+            playLabel={`Hear interval (${intervalPromptModeLabel})`}
             onPlay={playPromptT3B}
             onRestart={resetT3B}
             leftExtras={practiceLeftExtras}
@@ -3609,7 +3610,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
       ) : id === 'T3_INTERVALS' ? (
         <>
           <TestHeader
-            playLabel="Hear interval"
+            playLabel={`Hear interval (${intervalPromptModeLabel})`}
             onPlay={playPromptT3}
             onRestart={resetT3}
             leftExtras={practiceLeftExtras}
@@ -3719,7 +3720,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
       ) : id === 'E3_INTERVALS' ? (
         <>
           <TestHeader
-            playLabel="Hear interval"
+            playLabel={`Hear interval (${intervalPromptModeLabel})`}
             onPlay={playPromptE3}
             onRestart={resetE3}
             leftExtras={practiceLeftExtras}
