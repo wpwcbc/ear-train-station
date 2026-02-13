@@ -65,6 +65,8 @@ Optional (⚙️): you can choose **interval prompt style**:
 - **Melodic** (two notes in sequence)
 - **Harmonic** (both notes together)
 
+Optional (⚙️): **Harmonic helper** — when prompt style is Harmonic, also play a quick melodic version after the chord (a common “bridge” pattern in interval trainers).
+
 Comparable exercises:
 - ToneDear interval ID (melodic/harmonic variants are common):
   - https://tonedear.com/ear-training/intervals

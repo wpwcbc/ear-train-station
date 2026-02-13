@@ -171,6 +171,10 @@ export function ConfigDrawer(props: {
       localStorage.removeItem('ets_settings_v3');
       localStorage.removeItem('ets_settings_v4');
       localStorage.removeItem('ets_settings_v5');
+      localStorage.removeItem('ets_settings_v6');
+      localStorage.removeItem('ets_settings_v7');
+      localStorage.removeItem('ets_settings_v8');
+      localStorage.removeItem('ets_settings_v9');
     } catch {
       // ignore
     }
@@ -505,6 +509,23 @@ export function ConfigDrawer(props: {
 
           <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
             Tip: harmonic intervals can feel harder at first — but they map closer to real harmony.
+          </div>
+
+          <label className="configRow" style={{ marginTop: 12 }}>
+            <span className="configLabel">Harmonic helper</span>
+            <span className="configValue" style={{ justifySelf: 'start' }}>
+              {s.intervalHarmonicAlsoMelodic ? 'On' : 'Off'}
+            </span>
+            <button
+              className={s.intervalHarmonicAlsoMelodic ? 'primary' : 'ghost'}
+              onClick={() => commit({ ...s, intervalHarmonicAlsoMelodic: !s.intervalHarmonicAlsoMelodic })}
+            >
+              Toggle
+            </button>
+          </label>
+
+          <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
+            Tip: when prompt style is Harmonic, this will follow up with a quick melodic replay (trainer-style).
           </div>
         </div>
 

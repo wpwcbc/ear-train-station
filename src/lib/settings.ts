@@ -1,5 +1,5 @@
 export type Settings = {
-  version: 8;
+  version: 9;
   /** Overall prompt timing. */
   promptSpeed: 'slow' | 'normal' | 'fast';
   /** Master volume multiplier applied to prompt playback. */
@@ -26,6 +26,11 @@ export type Settings = {
    * - harmonic: both notes together
    */
   intervalPromptMode: 'melodic' | 'harmonic';
+  /**
+   * Harmonic interval helper: when in harmonic mode, also play a quick melodic version after.
+   * (Some trainers do this to help the ear “lock in” the distance.)
+   */
+  intervalHarmonicAlsoMelodic: boolean;
 };
 
 type SettingsV2 = {
@@ -54,7 +59,8 @@ type SettingsV5 = {
   playKeyPrimer: boolean;
 };
 
-const KEY = 'ets_settings_v8';
+const KEY = 'ets_settings_v9';
+const KEY_V8 = 'ets_settings_v8';
 const KEY_V7 = 'ets_settings_v7';
 const KEY_V6 = 'ets_settings_v6';
 const KEY_V5 = 'ets_settings_v5';
@@ -65,13 +71,14 @@ const KEY_V1 = 'ets_settings_v1';
 
 export function defaultSettings(): Settings {
   return {
-    version: 8,
+    version: 9,
     promptSpeed: 'normal',
     volume: 0.9,
     playKeyPrimer: true,
     lessonRetryOnce: false,
     intervalRetryOnce: false,
     intervalPromptMode: 'melodic',
+    intervalHarmonicAlsoMelodic: false,
   };
 }
 
@@ -89,20 +96,49 @@ export function loadSettings(): Settings {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<Settings>;
-      if (parsed?.version !== 8) return defaultSettings();
+      if (parsed?.version !== 9) return defaultSettings();
       const promptSpeed = normalizePromptSpeed(parsed.promptSpeed);
       const volume = clamp01(typeof parsed.volume === 'number' ? parsed.volume : 0.9);
       const playKeyPrimer = typeof parsed.playKeyPrimer === 'boolean' ? parsed.playKeyPrimer : true;
       const lessonRetryOnce = typeof parsed.lessonRetryOnce === 'boolean' ? parsed.lessonRetryOnce : false;
       const intervalRetryOnce = typeof parsed.intervalRetryOnce === 'boolean' ? parsed.intervalRetryOnce : false;
       const intervalPromptMode = parsed.intervalPromptMode === 'harmonic' ? 'harmonic' : 'melodic';
-      return { ...defaultSettings(), ...parsed, promptSpeed, volume, playKeyPrimer, lessonRetryOnce, intervalRetryOnce, intervalPromptMode } as Settings;
+      const intervalHarmonicAlsoMelodic = typeof parsed.intervalHarmonicAlsoMelodic === 'boolean' ? parsed.intervalHarmonicAlsoMelodic : false;
+      return {
+        ...defaultSettings(),
+        ...parsed,
+        promptSpeed,
+        volume,
+        playKeyPrimer,
+        lessonRetryOnce,
+        intervalRetryOnce,
+        intervalPromptMode,
+        intervalHarmonicAlsoMelodic,
+      } as Settings;
+    }
+
+    // Migrate v8 → v9 (add intervalHarmonicAlsoMelodic)
+    const v8raw = localStorage.getItem(KEY_V8);
+    if (v8raw) {
+      const v8 = JSON.parse(v8raw) as Partial<Omit<Settings, 'version' | 'intervalHarmonicAlsoMelodic'> & { version: 8 }>;
+      const migrated: Settings = {
+        ...defaultSettings(),
+        promptSpeed: normalizePromptSpeed(v8.promptSpeed),
+        volume: clamp01(typeof v8.volume === 'number' ? v8.volume : 0.9),
+        playKeyPrimer: typeof v8.playKeyPrimer === 'boolean' ? v8.playKeyPrimer : true,
+        lessonRetryOnce: typeof v8.lessonRetryOnce === 'boolean' ? v8.lessonRetryOnce : false,
+        intervalRetryOnce: typeof v8.intervalRetryOnce === 'boolean' ? v8.intervalRetryOnce : false,
+        intervalPromptMode: v8.intervalPromptMode === 'harmonic' ? 'harmonic' : 'melodic',
+        intervalHarmonicAlsoMelodic: false,
+      };
+      saveSettings(migrated);
+      return migrated;
     }
 
     // Migrate v7 → v8 (add intervalPromptMode)
     const v7raw = localStorage.getItem(KEY_V7);
     if (v7raw) {
-      const v7 = JSON.parse(v7raw) as Partial<Omit<Settings, 'version' | 'intervalPromptMode'> & { version: 7 }>;
+      const v7 = JSON.parse(v7raw) as Partial<Omit<Settings, 'version' | 'intervalPromptMode' | 'intervalHarmonicAlsoMelodic'> & { version: 7 }>;
       const migrated: Settings = {
         ...defaultSettings(),
         promptSpeed: normalizePromptSpeed(v7.promptSpeed),
@@ -111,6 +147,7 @@ export function loadSettings(): Settings {
         lessonRetryOnce: typeof v7.lessonRetryOnce === 'boolean' ? v7.lessonRetryOnce : false,
         intervalRetryOnce: typeof v7.intervalRetryOnce === 'boolean' ? v7.intervalRetryOnce : false,
         intervalPromptMode: 'melodic',
+        intervalHarmonicAlsoMelodic: false,
       };
       saveSettings(migrated);
       return migrated;

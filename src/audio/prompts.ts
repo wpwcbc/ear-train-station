@@ -26,6 +26,8 @@ export async function playIntervalPrompt(
   targetMidi: number,
   opts?: {
     mode?: 'melodic' | 'harmonic';
+    /** When mode=harmonic, optionally follow with a quick melodic version. */
+    harmonicAlsoMelodic?: boolean;
     rootDurationSec?: number;
     targetDurationSec?: number;
     velocity?: number;
@@ -41,6 +43,16 @@ export async function playIntervalPrompt(
   if (mode === 'harmonic') {
     // Harmonic interval: play both notes at once.
     await piano.playChord([rootMidi, targetMidi], { mode: 'block', durationSec: targetDurationSec, velocity });
+
+    if (opts?.harmonicAlsoMelodic) {
+      // Many learners find it easier to “hear” the distance melodically first.
+      // This helper keeps harmonic training grounded by following up with the melodic shape.
+      await new Promise((r) => setTimeout(r, gapMs));
+      await piano.playMidi(rootMidi, { durationSec: rootDurationSec, velocity });
+      await new Promise((r) => setTimeout(r, gapMs));
+      await piano.playMidi(targetMidi, { durationSec: targetDurationSec, velocity });
+    }
+
     return;
   }
 

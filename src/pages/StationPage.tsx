@@ -330,6 +330,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   const intervalPromptMode = settings.intervalPromptMode;
   const intervalPromptModeLabel = intervalPromptMode === 'harmonic' ? 'Harmonic' : 'Melodic';
+  const intervalHarmonicAlsoMelodic = settings.intervalHarmonicAlsoMelodic;
 
   async function queueCorrectionReplay(rootMidi: number, targetMidi: number) {
     const token = ++correctionReplayTokenRef.current;
@@ -338,6 +339,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     await playIntervalPrompt(rootMidi, targetMidi, {
       mode: intervalPromptMode,
+      harmonicAlsoMelodic: intervalHarmonicAlsoMelodic,
       gapMs: gap(260),
       rootDurationSec: dur(0.6),
       targetDurationSec: dur(0.85),
@@ -951,6 +953,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult('idle');
     setHighlighted({});
     await playIntervalPrompt(s3TwistQ.rootMidi, s3TwistQ.targetMidi, {
+      mode: intervalPromptMode,
+      harmonicAlsoMelodic: intervalHarmonicAlsoMelodic,
       gapMs: gap(320),
       rootDurationSec: dur(0.7),
       targetDurationSec: dur(0.95),
@@ -1829,6 +1833,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({});
     await playIntervalPrompt(t3bQ.rootMidi, t3bQ.targetMidi, {
       mode: intervalPromptMode,
+      harmonicAlsoMelodic: intervalHarmonicAlsoMelodic,
       gapMs: gap(320),
       rootDurationSec: dur(0.7),
       targetDurationSec: dur(0.95),
@@ -1911,7 +1916,13 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setCorrectionReplayBusy(false);
     setResult('idle');
     setHighlighted({});
-    await playIntervalPrompt(t3Q.rootMidi, t3Q.targetMidi, { mode: intervalPromptMode, gapMs: gap(320), rootDurationSec: dur(0.7), targetDurationSec: dur(0.95) });
+    await playIntervalPrompt(t3Q.rootMidi, t3Q.targetMidi, {
+      mode: intervalPromptMode,
+      harmonicAlsoMelodic: intervalHarmonicAlsoMelodic,
+      gapMs: gap(320),
+      rootDurationSec: dur(0.7),
+      targetDurationSec: dur(0.95),
+    });
   }
 
   async function chooseT3(choice: IntervalLabel) {
@@ -2000,6 +2011,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setHighlighted({});
     await playIntervalPrompt(e3Q.rootMidi, e3Q.targetMidi, {
       mode: intervalPromptMode,
+      harmonicAlsoMelodic: intervalHarmonicAlsoMelodic,
       gapMs: gap(320),
       rootDurationSec: dur(0.7),
       targetDurationSec: dur(0.95),
