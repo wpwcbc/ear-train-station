@@ -1,5 +1,5 @@
 export type Settings = {
-  version: 6;
+  version: 7;
   /** Overall prompt timing. */
   promptSpeed: 'slow' | 'normal' | 'fast';
   /** Master volume multiplier applied to prompt playback. */
@@ -15,6 +15,11 @@ export type Settings = {
    * (Never applies to standalone tests/exams.)
    */
   lessonRetryOnce: boolean;
+  /**
+   * Intervals (tests/exams/drills): after a miss, replay the correct interval and allow one immediate retest of the same question.
+   * (Designed for skill-building without turning tests into infinite loops.)
+   */
+  intervalRetryOnce: boolean;
 };
 
 type SettingsV2 = {
@@ -43,7 +48,8 @@ type SettingsV5 = {
   playKeyPrimer: boolean;
 };
 
-const KEY = 'ets_settings_v6';
+const KEY = 'ets_settings_v7';
+const KEY_V6 = 'ets_settings_v6';
 const KEY_V5 = 'ets_settings_v5';
 const KEY_V4 = 'ets_settings_v4';
 const KEY_V3 = 'ets_settings_v3';
@@ -51,7 +57,14 @@ const KEY_V2 = 'ets_settings_v2';
 const KEY_V1 = 'ets_settings_v1';
 
 export function defaultSettings(): Settings {
-  return { version: 6, promptSpeed: 'normal', volume: 0.9, playKeyPrimer: true, lessonRetryOnce: false };
+  return {
+    version: 7,
+    promptSpeed: 'normal',
+    volume: 0.9,
+    playKeyPrimer: true,
+    lessonRetryOnce: false,
+    intervalRetryOnce: false,
+  };
 }
 
 function clamp01(n: number) {
@@ -68,15 +81,32 @@ export function loadSettings(): Settings {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<Settings>;
-      if (parsed?.version !== 6) return defaultSettings();
+      if (parsed?.version !== 7) return defaultSettings();
       const promptSpeed = normalizePromptSpeed(parsed.promptSpeed);
       const volume = clamp01(typeof parsed.volume === 'number' ? parsed.volume : 0.9);
       const playKeyPrimer = typeof parsed.playKeyPrimer === 'boolean' ? parsed.playKeyPrimer : true;
       const lessonRetryOnce = typeof parsed.lessonRetryOnce === 'boolean' ? parsed.lessonRetryOnce : false;
-      return { ...defaultSettings(), ...parsed, promptSpeed, volume, playKeyPrimer, lessonRetryOnce } as Settings;
+      const intervalRetryOnce = typeof parsed.intervalRetryOnce === 'boolean' ? parsed.intervalRetryOnce : false;
+      return { ...defaultSettings(), ...parsed, promptSpeed, volume, playKeyPrimer, lessonRetryOnce, intervalRetryOnce } as Settings;
     }
 
-    // Migrate v5 → v6 (add lessonRetryOnce)
+    // Migrate v6 → v7 (add intervalRetryOnce)
+    const v6raw = localStorage.getItem(KEY_V6);
+    if (v6raw) {
+      const v6 = JSON.parse(v6raw) as Partial<Settings>;
+      const migrated: Settings = {
+        ...defaultSettings(),
+        promptSpeed: normalizePromptSpeed(v6.promptSpeed),
+        volume: clamp01(typeof v6.volume === 'number' ? v6.volume : 0.9),
+        playKeyPrimer: typeof v6.playKeyPrimer === 'boolean' ? v6.playKeyPrimer : true,
+        lessonRetryOnce: typeof v6.lessonRetryOnce === 'boolean' ? v6.lessonRetryOnce : false,
+        intervalRetryOnce: false,
+      };
+      saveSettings(migrated);
+      return migrated;
+    }
+
+    // Migrate v5 → v7
     const v5raw = localStorage.getItem(KEY_V5);
     if (v5raw) {
       const v5 = JSON.parse(v5raw) as Partial<SettingsV5>;

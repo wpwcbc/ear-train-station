@@ -371,6 +371,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [t3bIndex, setT3bIndex] = useState(0);
   const [t3bCorrect, setT3bCorrect] = useState(0);
   const [t3bWrong, setT3bWrong] = useState(0);
+  const [t3bRetryUsed, setT3bRetryUsed] = useState(false);
+  useEffect(() => setT3bRetryUsed(false), [t3bIndex]);
   const T3B_TOTAL = 8;
   const T3B_PASS = 6;
   const t3bDone = t3bIndex >= T3B_TOTAL;
@@ -392,6 +394,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [t3Index, setT3Index] = useState(0);
   const [t3Correct, setT3Correct] = useState(0);
   const [t3Wrong, setT3Wrong] = useState(0);
+  const [t3RetryUsed, setT3RetryUsed] = useState(false);
+  useEffect(() => setT3RetryUsed(false), [t3Index]);
   const T3_TOTAL = 10;
   const T3_PASS = 8;
   const t3Done = t3Index >= T3_TOTAL || t3Wrong >= HEARTS;
@@ -413,6 +417,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [e3Index, setE3Index] = useState(0);
   const [e3Correct, setE3Correct] = useState(0);
   const [e3Wrong, setE3Wrong] = useState(0);
+  const [e3RetryUsed, setE3RetryUsed] = useState(false);
+  useEffect(() => setE3RetryUsed(false), [e3Index]);
   const E3_TOTAL = 10;
   const E3_PASS = 8;
   const e3Done = e3Index >= E3_TOTAL || e3Wrong >= HEARTS;
@@ -1796,6 +1802,13 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         setCorrectionReplayBusy(false);
       }
 
+      if (settings.intervalRetryOnce && !t3bRetryUsed) {
+        // GuitarOrb-ish loop: after you hear the correction, try the *same* question once.
+        setT3bRetryUsed(true);
+        setResult('idle');
+        return;
+      }
+
       setT3bWrong((n) => n + 1);
 
       const nextIndex = t3bIndex + 1;
@@ -1835,6 +1848,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setT3bIndex(0);
     setT3bCorrect(0);
     setT3bWrong(0);
+    setT3bRetryUsed(false);
     setResult('idle');
     setHighlighted({});
     setSeed((x) => x + 1);
@@ -1865,6 +1879,12 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         await queueCorrectionReplay(t3Q.rootMidi, t3Q.targetMidi);
       } finally {
         setCorrectionReplayBusy(false);
+      }
+
+      if (settings.intervalRetryOnce && !t3RetryUsed) {
+        setT3RetryUsed(true);
+        setResult('idle');
+        return;
       }
 
       const nextWrong = t3Wrong + 1;
@@ -1915,6 +1935,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setT3Index(0);
     setT3Correct(0);
     setT3Wrong(0);
+    setT3RetryUsed(false);
     setResult('idle');
     setHighlighted({});
     setSeed((x) => x + 1);
@@ -1949,6 +1970,12 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         await queueCorrectionReplay(e3Q.rootMidi, e3Q.targetMidi);
       } finally {
         setCorrectionReplayBusy(false);
+      }
+
+      if (settings.intervalRetryOnce && !e3RetryUsed) {
+        setE3RetryUsed(true);
+        setResult('idle');
+        return;
       }
 
       const nextWrong = e3Wrong + 1;
@@ -1996,6 +2023,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setE3Index(0);
     setE3Correct(0);
     setE3Wrong(0);
+    setE3RetryUsed(false);
     setResult('idle');
     setHighlighted({});
     setSeed((x) => x + 1);

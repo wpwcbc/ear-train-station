@@ -467,6 +467,23 @@ export function ConfigDrawer(props: {
           <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
             Tip: on lesson Twist items, a first miss will prompt one retry before we reveal the answer and move on.
           </div>
+
+          <label className="configRow" style={{ marginTop: 12 }}>
+            <span className="configLabel">Intervals: replay correct + retry once on mistakes</span>
+            <span className="configValue" style={{ justifySelf: 'start' }}>
+              {s.intervalRetryOnce ? 'On' : 'Off'}
+            </span>
+            <button
+              className={s.intervalRetryOnce ? 'primary' : 'ghost'}
+              onClick={() => commit({ ...s, intervalRetryOnce: !s.intervalRetryOnce })}
+            >
+              Toggle
+            </button>
+          </label>
+
+          <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
+            Tip: on interval tests/exams/drills, a first miss will replay the correct interval and let you try the same question once.
+          </div>
         </div>
 
         <div className="configSection">

@@ -59,12 +59,15 @@ Quick definitions (nice phrasing from Theta Music Trainer): arpeggios are chord 
 
 When you miss an interval identification item (tests/exams/drills), the app **auto-replays the correct interval once** after a short delay.
 
+Optional (⚙️): you can also enable **replay correct + retry the same question once** after a miss (a short, GuitarOrb-ish correction loop).
+
 Why:
 - Fast error-correction loop: the ear immediately hears the “right” reference, not just a red X.
+- A single immediate retest helps you “close the loop” while the sound is still in working memory.
 - Keeps the surface knowledge-only (no extra modals), but still nudges learning.
 
 Comparable patterns / references:
-- GuitarOrb interval trainer mentions a mode to “play your mistake then tell you the correct answer”:
+- GuitarOrb interval trainer mentions a mode to “Play Mistake then Try Again”: 
   - https://www.guitarorb.com/interval-ear-trainer
 - EarMaster emphasizes real-time feedback and targeted practice:
   - https://www.earmaster.com/
@@ -77,6 +80,7 @@ Implementation notes:
 - Interval stations keep a lightweight **miss histogram** (+ last-missed timestamp) in `localStorage` (separate from the capped/de-duped review queue).
 - This powers the end-of-test “most missed” summary and the **Targeted mix** (weighted practice). Recency gets a tiny boost so targeted practice feels responsive, while long-term frequency still dominates.
 - In practice mode, correct answers gently **cool down** that interval’s miss count (−1) so targeted mixes can adapt as you improve.
+- If ⚙️ “Intervals: replay correct + retry once” is enabled, the **first miss** replays the correction and offers one immediate retest; we only advance the question / increment wrong-hearts after the retest is used.
 - End-of-test now also has an **All miss stats** expander: one-tap drill any interval you’ve missed (top 12 shown).
 - When you enter practice from the end-of-test summary, the header shows what mode you’re in (focused vs targeted) + gives you **Clear focus** and **Exit practice**.
 - If the weighting feels stale after you improve, you can **clear interval miss stats** from ⚙️ (station-scoped).
