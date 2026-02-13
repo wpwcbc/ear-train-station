@@ -511,8 +511,9 @@ export function ConfigDrawer(props: {
 
           <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
             Tip: harmonic intervals can feel harder at first — but they map closer to real harmony.
-            If you’re stuck, try isolating/singing the two notes (even quietly) to “separate” the chord.
-            Reference: <a href="https://www.musical-u.com/learn/how-can-i-improve-at-harmonic-intervals/" target="_blank" rel="noreferrer">Musical U</a>.
+            If you’re stuck, try (1) mentally “locking” the bottom note, then (2) sing/hum the top note (even quietly) to separate the chord.
+            References: <a href="https://www.musical-u.com/learn/how-can-i-improve-at-harmonic-intervals/" target="_blank" rel="noreferrer">Musical U</a>{' '}
+            · <a href="https://trainer.thetamusic.com/en/content/html5-harmonic-intervals" target="_blank" rel="noreferrer">Theta Music Trainer (harmonic intervals)</a>.
           </div>
 
           <label className="configRow" style={{ marginTop: 12 }}>
@@ -539,6 +540,7 @@ export function ConfigDrawer(props: {
 
           <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
             Tip: this is a trainer-style “bridge”: play Harmonic, then a quick Melodic version to lock in the distance.
+            For cleaner tests, set <b>timing</b> to <i>Only after mistakes</i>.
             (Turning this on will also switch Intervals → prompt style to Harmonic.)
             
             Inspired by: <a href="https://www.musical-u.com/learn/how-can-i-improve-at-harmonic-intervals/" target="_blank" rel="noreferrer">Musical U — harmonic intervals</a>.
@@ -558,6 +560,7 @@ export function ConfigDrawer(props: {
               }}
               aria-label="Harmonic helper timing"
               disabled={!s.intervalHarmonicAlsoMelodic}
+              title={!s.intervalHarmonicAlsoMelodic ? 'Enable Harmonic helper to adjust timing.' : undefined}
             >
               <option value="always">Always (every prompt)</option>
               <option value="onMiss">Only after mistakes (correction replay)</option>
@@ -583,6 +586,7 @@ export function ConfigDrawer(props: {
               onChange={(e) => commit({ ...s, intervalHarmonicHelperDelayMs: Math.max(0, Math.min(1200, parseInt(e.target.value || '260', 10) || 260)) })}
               aria-label="Harmonic helper delay"
               disabled={!s.intervalHarmonicAlsoMelodic}
+              title={!s.intervalHarmonicAlsoMelodic ? 'Enable Harmonic helper to adjust delay.' : undefined}
             >
               <option value="0">0 ms (immediate)</option>
               <option value="120">120 ms</option>

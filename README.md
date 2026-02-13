@@ -65,6 +65,11 @@ Optional (⚙️): you can choose **interval prompt style**:
 - **Melodic** (two notes in sequence)
 - **Harmonic** (both notes together)
 
+Harmonic tips (quick): harmonic intervals often feel harder because you hear one fused “sonority”. Try anchoring the bottom note, then sing/hum the top note to separate the sound.
+References:
+- Musical U (harmonic interval practice tips): https://www.musical-u.com/learn/how-can-i-improve-at-harmonic-intervals/
+- Theta Music Trainer (harmonic interval drill): https://trainer.thetamusic.com/en/content/html5-harmonic-intervals
+
 Optional (⚙️): **Harmonic helper** — when prompt style is Harmonic, also play a quick melodic version after the chord (a common “bridge” pattern in interval trainers).
 
 Optional (⚙️): **Harmonic helper timing** — choose whether the melodic replay happens **always** or **only after mistakes** (during correction replay).
