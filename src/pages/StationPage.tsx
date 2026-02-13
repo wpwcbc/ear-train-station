@@ -93,29 +93,46 @@ function ageShort(nowMs: number, thenMs: number): string {
   return `${days}d ago`;
 }
 
-function intervalMissList(stationId: StationId): { label: IntervalLabel; count: number; lastMissAtMs: number }[] {
+function intervalMissList(
+  stationId: StationId,
+): { label: IntervalLabel; count: number; weight: number; lastMissAtMs: number }[] {
   const counts = computeIntervalMissCounts(stationId);
 
   // Sorting for UX:
-  // - Count matters most.
-  // - But if two labels are close, nudge recently-missed ones upward so "targeted" feels responsive.
+  // - Long-term frequency matters most.
+  // - But we also want "targeted" practice to feel responsive to recent mistakes.
+  //
+  // We do this in two layers:
+  // 1) A gentle time-decay applied to the *weight* (used for sampling), so old misses naturally fade.
+  // 2) A tiny recency bump in sorting, so fresh misses bubble up when counts are close.
   const details = loadIntervalMissDetails(stationId);
   const now = Date.now();
-  const RECENCY_HALF_LIFE_MS = 36 * 60 * 60 * 1000; // ~1.5 days
+
+  const WEIGHT_DECAY_HALF_LIFE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+  const RECENCY_BUMP_HALF_LIFE_MS = 36 * 60 * 60 * 1000; // ~1.5 days
+  const LN2 = Math.log(2);
 
   const rows = Array.from(counts.entries()).map(([label, count]) => {
     const semi = LABEL_TO_SEMITONE[label];
     const lastMissAtMs = details.get(semi)?.lastMissAtMs ?? 0;
-    const age = lastMissAtMs > 0 ? Math.max(0, now - lastMissAtMs) : Infinity;
-    const recencyBoost = Number.isFinite(age) ? Math.exp(-age / RECENCY_HALF_LIFE_MS) : 0; // 1 → 0
 
-    // Tiny boost only; we still want frequency to dominate.
-    const score = count + recencyBoost * 0.35;
-    return { label, count, lastMissAtMs, score };
+    // If we don't know when this was last missed, treat it as "no decay".
+    const age = lastMissAtMs > 0 ? Math.max(0, now - lastMissAtMs) : 0;
+
+    const decayFactor = lastMissAtMs > 0 ? Math.exp((-LN2 * age) / WEIGHT_DECAY_HALF_LIFE_MS) : 1;
+    const weight = Math.max(0, Math.round(count * decayFactor));
+
+    const recencyBoost = lastMissAtMs > 0 ? Math.exp(-age / RECENCY_BUMP_HALF_LIFE_MS) : 0; // 1 → 0
+
+    // Keep frequency dominant; recency is only a nudge.
+    const score = weight + recencyBoost * 0.35;
+    return { label, count, weight, lastMissAtMs, score };
   });
 
-  rows.sort((a, b) => b.score - a.score || b.count - a.count || a.label.localeCompare(b.label));
-  return rows.map(({ label, count, lastMissAtMs }) => ({ label, count, lastMissAtMs }));
+  // Hide fully-decayed entries (keeps UI clean without deleting localStorage data).
+  const visible = rows.filter((x) => x.weight > 0);
+  visible.sort((a, b) => b.score - a.score || b.weight - a.weight || b.count - a.count || a.label.localeCompare(b.label));
+  return visible.map(({ label, count, weight, lastMissAtMs }) => ({ label, count, weight, lastMissAtMs }));
 }
 
 export function StationPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
@@ -171,7 +188,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   const allIntervalMisses = useMemo(() => {
     if (id !== 'T3B_INTERVALS' && id !== 'T3_INTERVALS' && id !== 'E3_INTERVALS') {
-      return [] as { label: IntervalLabel; count: number; lastMissAtMs: number }[];
+      return [] as { label: IntervalLabel; count: number; weight: number; lastMissAtMs: number }[];
     }
     return intervalMissList(id);
   }, [id, now]);
@@ -3550,7 +3567,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                       // Bias question sampling toward your worst offenders.
                       // Implementation: duplicate semitone values in the allowlist (higher frequency = more likely).
                       const weighted = topIntervalMisses.flatMap((x) =>
-                        Array(Math.min(6, Math.max(2, x.count))).fill(LABEL_TO_SEMITONE[x.label]),
+                        Array(Math.min(6, Math.max(2, x.weight))).fill(LABEL_TO_SEMITONE[x.label]),
                       );
                       setPractice(true);
                       setPracticeFocusIntervals(null);
@@ -3660,7 +3677,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                     className="pillBtn"
                     onClick={() => {
                       const weighted = topIntervalMisses.flatMap((x) =>
-                        Array(Math.min(6, Math.max(2, x.count))).fill(LABEL_TO_SEMITONE[x.label]),
+                        Array(Math.min(6, Math.max(2, x.weight))).fill(LABEL_TO_SEMITONE[x.label]),
                       );
                       setPractice(true);
                       setPracticeFocusIntervals(null);
@@ -3770,7 +3787,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                     className="pillBtn"
                     onClick={() => {
                       const weighted = topIntervalMisses.flatMap((x) =>
-                        Array(Math.min(6, Math.max(2, x.count))).fill(LABEL_TO_SEMITONE[x.label]),
+                        Array(Math.min(6, Math.max(2, x.weight))).fill(LABEL_TO_SEMITONE[x.label]),
                       );
                       setPractice(true);
                       setPracticeFocusIntervals(null);
