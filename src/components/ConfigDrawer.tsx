@@ -176,6 +176,7 @@ export function ConfigDrawer(props: {
       localStorage.removeItem('ets_settings_v8');
       localStorage.removeItem('ets_settings_v9');
       localStorage.removeItem('ets_settings_v10');
+      localStorage.removeItem('ets_settings_v11');
     } catch {
       // ignore
     }
@@ -527,6 +528,30 @@ export function ConfigDrawer(props: {
 
           <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
             Tip: when prompt style is Harmonic, this will follow up with a quick melodic replay (trainer-style).
+          </div>
+
+          <label className="configRow" style={{ marginTop: 12 }}>
+            <span className="configLabel">Harmonic helper timing</span>
+            <span className="configValue" style={{ justifySelf: 'start' }}>
+              {s.intervalHarmonicHelperWhen === 'onMiss' ? 'Only after mistakes' : 'Always'}
+            </span>
+            <select
+              className="configSelect"
+              value={s.intervalHarmonicHelperWhen}
+              onChange={(e) => {
+                const v = e.target.value;
+                commit({ ...s, intervalHarmonicHelperWhen: v === 'onMiss' ? 'onMiss' : 'always' });
+              }}
+              aria-label="Harmonic helper timing"
+              disabled={!s.intervalHarmonicAlsoMelodic}
+            >
+              <option value="always">Always (every prompt)</option>
+              <option value="onMiss">Only after mistakes (correction replay)</option>
+            </select>
+          </label>
+
+          <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
+            Tip: “Only after mistakes” keeps tests cleaner — you still get the melodic version when you miss.
           </div>
 
 

@@ -67,6 +67,8 @@ Optional (⚙️): you can choose **interval prompt style**:
 
 Optional (⚙️): **Harmonic helper** — when prompt style is Harmonic, also play a quick melodic version after the chord (a common “bridge” pattern in interval trainers).
 
+Optional (⚙️): **Harmonic helper timing** — choose whether the melodic replay happens **always** or **only after mistakes** (during correction replay).
+
 Optional (⚙️): **Harmonic helper delay** — control the pause between the harmonic chord and the melodic replay (helps if it feels rushed).
 
 Comparable exercises:

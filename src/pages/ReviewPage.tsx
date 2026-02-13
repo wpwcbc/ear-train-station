@@ -344,13 +344,16 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
     const intervalPromptMode = settings.intervalPromptMode;
     const intervalHarmonicAlsoMelodic = settings.intervalHarmonicAlsoMelodic;
+    const intervalHarmonicHelperWhen = settings.intervalHarmonicHelperWhen;
     const intervalHarmonicHelperDelayMs = settings.intervalHarmonicHelperDelayMs;
+
+    const harmonicAlsoMelodic = intervalPromptMode === 'harmonic' && intervalHarmonicAlsoMelodic && intervalHarmonicHelperWhen !== 'onMiss';
 
     if (drillMode) {
       if (!drillIlQ) return;
       await playIntervalPrompt(drillIlQ.rootMidi, drillIlQ.targetMidi, {
         mode: intervalPromptMode,
-        harmonicAlsoMelodic: intervalHarmonicAlsoMelodic,
+        harmonicAlsoMelodic: harmonicAlsoMelodic,
         harmonicHelperDelayMs: gap(intervalHarmonicHelperDelayMs),
         gapMs: gap(320),
         rootDurationSec: dur(0.7),
@@ -369,7 +372,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     if (active.kind === 'intervalLabel') {
       await playIntervalPrompt(active.rootMidi, active.rootMidi + active.semitones, {
         mode: intervalPromptMode,
-        harmonicAlsoMelodic: intervalHarmonicAlsoMelodic,
+        harmonicAlsoMelodic: harmonicAlsoMelodic,
         harmonicHelperDelayMs: gap(intervalHarmonicHelperDelayMs),
         gapMs: gap(320),
         rootDurationSec: dur(0.7),

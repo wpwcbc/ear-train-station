@@ -1,5 +1,5 @@
 export type Settings = {
-  version: 10;
+  version: 11;
   /** Overall prompt timing. */
   promptSpeed: 'slow' | 'normal' | 'fast';
   /** Master volume multiplier applied to prompt playback. */
@@ -31,6 +31,12 @@ export type Settings = {
    * (Some trainers do this to help the ear “lock in” the distance.)
    */
   intervalHarmonicAlsoMelodic: boolean;
+  /**
+   * When Harmonic helper is enabled, control when the melodic replay happens.
+   * - always: every harmonic prompt includes the melodic replay
+   * - onMiss: only play the melodic replay during correction replay after a wrong answer
+   */
+  intervalHarmonicHelperWhen: 'always' | 'onMiss';
   /** Delay (ms) before the melodic replay when Harmonic helper is enabled. */
   intervalHarmonicHelperDelayMs: number; // ms
 };
@@ -61,7 +67,8 @@ type SettingsV5 = {
   playKeyPrimer: boolean;
 };
 
-const KEY = 'ets_settings_v10';
+const KEY = 'ets_settings_v11';
+const KEY_V10 = 'ets_settings_v10';
 const KEY_V9 = 'ets_settings_v9';
 const KEY_V8 = 'ets_settings_v8';
 const KEY_V7 = 'ets_settings_v7';
@@ -74,7 +81,7 @@ const KEY_V1 = 'ets_settings_v1';
 
 export function defaultSettings(): Settings {
   return {
-    version: 10,
+    version: 11,
     promptSpeed: 'normal',
     volume: 0.9,
     playKeyPrimer: true,
@@ -82,6 +89,7 @@ export function defaultSettings(): Settings {
     intervalRetryOnce: false,
     intervalPromptMode: 'melodic',
     intervalHarmonicAlsoMelodic: false,
+    intervalHarmonicHelperWhen: 'always',
     intervalHarmonicHelperDelayMs: 260,
   };
 }
@@ -100,7 +108,7 @@ export function loadSettings(): Settings {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<Settings>;
-      if (parsed?.version != 10) return defaultSettings();
+      if (parsed?.version != 11) return defaultSettings();
       const promptSpeed = normalizePromptSpeed(parsed.promptSpeed);
       const volume = clamp01(typeof parsed.volume === 'number' ? parsed.volume : 0.9);
       const playKeyPrimer = typeof parsed.playKeyPrimer === 'boolean' ? parsed.playKeyPrimer : true;
@@ -108,6 +116,7 @@ export function loadSettings(): Settings {
       const intervalRetryOnce = typeof parsed.intervalRetryOnce === 'boolean' ? parsed.intervalRetryOnce : false;
       const intervalPromptMode = parsed.intervalPromptMode === 'harmonic' ? 'harmonic' : 'melodic';
       const intervalHarmonicAlsoMelodic = typeof parsed.intervalHarmonicAlsoMelodic === 'boolean' ? parsed.intervalHarmonicAlsoMelodic : false;
+      const intervalHarmonicHelperWhen = parsed.intervalHarmonicHelperWhen === 'onMiss' ? 'onMiss' : 'always';
       const intervalHarmonicHelperDelayMs = (
         typeof parsed.intervalHarmonicHelperDelayMs === 'number' && parsed.intervalHarmonicHelperDelayMs >= 0 && parsed.intervalHarmonicHelperDelayMs <= 1200
       )
@@ -123,11 +132,37 @@ export function loadSettings(): Settings {
         intervalRetryOnce,
         intervalPromptMode,
         intervalHarmonicAlsoMelodic,
+        intervalHarmonicHelperWhen,
         intervalHarmonicHelperDelayMs,
       } as Settings;
     }
 
-    // Migrate v9 → v10 (add intervalHarmonicHelperDelayMs)
+    
+
+    // Migrate v10 → v11 (add intervalHarmonicHelperWhen)
+    const v10raw = localStorage.getItem(KEY_V10);
+    if (v10raw) {
+      const v10 = JSON.parse(v10raw) as Partial<Omit<Settings, 'version' | 'intervalHarmonicHelperWhen'> & { version: 10 }>;
+      const migrated: Settings = {
+        ...defaultSettings(),
+        promptSpeed: normalizePromptSpeed(v10.promptSpeed),
+        volume: clamp01(typeof v10.volume === 'number' ? v10.volume : 0.9),
+        playKeyPrimer: typeof v10.playKeyPrimer === 'boolean' ? v10.playKeyPrimer : true,
+        lessonRetryOnce: typeof v10.lessonRetryOnce === 'boolean' ? v10.lessonRetryOnce : false,
+        intervalRetryOnce: typeof v10.intervalRetryOnce === 'boolean' ? v10.intervalRetryOnce : false,
+        intervalPromptMode: v10.intervalPromptMode === 'harmonic' ? 'harmonic' : 'melodic',
+        intervalHarmonicAlsoMelodic: typeof v10.intervalHarmonicAlsoMelodic === 'boolean' ? v10.intervalHarmonicAlsoMelodic : false,
+        intervalHarmonicHelperWhen: 'always',
+        intervalHarmonicHelperDelayMs: (
+          typeof v10.intervalHarmonicHelperDelayMs === 'number' && v10.intervalHarmonicHelperDelayMs >= 0 && v10.intervalHarmonicHelperDelayMs <= 1200
+        )
+          ? Math.round(v10.intervalHarmonicHelperDelayMs)
+          : 260,
+      };
+      saveSettings(migrated);
+      return migrated;
+    }
+// Migrate v9 → v10 (add intervalHarmonicHelperDelayMs)
     const v9raw = localStorage.getItem(KEY_V9);
     if (v9raw) {
       const v9 = JSON.parse(v9raw) as Partial<Omit<Settings, 'version' | 'intervalHarmonicHelperDelayMs'> & { version: 9 }>;
