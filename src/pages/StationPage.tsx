@@ -6,7 +6,7 @@ import { useFocusUI } from '../components/focusUI';
 import type { StationId, Progress } from '../lib/progress';
 import { applyStudyReward, markStationDone } from '../lib/progress';
 import { hasShownDailyGoalReachedToast, markDailyGoalReachedToastShown } from '../lib/dailyGoalToast';
-import { loadIntervalMissHistogram, recordIntervalMiss } from '../lib/intervalStats';
+import { loadIntervalMissDetails, loadIntervalMissHistogram, recordIntervalMiss } from '../lib/intervalStats';
 import { addMistake, loadMistakes, mistakeCountForStation } from '../lib/mistakes';
 import { bumpStationCompleted } from '../lib/quests';
 import { STATIONS, nextStationId, isStationUnlocked } from '../lib/stations';
@@ -84,9 +84,27 @@ function computeIntervalMissCounts(stationId: StationId): Map<IntervalLabel, num
 
 function intervalMissList(stationId: StationId): { label: IntervalLabel; count: number }[] {
   const counts = computeIntervalMissCounts(stationId);
-  return Array.from(counts.entries())
-    .map(([label, count]) => ({ label, count }))
-    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+
+  // Sorting for UX:
+  // - Count matters most.
+  // - But if two labels are close, nudge recently-missed ones upward so "targeted" feels responsive.
+  const details = loadIntervalMissDetails(stationId);
+  const now = Date.now();
+  const RECENCY_HALF_LIFE_MS = 36 * 60 * 60 * 1000; // ~1.5 days
+
+  const rows = Array.from(counts.entries()).map(([label, count]) => {
+    const semi = LABEL_TO_SEMITONE[label];
+    const lastMissAt = details.get(semi)?.lastMissAtMs ?? 0;
+    const age = lastMissAt > 0 ? Math.max(0, now - lastMissAt) : Infinity;
+    const recencyBoost = Number.isFinite(age) ? Math.exp(-age / RECENCY_HALF_LIFE_MS) : 0; // 1 → 0
+
+    // Tiny boost only; we still want frequency to dominate.
+    const score = count + recencyBoost * 0.35;
+    return { label, count, score };
+  });
+
+  rows.sort((a, b) => b.score - a.score || b.count - a.count || a.label.localeCompare(b.label));
+  return rows.map(({ label, count }) => ({ label, count }));
 }
 
 export function StationPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
