@@ -81,7 +81,7 @@ Implementation notes:
 - This powers the end-of-test “most missed” summary and the **Targeted mix** (weighted practice). Recency gets a tiny boost so targeted practice feels responsive, while long-term frequency still dominates.
 - In practice mode, correct answers gently **cool down** that interval’s miss count (−1) so targeted mixes can adapt as you improve.
 - If ⚙️ “Intervals: replay correct + retry once” is enabled, the **first miss** replays the correction and offers one immediate retest; we only advance the question / increment wrong-hearts after the retest is used.
-- End-of-test now also has an **All miss stats** expander: one-tap drill any interval you’ve missed (top 12 shown).
+- End-of-test now also has an **All miss stats** expander: one-tap drill any interval you’ve missed (top 12 shown), plus a **Review top 5** shortcut to practice your biggest misses as a focused set.
 - When you enter practice from the end-of-test summary, the header shows what mode you’re in (focused vs targeted) + gives you **Clear focus** and **Exit practice**.
 - If the weighting feels stale after you improve, you can **clear interval miss stats** from ⚙️ (station-scoped).
 

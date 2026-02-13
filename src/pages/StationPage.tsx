@@ -226,7 +226,21 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
         <details style={{ marginTop: 6 }}>
           <summary style={{ cursor: 'pointer', fontSize: 12, opacity: 0.9 }}>All miss stats</summary>
-          <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <button
+              className="ghost"
+              onClick={() => {
+                const topLabels = allIntervalMisses.slice(0, 5).map((x) => x.label);
+                if (!topLabels.length) return;
+                setPractice(true);
+                setPracticeWeightedSemitones(null);
+                setPracticeFocusIntervals(topLabels);
+                reset();
+              }}
+              title="Practice your top 5 misses (focused set)"
+            >
+              Review top 5
+            </button>
             {allIntervalMisses.slice(0, 12).map((x) => (
               <button
                 key={x.label}
