@@ -252,11 +252,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   // When we schedule a short “correction replay” after a miss, we want it to be
   // cancelable (so it won't overlap if the user triggers another prompt).
   const correctionReplayTokenRef = useRef(0);
+  const [correctionReplayBusy, setCorrectionReplayBusy] = useState(false);
   useEffect(() => {
     // Bump token on station change + unmount to invalidate any pending async work.
     correctionReplayTokenRef.current += 1;
+    setCorrectionReplayBusy(false);
     return () => {
       correctionReplayTokenRef.current += 1;
+      setCorrectionReplayBusy(false);
     };
   }, [id]);
 
@@ -1746,6 +1749,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   async function playPromptT3B() {
     correctionReplayTokenRef.current += 1;
+    setCorrectionReplayBusy(false);
     setResult('idle');
     setHighlighted({});
     await playIntervalPrompt(t3bQ.rootMidi, t3bQ.targetMidi, {
@@ -1767,7 +1771,12 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
       // Immediate correction loop: replay the correct interval once after a miss.
       // (Keeps the flow, but still teaches the ear what “right” sounds like.)
-      await queueCorrectionReplay(t3bQ.rootMidi, t3bQ.targetMidi);
+      setCorrectionReplayBusy(true);
+      try {
+        await queueCorrectionReplay(t3bQ.rootMidi, t3bQ.targetMidi);
+      } finally {
+        setCorrectionReplayBusy(false);
+      }
 
       setT3bWrong((n) => n + 1);
 
@@ -1813,6 +1822,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   async function playPromptT3() {
     correctionReplayTokenRef.current += 1;
+    setCorrectionReplayBusy(false);
     setResult('idle');
     setHighlighted({});
     await playIntervalPrompt(t3Q.rootMidi, t3Q.targetMidi, { gapMs: gap(320), rootDurationSec: dur(0.7), targetDurationSec: dur(0.95) });
@@ -1830,7 +1840,12 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       recordIntervalMiss(id, t3Q.semitones);
 
       // Immediate correction loop: replay the correct interval once after a miss.
-      await queueCorrectionReplay(t3Q.rootMidi, t3Q.targetMidi);
+      setCorrectionReplayBusy(true);
+      try {
+        await queueCorrectionReplay(t3Q.rootMidi, t3Q.targetMidi);
+      } finally {
+        setCorrectionReplayBusy(false);
+      }
 
       const nextWrong = t3Wrong + 1;
       setT3Wrong(nextWrong);
@@ -1885,6 +1900,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   async function playPromptE3() {
     correctionReplayTokenRef.current += 1;
+    setCorrectionReplayBusy(false);
     setResult('idle');
     setHighlighted({});
     await playIntervalPrompt(e3Q.rootMidi, e3Q.targetMidi, {
@@ -1906,7 +1922,12 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       recordIntervalMiss(id, e3Q.semitones);
 
       // Immediate correction loop: replay the correct interval once after a miss.
-      await queueCorrectionReplay(e3Q.rootMidi, e3Q.targetMidi);
+      setCorrectionReplayBusy(true);
+      try {
+        await queueCorrectionReplay(e3Q.rootMidi, e3Q.targetMidi);
+      } finally {
+        setCorrectionReplayBusy(false);
+      }
 
       const nextWrong = e3Wrong + 1;
       setE3Wrong(nextWrong);
@@ -3396,7 +3417,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            <ChoiceGrid choices={t3bQ.choices} onChoose={chooseT3B} />
+            <ChoiceGrid choices={t3bQ.choices} onChoose={chooseT3B} disabled={correctionReplayBusy} />
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
@@ -3506,7 +3527,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            <ChoiceGrid choices={t3Q.choices} onChoose={chooseT3} />
+            <ChoiceGrid choices={t3Q.choices} onChoose={chooseT3} disabled={correctionReplayBusy} />
           </div>
 
           <RegisterPolicyNote mode="both" />
@@ -3618,7 +3639,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            <ChoiceGrid choices={e3Q.choices} onChoose={chooseE3} />
+            <ChoiceGrid choices={e3Q.choices} onChoose={chooseE3} disabled={correctionReplayBusy} />
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>

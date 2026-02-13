@@ -68,6 +68,8 @@ Comparable patterns / references:
   - https://www.guitarorb.com/interval-ear-trainer
 - EarMaster emphasizes real-time feedback and targeted practice:
   - https://www.earmaster.com/
+- Musical U interval drills: hear the correct answer + get a chance to hear the interval again:
+  - https://www.musical-u.com/learn/topic/ear-training/intervals/
 - Duolingo on learning science (active recall + spaced repetition):
   - https://blog.duolingo.com/spaced-repetition-for-learning/
 
