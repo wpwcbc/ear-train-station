@@ -1,5 +1,5 @@
 export type Settings = {
-  version: 7;
+  version: 8;
   /** Overall prompt timing. */
   promptSpeed: 'slow' | 'normal' | 'fast';
   /** Master volume multiplier applied to prompt playback. */
@@ -20,6 +20,12 @@ export type Settings = {
    * (Designed for skill-building without turning tests into infinite loops.)
    */
   intervalRetryOnce: boolean;
+  /**
+   * Interval prompt style.
+   * - melodic: root then target
+   * - harmonic: both notes together
+   */
+  intervalPromptMode: 'melodic' | 'harmonic';
 };
 
 type SettingsV2 = {
@@ -48,7 +54,8 @@ type SettingsV5 = {
   playKeyPrimer: boolean;
 };
 
-const KEY = 'ets_settings_v7';
+const KEY = 'ets_settings_v8';
+const KEY_V7 = 'ets_settings_v7';
 const KEY_V6 = 'ets_settings_v6';
 const KEY_V5 = 'ets_settings_v5';
 const KEY_V4 = 'ets_settings_v4';
@@ -58,12 +65,13 @@ const KEY_V1 = 'ets_settings_v1';
 
 export function defaultSettings(): Settings {
   return {
-    version: 7,
+    version: 8,
     promptSpeed: 'normal',
     volume: 0.9,
     playKeyPrimer: true,
     lessonRetryOnce: false,
     intervalRetryOnce: false,
+    intervalPromptMode: 'melodic',
   };
 }
 
@@ -81,13 +89,31 @@ export function loadSettings(): Settings {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<Settings>;
-      if (parsed?.version !== 7) return defaultSettings();
+      if (parsed?.version !== 8) return defaultSettings();
       const promptSpeed = normalizePromptSpeed(parsed.promptSpeed);
       const volume = clamp01(typeof parsed.volume === 'number' ? parsed.volume : 0.9);
       const playKeyPrimer = typeof parsed.playKeyPrimer === 'boolean' ? parsed.playKeyPrimer : true;
       const lessonRetryOnce = typeof parsed.lessonRetryOnce === 'boolean' ? parsed.lessonRetryOnce : false;
       const intervalRetryOnce = typeof parsed.intervalRetryOnce === 'boolean' ? parsed.intervalRetryOnce : false;
-      return { ...defaultSettings(), ...parsed, promptSpeed, volume, playKeyPrimer, lessonRetryOnce, intervalRetryOnce } as Settings;
+      const intervalPromptMode = parsed.intervalPromptMode === 'harmonic' ? 'harmonic' : 'melodic';
+      return { ...defaultSettings(), ...parsed, promptSpeed, volume, playKeyPrimer, lessonRetryOnce, intervalRetryOnce, intervalPromptMode } as Settings;
+    }
+
+    // Migrate v7 → v8 (add intervalPromptMode)
+    const v7raw = localStorage.getItem(KEY_V7);
+    if (v7raw) {
+      const v7 = JSON.parse(v7raw) as Partial<Omit<Settings, 'version' | 'intervalPromptMode'> & { version: 7 }>;
+      const migrated: Settings = {
+        ...defaultSettings(),
+        promptSpeed: normalizePromptSpeed(v7.promptSpeed),
+        volume: clamp01(typeof v7.volume === 'number' ? v7.volume : 0.9),
+        playKeyPrimer: typeof v7.playKeyPrimer === 'boolean' ? v7.playKeyPrimer : true,
+        lessonRetryOnce: typeof v7.lessonRetryOnce === 'boolean' ? v7.lessonRetryOnce : false,
+        intervalRetryOnce: typeof v7.intervalRetryOnce === 'boolean' ? v7.intervalRetryOnce : false,
+        intervalPromptMode: 'melodic',
+      };
+      saveSettings(migrated);
+      return migrated;
     }
 
     // Migrate v6 → v7 (add intervalRetryOnce)
@@ -101,6 +127,7 @@ export function loadSettings(): Settings {
         playKeyPrimer: typeof v6.playKeyPrimer === 'boolean' ? v6.playKeyPrimer : true,
         lessonRetryOnce: typeof v6.lessonRetryOnce === 'boolean' ? v6.lessonRetryOnce : false,
         intervalRetryOnce: false,
+        intervalPromptMode: 'melodic',
       };
       saveSettings(migrated);
       return migrated;
@@ -116,6 +143,8 @@ export function loadSettings(): Settings {
         volume: clamp01(typeof v5.volume === 'number' ? v5.volume : 0.9),
         playKeyPrimer: typeof v5.playKeyPrimer === 'boolean' ? v5.playKeyPrimer : true,
         lessonRetryOnce: false,
+        intervalRetryOnce: false,
+        intervalPromptMode: 'melodic',
       };
       saveSettings(migrated);
       return migrated;
@@ -131,6 +160,8 @@ export function loadSettings(): Settings {
         volume: clamp01(typeof v4.volume === 'number' ? v4.volume : 0.9),
         playKeyPrimer: true,
         lessonRetryOnce: false,
+        intervalRetryOnce: false,
+        intervalPromptMode: 'melodic',
       };
       saveSettings(migrated);
       return migrated;
@@ -146,6 +177,8 @@ export function loadSettings(): Settings {
         volume: clamp01(typeof v3.volume === 'number' ? v3.volume : 0.9),
         playKeyPrimer: true,
         lessonRetryOnce: false,
+        intervalRetryOnce: false,
+        intervalPromptMode: 'melodic',
       };
       saveSettings(migrated);
       return migrated;
@@ -160,6 +193,8 @@ export function loadSettings(): Settings {
         promptSpeed: normalizePromptSpeed(v2.promptSpeed),
         playKeyPrimer: true,
         lessonRetryOnce: false,
+        intervalRetryOnce: false,
+        intervalPromptMode: 'melodic',
       };
       saveSettings(migrated);
       return migrated;

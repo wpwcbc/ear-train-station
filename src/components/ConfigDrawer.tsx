@@ -484,6 +484,28 @@ export function ConfigDrawer(props: {
           <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
             Tip: on interval tests/exams/drills, a first miss will replay the correct interval and let you try the same question once.
           </div>
+
+          <label className="configRow" style={{ marginTop: 12 }}>
+            <span className="configLabel">Intervals: prompt style</span>
+            <span className="configValue" style={{ justifySelf: 'start' }}>
+              {s.intervalPromptMode === 'harmonic' ? 'Harmonic' : 'Melodic'}
+            </span>
+            <select
+              className="configSelect"
+              value={s.intervalPromptMode}
+              onChange={(e) => {
+                const v = e.target.value;
+                commit({ ...s, intervalPromptMode: v === 'harmonic' ? 'harmonic' : 'melodic' });
+              }}
+            >
+              <option value="melodic">Melodic (two notes)</option>
+              <option value="harmonic">Harmonic (together)</option>
+            </select>
+          </label>
+
+          <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
+            Tip: harmonic intervals can feel harder at first — but they map closer to real harmony.
+          </div>
         </div>
 
         <div className="configSection">

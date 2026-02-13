@@ -61,6 +61,14 @@ When you miss an interval identification item (tests/exams/drills), the app **au
 
 Optional (⚙️): you can also enable **replay correct + retry the same question once** after a miss (a short, GuitarOrb-ish correction loop).
 
+Optional (⚙️): you can choose **interval prompt style**:
+- **Melodic** (two notes in sequence)
+- **Harmonic** (both notes together)
+
+Comparable exercises:
+- ToneDeaf / ToneDear style interval ID (melodic/harmonic variants are common):
+  - https://tonedear.com/ear-training/intervals
+
 Why:
 - Fast error-correction loop: the ear immediately hears the “right” reference, not just a red X.
 - A single immediate retest helps you “close the loop” while the sound is still in working memory.

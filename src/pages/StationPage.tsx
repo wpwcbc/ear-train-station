@@ -328,12 +328,15 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     };
   }, [id]);
 
+  const intervalPromptMode = settings.intervalPromptMode;
+
   async function queueCorrectionReplay(rootMidi: number, targetMidi: number) {
     const token = ++correctionReplayTokenRef.current;
     await new Promise((r) => setTimeout(r, gap(240)));
     if (token !== correctionReplayTokenRef.current) return;
 
     await playIntervalPrompt(rootMidi, targetMidi, {
+      mode: intervalPromptMode,
       gapMs: gap(260),
       rootDurationSec: dur(0.6),
       targetDurationSec: dur(0.85),
@@ -1824,6 +1827,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult('idle');
     setHighlighted({});
     await playIntervalPrompt(t3bQ.rootMidi, t3bQ.targetMidi, {
+      mode: intervalPromptMode,
       gapMs: gap(320),
       rootDurationSec: dur(0.7),
       targetDurationSec: dur(0.95),
@@ -1906,7 +1910,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setCorrectionReplayBusy(false);
     setResult('idle');
     setHighlighted({});
-    await playIntervalPrompt(t3Q.rootMidi, t3Q.targetMidi, { gapMs: gap(320), rootDurationSec: dur(0.7), targetDurationSec: dur(0.95) });
+    await playIntervalPrompt(t3Q.rootMidi, t3Q.targetMidi, { mode: intervalPromptMode, gapMs: gap(320), rootDurationSec: dur(0.7), targetDurationSec: dur(0.95) });
   }
 
   async function chooseT3(choice: IntervalLabel) {
@@ -1994,6 +1998,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setResult('idle');
     setHighlighted({});
     await playIntervalPrompt(e3Q.rootMidi, e3Q.targetMidi, {
+      mode: intervalPromptMode,
       gapMs: gap(320),
       rootDurationSec: dur(0.7),
       targetDurationSec: dur(0.95),

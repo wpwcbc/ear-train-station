@@ -25,17 +25,26 @@ export async function playIntervalPrompt(
   rootMidi: number,
   targetMidi: number,
   opts?: {
+    mode?: 'melodic' | 'harmonic';
     rootDurationSec?: number;
     targetDurationSec?: number;
     velocity?: number;
     gapMs?: number;
   },
 ) {
+  const mode = opts?.mode ?? 'melodic';
   const rootDurationSec = opts?.rootDurationSec ?? 0.7;
   const targetDurationSec = opts?.targetDurationSec ?? 0.95;
   const velocity = opts?.velocity ?? 0.9;
   const gapMs = opts?.gapMs ?? 320;
 
+  if (mode === 'harmonic') {
+    // Harmonic interval: play both notes at once.
+    await piano.playChord([rootMidi, targetMidi], { mode: 'block', durationSec: targetDurationSec, velocity });
+    return;
+  }
+
+  // Melodic interval: root then target.
   await piano.playMidi(rootMidi, { durationSec: rootDurationSec, velocity });
   await new Promise((r) => setTimeout(r, gapMs));
   await piano.playMidi(targetMidi, { durationSec: targetDurationSec, velocity });

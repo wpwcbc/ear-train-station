@@ -342,9 +342,12 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   async function playPrompt() {
     setResult('idle');
 
+    const intervalPromptMode = settings.intervalPromptMode;
+
     if (drillMode) {
       if (!drillIlQ) return;
       await playIntervalPrompt(drillIlQ.rootMidi, drillIlQ.targetMidi, {
+        mode: intervalPromptMode,
         gapMs: gap(320),
         rootDurationSec: dur(0.7),
         targetDurationSec: dur(0.95),
@@ -361,6 +364,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
     if (active.kind === 'intervalLabel') {
       await playIntervalPrompt(active.rootMidi, active.rootMidi + active.semitones, {
+        mode: intervalPromptMode,
         gapMs: gap(320),
         rootDurationSec: dur(0.7),
         targetDurationSec: dur(0.95),
