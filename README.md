@@ -78,7 +78,7 @@ Comparable patterns / references:
 
 Implementation notes:
 - Interval stations keep a lightweight **miss histogram** (+ last-missed timestamp) in `localStorage` (separate from the capped/de-duped review queue).
-- This powers the end-of-test “most missed” summary and the **Targeted mix** (weighted practice). Recency gets a tiny boost so targeted practice feels responsive, while long-term frequency still dominates.
+- This powers the end-of-test “most missed” summary (now also shows roughly when you last missed each top interval) and the **Targeted mix** (weighted practice). Recency gets a tiny boost so targeted practice feels responsive, while long-term frequency still dominates.
 - In practice mode, correct answers gently **cool down** that interval’s miss count (−1) so targeted mixes can adapt as you improve.
 - If ⚙️ “Intervals: replay correct + retry once” is enabled, the **first miss** replays the correction and offers one immediate retest; we only advance the question / increment wrong-hearts after the retest is used.
 - End-of-test now also has an **All miss stats** expander: one-tap drill any interval you’ve missed (top 12 shown), plus a **Review top 5** shortcut to practice your biggest misses as a focused set.

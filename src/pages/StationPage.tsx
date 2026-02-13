@@ -82,7 +82,18 @@ function computeIntervalMissCounts(stationId: StationId): Map<IntervalLabel, num
   return counts;
 }
 
-function intervalMissList(stationId: StationId): { label: IntervalLabel; count: number }[] {
+function ageShort(nowMs: number, thenMs: number): string {
+  const d = Math.max(0, nowMs - thenMs);
+  const mins = Math.round(d / 60_000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 48) return `${hrs}h ago`;
+  const days = Math.round(hrs / 24);
+  return `${days}d ago`;
+}
+
+function intervalMissList(stationId: StationId): { label: IntervalLabel; count: number; lastMissAtMs: number }[] {
   const counts = computeIntervalMissCounts(stationId);
 
   // Sorting for UX:
@@ -94,17 +105,17 @@ function intervalMissList(stationId: StationId): { label: IntervalLabel; count: 
 
   const rows = Array.from(counts.entries()).map(([label, count]) => {
     const semi = LABEL_TO_SEMITONE[label];
-    const lastMissAt = details.get(semi)?.lastMissAtMs ?? 0;
-    const age = lastMissAt > 0 ? Math.max(0, now - lastMissAt) : Infinity;
+    const lastMissAtMs = details.get(semi)?.lastMissAtMs ?? 0;
+    const age = lastMissAtMs > 0 ? Math.max(0, now - lastMissAtMs) : Infinity;
     const recencyBoost = Number.isFinite(age) ? Math.exp(-age / RECENCY_HALF_LIFE_MS) : 0; // 1 → 0
 
     // Tiny boost only; we still want frequency to dominate.
     const score = count + recencyBoost * 0.35;
-    return { label, count, score };
+    return { label, count, lastMissAtMs, score };
   });
 
   rows.sort((a, b) => b.score - a.score || b.count - a.count || a.label.localeCompare(b.label));
-  return rows.map(({ label, count }) => ({ label, count }));
+  return rows.map(({ label, count, lastMissAtMs }) => ({ label, count, lastMissAtMs }));
 }
 
 export function StationPage({ progress, setProgress }: { progress: Progress; setProgress: (p: Progress) => void }) {
@@ -159,7 +170,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const stationMistakeDue = mistakeCountForStation(id, { dueOnly: true, now });
 
   const allIntervalMisses = useMemo(() => {
-    if (id !== 'T3B_INTERVALS' && id !== 'T3_INTERVALS' && id !== 'E3_INTERVALS') return [] as { label: IntervalLabel; count: number }[];
+    if (id !== 'T3B_INTERVALS' && id !== 'T3_INTERVALS' && id !== 'E3_INTERVALS') {
+      return [] as { label: IntervalLabel; count: number; lastMissAtMs: number }[];
+    }
     return intervalMissList(id);
   }, [id, now]);
 
@@ -220,7 +233,10 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     return (
       <div style={{ marginTop: 8 }}>
         <div style={{ fontSize: 12, opacity: 0.85 }}>
-          Most missed: {top.map((x) => `${x.label}×${x.count}`).join(' · ')}
+          Most missed:{' '}
+          {top
+            .map((x) => `${x.label}×${x.count}${x.lastMissAtMs ? ` (${ageShort(now, x.lastMissAtMs)})` : ''}`)
+            .join(' · ')}
           {moreCount ? ` · +${moreCount} more` : ''}
         </div>
 
@@ -251,7 +267,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                   setPracticeFocusIntervals([x.label]);
                   reset();
                 }}
-                title={`Practice ${x.label} only`}
+                title={`Practice ${x.label} only${x.lastMissAtMs ? ` (last miss: ${ageShort(now, x.lastMissAtMs)})` : ''}`}
               >
                 {x.label}×{x.count}
               </button>
