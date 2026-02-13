@@ -93,6 +93,8 @@ Comparable patterns / references:
   - https://www.musical-u.com/learn/topic/ear-training/intervals/
 - Duolingo on learning science (active recall + spaced repetition):
   - https://blog.duolingo.com/spaced-repetition-for-learning/
+- Duolingo: adaptive / mistakes-focused sessions (“frontier of learning”):
+  - https://blog.duolingo.com/keeping-you-at-the-frontier-of-learning-with-adaptive-lessons/
 
 Implementation notes:
 - Interval stations keep a lightweight **miss histogram** (+ last-missed timestamp) in `localStorage` (separate from the capped/de-duped review queue).

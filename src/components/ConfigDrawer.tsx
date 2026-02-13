@@ -511,6 +511,8 @@ export function ConfigDrawer(props: {
 
           <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
             Tip: harmonic intervals can feel harder at first — but they map closer to real harmony.
+            If you’re stuck, try isolating/singing the two notes (even quietly) to “separate” the chord.
+            Reference: <a href="https://www.musical-u.com/learn/how-can-i-improve-at-harmonic-intervals/" target="_blank" rel="noreferrer">Musical U</a>.
           </div>
 
           <label className="configRow" style={{ marginTop: 12 }}>
@@ -538,6 +540,8 @@ export function ConfigDrawer(props: {
           <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
             Tip: this is a trainer-style “bridge”: play Harmonic, then a quick Melodic version to lock in the distance.
             (Turning this on will also switch Intervals → prompt style to Harmonic.)
+            
+            Inspired by: <a href="https://www.musical-u.com/learn/how-can-i-improve-at-harmonic-intervals/" target="_blank" rel="noreferrer">Musical U — harmonic intervals</a>.
           </div>
 
           <label className="configRow" style={{ marginTop: 12 }}>
@@ -564,6 +568,11 @@ export function ConfigDrawer(props: {
             Tip: “Only after mistakes” keeps tests cleaner — you still get the melodic version when you miss.
           </div>
 
+          {!s.intervalHarmonicAlsoMelodic ? (
+            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 8 }}>
+              Note: enable <b>Harmonic helper</b> to adjust timing/delay.
+            </div>
+          ) : null}
 
           <label className="configRow" style={{ marginTop: 12 }}>
             <span className="configLabel">Harmonic helper delay</span>
