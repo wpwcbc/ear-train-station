@@ -6,7 +6,7 @@ import { useFocusUI } from '../components/focusUI';
 import type { StationId, Progress } from '../lib/progress';
 import { applyStudyReward, markStationDone } from '../lib/progress';
 import { hasShownDailyGoalReachedToast, markDailyGoalReachedToastShown } from '../lib/dailyGoalToast';
-import { loadIntervalMissDetails, loadIntervalMissHistogram, recordIntervalMiss } from '../lib/intervalStats';
+import { loadIntervalMissDetails, loadIntervalMissHistogram, recordIntervalMiss, recordIntervalPracticeHit } from '../lib/intervalStats';
 import { addMistake, loadMistakes, mistakeCountForStation } from '../lib/mistakes';
 import { bumpStationCompleted } from '../lib/quests';
 import { STATIONS, nextStationId, isStationUnlocked } from '../lib/stations';
@@ -1809,6 +1809,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
     setT3bCorrect((n) => n + 1);
 
+    if (practice) recordIntervalPracticeHit(id, t3bQ.semitones);
+
     let p2 = applyStudyReward(progress, 3);
 
     const nextIndex = t3bIndex + 1;
@@ -1884,6 +1886,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     }
 
     setT3Correct((n) => n + 1);
+
+    if (practice) recordIntervalPracticeHit(id, t3Q.semitones);
 
     // +3 XP per correct test item.
     let p2 = applyStudyReward(progress, 3);
@@ -1964,6 +1968,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     }
 
     setE3Correct((n) => n + 1);
+
+    if (practice) recordIntervalPracticeHit(id, e3Q.semitones);
 
     let p2 = applyStudyReward(progress, 3);
 

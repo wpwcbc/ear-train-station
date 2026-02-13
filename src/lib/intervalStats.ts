@@ -68,6 +68,34 @@ export function recordIntervalMiss(stationId: StationId, semitones: number) {
   saveAllV2({ ...all, [stationId]: bySemi });
 }
 
+/**
+ * Optional “recovery” signal: when the user gets an interval right during practice,
+ * let the long-lived miss histogram cool down a bit so targeted mixes can adapt.
+ *
+ * Note: we keep this gentle and only touch the persistent histogram (not the review queue).
+ */
+export function recordIntervalPracticeHit(stationId: StationId, semitones: number) {
+  const all = loadAllV2();
+  const bySemi: IntervalMissesBySemitoneV2 = { ...(all[stationId] ?? {}) };
+  const key = String(semitones);
+  const prev = bySemi[key];
+  const cPrev = prev && typeof prev.c === 'number' && Number.isFinite(prev.c) ? prev.c : 0;
+
+  // Only cool down if we actually have recorded misses.
+  if (cPrev <= 0) return;
+
+  // Gentle decay: don’t erase a hard-won histogram instantly.
+  const nextC = Math.max(0, cPrev - 1);
+  if (nextC <= 0) {
+    delete bySemi[key];
+  } else {
+    // Keep last-miss timestamp intact; we’re not claiming “un-missed”, just improving.
+    bySemi[key] = { c: nextC, t: prev?.t ?? 0 };
+  }
+
+  saveAllV2({ ...all, [stationId]: bySemi });
+}
+
 export function loadIntervalMissDetails(stationId: StationId): Map<number, { count: number; lastMissAtMs: number }> {
   const all = loadAllV2();
   const bySemi = all[stationId] ?? {};
