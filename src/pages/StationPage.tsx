@@ -160,6 +160,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
   const [mistakesThisVisit, setMistakesThisVisit] = useState(0);
 
+  const [harmonicTipsOpen, setHarmonicTipsOpen] = useState(false);
+
   const trackMistake = (m: Parameters<typeof addMistake>[0]) => {
     setMistakesThisVisit((n) => n + 1);
     addMistake(m);
@@ -169,6 +171,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     const t = window.setTimeout(() => setMistakesThisVisit(0), 0);
     return () => window.clearTimeout(t);
   }, [id]);
+
+  // Close harmonic tips when changing station or switching prompt mode.
+  useEffect(() => {
+    setHarmonicTipsOpen(false);
+  }, [id, settings.intervalPromptMode]);
 
   useEffect(() => {
     function bump() {
@@ -333,6 +340,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const intervalHarmonicAlsoMelodic = settings.intervalHarmonicAlsoMelodic;
   const intervalHarmonicHelperWhen = settings.intervalHarmonicHelperWhen;
   const intervalHarmonicHelperDelayMs = settings.intervalHarmonicHelperDelayMs;
+
+  const isIntervalStation = id === 'S3_INTERVALS' || id === 'T3B_INTERVALS' || id === 'T3_INTERVALS' || id === 'E3_INTERVALS';
+  const showHarmonicTips = isIntervalStation && intervalPromptMode === 'harmonic';
 
   function harmonicHelperEnabled(isCorrection: boolean) {
     if (intervalPromptMode !== 'harmonic') return false;
@@ -2893,6 +2903,47 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         </div>
       ) : null}
 
+
+      <HintOverlay
+        open={harmonicTipsOpen}
+        onClose={() => setHarmonicTipsOpen(false)}
+        title="Harmonic interval tips"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ opacity: 0.92 }}>
+            Harmonic intervals are harder because both notes arrive at once — your brain doesn’t get the “jump”
+            cue from melodic motion. Try these trainer moves:
+          </div>
+
+          <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.5 }}>
+            <li>
+              <b>Split it:</b> after the chord, sing/hum either the top or bottom note (even badly).
+            </li>
+            <li>
+              <b>Arpeggiate mentally:</b> imagine root → target (or replay with helper on) to recover the melodic shape.
+            </li>
+            <li>
+              <b>Listen for “color” first:</b> consonant vs crunchy, then refine (e.g. 4th vs 5th, 3rd vs 6th).
+            </li>
+            <li>
+              <b>Slow down:</b> two listens is normal. Accuracy beats speed.
+            </li>
+          </ul>
+
+          <div style={{ fontSize: 12, opacity: 0.78, lineHeight: 1.45 }}>
+            Quick reads: 
+            <a href="https://www.musical-u.com/learn/how-can-i-improve-at-harmonic-intervals/" target="_blank" rel="noreferrer">Musical U</a>
+            {' · '}
+            <a href="https://music.stackexchange.com/questions/59145/how-to-hear-lowest-note-in-harmonic-intervals" target="_blank" rel="noreferrer">Music.SE thread</a>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button className="primary" onClick={() => setHarmonicTipsOpen(false)}>Got it</button>
+            <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.75 }}>Knowledge-only</div>
+          </div>
+        </div>
+      </HintOverlay>
+
       <div className="focusCenter">
       {/* Duolingo-style Focus Mode: no big station header. */}
       <div className="focusMetaRow">
@@ -2905,6 +2956,17 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             Review{stationMistakeDue > 0 ? ` (${stationMistakeDue} due)` : ` (${stationMistakeCount})`}
             {mistakesThisVisit > 0 ? ` · +${mistakesThisVisit} new` : ''}
           </Link>
+        ) : null}
+
+        {showHarmonicTips ? (
+          <button
+            className="linkBtn"
+            style={{ fontSize: 12, padding: '6px 10px' }}
+            onClick={() => setHarmonicTipsOpen(true)}
+            title="Trainer tips for hearing harmonic intervals"
+          >
+            Harmonic tips
+          </button>
         ) : null}
       </div>
 
