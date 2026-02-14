@@ -445,7 +445,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [t3bCorrect, setT3bCorrect] = useState(0);
   const [t3bWrong, setT3bWrong] = useState(0);
   const [t3bRetryUsed, setT3bRetryUsed] = useState(false);
-  useEffect(() => setT3bRetryUsed(false), [t3bIndex]);
+  const [t3bLastWrongChoice, setT3bLastWrongChoice] = useState<IntervalLabel | null>(null);
+  useEffect(() => {
+    setT3bRetryUsed(false);
+    setT3bLastWrongChoice(null);
+  }, [t3bIndex]);
   const T3B_TOTAL = 8;
   const T3B_PASS = 6;
   const t3bDone = t3bIndex >= T3B_TOTAL;
@@ -468,7 +472,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [t3Correct, setT3Correct] = useState(0);
   const [t3Wrong, setT3Wrong] = useState(0);
   const [t3RetryUsed, setT3RetryUsed] = useState(false);
-  useEffect(() => setT3RetryUsed(false), [t3Index]);
+  const [t3LastWrongChoice, setT3LastWrongChoice] = useState<IntervalLabel | null>(null);
+  useEffect(() => {
+    setT3RetryUsed(false);
+    setT3LastWrongChoice(null);
+  }, [t3Index]);
   const T3_TOTAL = 10;
   const T3_PASS = 8;
   const t3Done = t3Index >= T3_TOTAL || t3Wrong >= HEARTS;
@@ -491,7 +499,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [e3Correct, setE3Correct] = useState(0);
   const [e3Wrong, setE3Wrong] = useState(0);
   const [e3RetryUsed, setE3RetryUsed] = useState(false);
-  useEffect(() => setE3RetryUsed(false), [e3Index]);
+  const [e3LastWrongChoice, setE3LastWrongChoice] = useState<IntervalLabel | null>(null);
+  useEffect(() => {
+    setE3RetryUsed(false);
+    setE3LastWrongChoice(null);
+  }, [e3Index]);
   const E3_TOTAL = 10;
   const E3_PASS = 8;
   const e3Done = e3Index >= E3_TOTAL || e3Wrong >= HEARTS;
@@ -1881,6 +1893,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
 
       if (settings.intervalRetryOnce && !t3bRetryUsed) {
         // GuitarOrb-ish loop: after you hear the correction, try the *same* question once.
+        // Keep the previously-wrong choice marked, so the learner doesn't fat-finger it again.
+        setT3bLastWrongChoice(choice);
         setT3bRetryUsed(true);
         setResult('idle');
         return;
@@ -1897,6 +1911,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       return;
     }
 
+    setT3bLastWrongChoice(null);
     setT3bCorrect((n) => n + 1);
 
     if (practice) recordIntervalPracticeHit(id, t3bQ.semitones);
@@ -1965,6 +1980,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       }
 
       if (settings.intervalRetryOnce && !t3RetryUsed) {
+        setT3LastWrongChoice(choice);
         setT3RetryUsed(true);
         setResult('idle');
         return;
@@ -1988,6 +2004,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       return;
     }
 
+    setT3LastWrongChoice(null);
     setT3Correct((n) => n + 1);
 
     if (practice) recordIntervalPracticeHit(id, t3Q.semitones);
@@ -2058,6 +2075,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       }
 
       if (settings.intervalRetryOnce && !e3RetryUsed) {
+        setE3LastWrongChoice(choice);
         setE3RetryUsed(true);
         setResult('idle');
         return;
@@ -2079,6 +2097,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       return;
     }
 
+    setE3LastWrongChoice(null);
     setE3Correct((n) => n + 1);
 
     if (practice) recordIntervalPracticeHit(id, e3Q.semitones);
@@ -3611,7 +3630,12 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            <ChoiceGrid choices={t3bQ.choices} onChoose={chooseT3B} disabled={correctionReplayBusy} />
+            <ChoiceGrid
+              choices={t3bQ.choices}
+              onChoose={chooseT3B}
+              disabled={correctionReplayBusy}
+              getButtonClassName={(c) => `secondary${c === t3bLastWrongChoice ? ' choiceWrong' : ''}`}
+            />
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
@@ -3721,7 +3745,12 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            <ChoiceGrid choices={t3Q.choices} onChoose={chooseT3} disabled={correctionReplayBusy} />
+            <ChoiceGrid
+              choices={t3Q.choices}
+              onChoose={chooseT3}
+              disabled={correctionReplayBusy}
+              getButtonClassName={(c) => `secondary${c === t3LastWrongChoice ? ' choiceWrong' : ''}`}
+            />
           </div>
 
           <RegisterPolicyNote mode="both" />
@@ -3833,7 +3862,12 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            <ChoiceGrid choices={e3Q.choices} onChoose={chooseE3} disabled={correctionReplayBusy} />
+            <ChoiceGrid
+              choices={e3Q.choices}
+              onChoose={chooseE3}
+              disabled={correctionReplayBusy}
+              getButtonClassName={(c) => `secondary${c === e3LastWrongChoice ? ' choiceWrong' : ''}`}
+            />
           </div>
 
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>

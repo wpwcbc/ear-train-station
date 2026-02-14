@@ -1055,6 +1055,12 @@ button.primary { background: #e9f0ff; }
 button.secondary { background: var(--card); }
 button.ghost { background: transparent; }
 
+/* Mark a previously-wrong choice during a retry (keeps the learner oriented). */
+button.choiceWrong {
+  background: #ffe9e9;
+  border-color: #b00020;
+}
+
 .linkBtn {
   display: inline-block;
   padding: 8px 12px;
