@@ -344,6 +344,29 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const isIntervalStation = id === 'S3_INTERVALS' || id === 'T3B_INTERVALS' || id === 'T3_INTERVALS' || id === 'E3_INTERVALS';
   const showHarmonicTips = isIntervalStation && intervalPromptMode === 'harmonic';
 
+  // Quick “Practice Hub” entry point: start a targeted mix weighted toward your recent misses.
+  // Keep it knowledge-only (no settings), and only show it when we have miss stats.
+  const canQuickTargetedMix =
+    (id === 'T3B_INTERVALS' || id === 'T3_INTERVALS' || id === 'E3_INTERVALS') && allIntervalMisses.length > 0;
+
+  function resetIntervalTestLike() {
+    if (id === 'T3B_INTERVALS') return resetT3B();
+    if (id === 'T3_INTERVALS') return resetT3();
+    if (id === 'E3_INTERVALS') return resetE3();
+  }
+
+  function startIntervalTargetedMix() {
+    // Bias question sampling toward your worst offenders.
+    // Implementation: duplicate semitone values in the allowlist (higher frequency = more likely).
+    const basis = (topIntervalMisses.length ? topIntervalMisses : allIntervalMisses.slice(0, 5)).slice(0, 5);
+    const weighted = basis.flatMap((x) => Array(Math.min(6, Math.max(2, x.weight))).fill(LABEL_TO_SEMITONE[x.label]));
+
+    setPractice(true);
+    setPracticeFocusIntervals(null);
+    setPracticeWeightedSemitones(weighted.length ? weighted : null);
+    resetIntervalTestLike();
+  }
+
   function harmonicHelperEnabled(isCorrection: boolean) {
     if (intervalPromptMode !== 'harmonic') return false;
     if (!intervalHarmonicAlsoMelodic) return false;
@@ -2980,6 +3003,17 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             Review{stationMistakeDue > 0 ? ` (${stationMistakeDue} due)` : ` (${stationMistakeCount})`}
             {mistakesThisVisit > 0 ? ` · +${mistakesThisVisit} new` : ''}
           </Link>
+        ) : null}
+
+        {canQuickTargetedMix ? (
+          <button
+            className="linkBtn"
+            style={{ fontSize: 12, padding: '6px 10px' }}
+            onClick={startIntervalTargetedMix}
+            title="Practice a targeted mix weighted toward your recent misses"
+          >
+            Targeted mix
+          </button>
         ) : null}
 
         {showHarmonicTips ? (
