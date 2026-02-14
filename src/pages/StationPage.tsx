@@ -350,6 +350,10 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     (id === 'T3B_INTERVALS' || id === 'T3_INTERVALS' || id === 'E3_INTERVALS') && allIntervalMisses.length > 0;
 
   function resetIntervalTestLike() {
+    // Cancel any pending “correction replay” so we don’t overlap audio when the user jumps into practice.
+    correctionReplayTokenRef.current += 1;
+    setCorrectionReplayBusy(false);
+
     if (id === 'T3B_INTERVALS') return resetT3B();
     if (id === 'T3_INTERVALS') return resetT3();
     if (id === 'E3_INTERVALS') return resetE3();
