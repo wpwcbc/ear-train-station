@@ -2630,6 +2630,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       else if (id === 'S8_DEGREE_INTERVALS') next();
       else if (id === 'T8_DEGREE_INTERVALS') resetT8();
     },
+    keyMap: showHarmonicTips
+      ? {
+          h: () => setHarmonicTipsOpen(true),
+        }
+      : undefined,
     onChoiceIndex: (idx) => {
       if (id === 'S1_NOTES') {
         if (s1TestComplete) {
@@ -2963,9 +2968,9 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             className="linkBtn"
             style={{ fontSize: 12, padding: '6px 10px' }}
             onClick={() => setHarmonicTipsOpen(true)}
-            title="Trainer tips for hearing harmonic intervals"
+            title="Trainer tips for hearing harmonic intervals (hotkey: H)"
           >
-            Harmonic tips
+            Harmonic tips (H)
           </button>
         ) : null}
       </div>

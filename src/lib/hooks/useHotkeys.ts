@@ -16,6 +16,8 @@ export type HotkeyHandlers = {
   onSecondary?: () => void;
   /** Digit 1-9 answers; index is 0-based. */
   onChoiceIndex?: (idx: number) => void;
+  /** Extra single-key bindings (case-insensitive). Example: { h: () => openHelp() } */
+  keyMap?: Record<string, () => void>;
   enabled?: boolean;
 };
 
@@ -26,7 +28,7 @@ export type HotkeyHandlers = {
  * - 1..9 → choice buttons
  */
 export function useHotkeys(handlers: HotkeyHandlers) {
-  const { enabled = true, onPrimary, onSecondary, onChoiceIndex } = handlers;
+  const { enabled = true, onPrimary, onSecondary, onChoiceIndex, keyMap } = handlers;
 
   useEffect(() => {
     if (!enabled) return;
@@ -55,10 +57,20 @@ export function useHotkeys(handlers: HotkeyHandlers) {
         const idx = Number.parseInt(k, 10) - 1;
         e.preventDefault();
         onChoiceIndex(idx);
+        return;
+      }
+
+      // Extra single-key bindings (letters etc.)
+      if (keyMap && k && k.length === 1) {
+        const fn = keyMap[k.toLowerCase()];
+        if (fn) {
+          e.preventDefault();
+          fn();
+        }
       }
     }
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [enabled, onPrimary, onSecondary, onChoiceIndex]);
+  }, [enabled, onPrimary, onSecondary, onChoiceIndex, keyMap]);
 }

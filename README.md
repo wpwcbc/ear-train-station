@@ -67,7 +67,7 @@ Optional (⚙️): you can choose **interval prompt style**:
 
 Harmonic tips (quick): harmonic intervals often feel harder because you hear one fused “sonority”. Try anchoring the bottom note, then sing/hum the top note to separate the sound.
 
-In interval stations, when you’re in **Harmonic** prompt style, you can tap **Harmonic tips** for a short trainer-style cheat sheet.
+In interval stations, when you’re in **Harmonic** prompt style, you can tap **Harmonic tips** (or press **H**) for a short trainer-style cheat sheet.
 
 References:
 - Musical U (harmonic interval practice tips): https://www.musical-u.com/learn/how-can-i-improve-at-harmonic-intervals/
