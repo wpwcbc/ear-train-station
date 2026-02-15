@@ -74,6 +74,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const stationFilter = (searchParams.get('station') || '').trim();
   const drill = (searchParams.get('drill') || '').trim();
   const drillModeRaw = drill === '1' || drill === 'true' || drill === 'yes';
+  const drillKindRaw = (searchParams.get('kind') || '').trim().toLowerCase();
+  const drillKind: 'interval' | 'triad' = ['triad', 'triads', 'chord', 'chords'].includes(drillKindRaw) ? 'triad' : 'interval';
   const warmup = (searchParams.get('warmup') || '').trim();
   const warmupModeRaw = warmup === '1' || warmup === 'true' || warmup === 'yes';
 
@@ -125,6 +127,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const practiceDoneTo = workoutSession ? `/practice?workoutDone=${workoutSession}` : null;
 
   const drillSemisRaw = (searchParams.get('semitones') || '').trim();
+  const drillQualRaw = (searchParams.get('qualities') || '').trim();
   const drillSemitones = drillSemisRaw
     ? drillSemisRaw
         .split(',')
@@ -228,6 +231,22 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     return [...map.values()].sort((a, b) => b.weight - a.weight || b.count - a.count || a.semitones - b.semitones);
   }, [filtered]);
 
+
+  const triadStats = useMemo(() => {
+    const map = new Map<TriadQuality, { quality: TriadQuality; count: number; weight: number }>();
+    for (const m of filtered) {
+      if (m.kind !== 'triadQuality') continue;
+      const key = m.quality;
+      const prev = map.get(key) ?? { quality: key, count: 0, weight: 0 };
+      const w = 1 + Math.min(5, m.wrongCount ?? 0);
+      prev.count += 1;
+      prev.weight += w;
+      map.set(key, prev);
+    }
+
+    return [...map.values()].sort((a, b) => b.weight - a.weight || b.count - a.count);
+  }, [filtered]);
+
   const mistakeKindStats = useMemo(() => {
     const map = new Map<Mistake['kind'], { kind: Mistake['kind']; total: number; due: number }>();
     for (const m of filtered) {
@@ -250,6 +269,31 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     return intervalStats.slice(0, 3).map((x) => x.semitones);
   }, [drillMode, drillSemitones, intervalStats]);
 
+
+  const drillFocusQualities = useMemo(() => {
+    if (!drillMode) return [] as TriadQuality[];
+    if (drillKind !== 'triad') return [] as TriadQuality[];
+
+    if (drillQualRaw) {
+      const items = drillQualRaw
+        .split(',')
+        .map((x) => x.trim().toLowerCase())
+        .filter(Boolean);
+      const allowed = items.filter((x): x is TriadQuality => x === 'major' || x === 'minor' || x === 'diminished');
+      // de-dup preserving order
+      const seen = new Set<string>();
+      const out: TriadQuality[] = [];
+      for (const x of allowed) {
+        if (seen.has(x)) continue;
+        seen.add(x);
+        out.push(x);
+      }
+      return out;
+    }
+
+    return triadStats.slice(0, 2).map((x) => x.quality);
+  }, [drillMode, drillKind, drillQualRaw, triadStats]);
+
   const DRILL_TOTAL = sessionN;
   const [drillIndex, setDrillIndex] = useState(0);
   const [drillCorrect, setDrillCorrect] = useState(0);
@@ -262,10 +306,11 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     setDrillCorrect(0);
     setDrillWrong(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drillMode, drillSemisRaw, stationFilter, sessionN]);
+  }, [drillMode, drillKind, drillSemisRaw, drillQualRaw, stationFilter, sessionN]);
 
   const drillIlQ = useMemo(() => {
     if (!drillMode) return null;
+    if (drillKind !== 'interval') return null;
     if (drillFocusSemitones.length === 0) return null;
     if (drillIndex >= DRILL_TOTAL) return null;
     // Tests/exams: wide register (>= G2). Keep drills aligned with that.
@@ -276,7 +321,27 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       allowedSemitones: drillFocusSemitones,
       choiceCount: 6,
     });
-  }, [drillMode, drillFocusSemitones, drillIndex, seed]);
+  }, [drillMode, drillKind, drillFocusSemitones, drillIndex, seed]);
+
+  const drillTriadQ = useMemo(() => {
+    if (!drillMode) return null;
+    if (drillKind !== 'triad') return null;
+    if (drillFocusQualities.length === 0) return null;
+    if (drillIndex >= DRILL_TOTAL) return null;
+
+    // Tests/exams: wide register (>= G2). Keep drills aligned with that.
+    const maxTriadInterval = 7;
+    const span = Math.max(1, (DEFAULT_WIDE_REGISTER_MAX_MIDI - maxTriadInterval) - WIDE_REGISTER_MIN_MIDI + 1);
+    const rootMidi = WIDE_REGISTER_MIN_MIDI + ((seed * 10_000 + 7100 + drillIndex) % span);
+    const q = drillFocusQualities[(seed + drillIndex) % drillFocusQualities.length] ?? drillFocusQualities[0]!;
+
+    return makeTriadQualityReviewQuestion({
+      seed: seed * 10_000 + 7200 + drillIndex,
+      rootMidi,
+      quality: q,
+      choiceCount: 3,
+    });
+  }, [drillMode, drillKind, drillFocusQualities, drillIndex, seed, DRILL_TOTAL]);
 
   const active = (drillMode
     ? undefined
@@ -350,14 +415,26 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     const harmonicAlsoMelodic = intervalPromptMode === 'harmonic' && intervalHarmonicAlsoMelodic && intervalHarmonicHelperWhen !== 'onMiss';
 
     if (drillMode) {
-      if (!drillIlQ) return;
-      await playIntervalPrompt(drillIlQ.rootMidi, drillIlQ.targetMidi, {
-        mode: intervalPromptMode,
-        harmonicAlsoMelodic: harmonicAlsoMelodic,
-        harmonicHelperDelayMs: gap(intervalHarmonicHelperDelayMs),
-        gapMs: gap(320),
-        rootDurationSec: dur(0.7),
-        targetDurationSec: dur(0.95),
+      if (drillKind === 'interval') {
+        if (!drillIlQ) return;
+        await playIntervalPrompt(drillIlQ.rootMidi, drillIlQ.targetMidi, {
+          mode: intervalPromptMode,
+          harmonicAlsoMelodic: harmonicAlsoMelodic,
+          harmonicHelperDelayMs: gap(intervalHarmonicHelperDelayMs),
+          gapMs: gap(320),
+          rootDurationSec: dur(0.7),
+          targetDurationSec: dur(0.95),
+        });
+        return;
+      }
+
+      if (!drillTriadQ) return;
+      await playRootThenChordPrompt(drillTriadQ.chordMidis, {
+        mode: chordMode,
+        rootDurationSec: dur(0.65),
+        chordDurationSec: dur(1.1),
+        gapBeforeChordMs: gap(240),
+        gapMs: gap(130),
       });
       return;
     }
@@ -449,7 +526,6 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
   function applyDrillOutcome(outcome: 'correct' | 'wrong') {
     if (!drillMode) return;
-    if (!drillIlQ) return;
 
     if (outcome === 'correct') {
       setDrillCorrect((n) => n + 1);
@@ -487,6 +563,13 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   }
 
   async function chooseTriad(choice: TriadQuality) {
+    if (drillMode) {
+      if (!drillTriadQ) return;
+      const ok = choice === drillTriadQ.quality;
+      applyDrillOutcome(ok ? 'correct' : 'wrong');
+      return;
+    }
+
     if (!triadQ || !active || active.kind !== 'triadQuality') return;
     const ok = choice === triadQ.quality;
     applyOutcome(ok ? 'correct' : 'wrong');
@@ -520,7 +603,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   // mark it as done once the user reaches a natural completion state.
   // (So the Practice Hub checkmark doesn't depend on a specific exit link.)
   const workoutComplete =
-    (drillMode && drillFocusSemitones.length > 0 && drillIndex >= DRILL_TOTAL && !drillIlQ) ||
+    (drillMode &&
+      ((drillKind === 'interval' && drillFocusSemitones.length > 0 && drillIndex >= DRILL_TOTAL && !drillIlQ) ||
+        (drillKind === 'triad' && drillFocusQualities.length > 0 && drillIndex >= DRILL_TOTAL && !drillTriadQ))) ||
     (!drillMode && warmupMode && !active && warmupQueue.length > 0 && doneCount > 0) ||
     (!drillMode && !warmupMode && !active && dueCount === 0 && doneCount > 0);
 
@@ -550,7 +635,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     },
     onSecondary: () => {
       if (drillMode) {
-        if (!drillIlQ) return;
+        if (drillKind === 'interval' && !drillIlQ) return;
+        if (drillKind === 'triad' && !drillTriadQ) return;
         setResult('idle');
         setSeed((x) => x + 1);
         setDrillIndex((i) => i + 1);
@@ -563,9 +649,16 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     },
     onChoiceIndex: (idx) => {
       if (drillMode) {
-        if (!drillIlQ) return;
-        const c = drillIlQ.choices[idx];
-        if (c) void chooseInterval(c);
+        if (drillKind === 'interval') {
+          if (!drillIlQ) return;
+          const c = drillIlQ.choices[idx];
+          if (c) void chooseInterval(c);
+          return;
+        }
+
+        if (!drillTriadQ) return;
+        const c = drillTriadQ.choices[idx];
+        if (c) void chooseTriad(c);
         return;
       }
 
@@ -609,7 +702,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           <h1 className="title">{drillMode ? 'Review Drill' : warmupMode ? 'Warm‑up Review' : 'Review'}</h1>
           <p className="sub">
             {drillMode
-              ? 'Targeted interval drills from your mistakes (wide register: G2+).'
+              ? drillKind === 'triad'
+                ? 'Targeted triad-quality drills from your mistakes (wide register: G2+).'
+                : 'Targeted interval drills from your mistakes (wide register: G2+).'
               : warmupMode
                 ? 'A quick warm‑up set from your queue (even if nothing is due yet).'
                 : 'Spaced review of missed items. Clear an item by getting it right twice in a row (streak 2/2).'}
@@ -654,8 +749,10 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button className="primary" disabled={drillMode ? !drillIlQ : !active} onClick={playPrompt}>
-            {drillMode || active?.kind === 'intervalLabel' ? `Play (${settings.intervalPromptMode === 'harmonic' ? 'Harmonic' : 'Melodic'})` : 'Play'}
+          <button className="primary" disabled={drillMode ? (drillKind === 'interval' ? !drillIlQ : !drillTriadQ) : !active} onClick={playPrompt}>
+            {(drillMode && drillKind === 'interval') || active?.kind === 'intervalLabel'
+              ? `Play (${settings.intervalPromptMode === 'harmonic' ? 'Harmonic' : 'Melodic'})`
+              : 'Play'}
           </button>
           <div style={{ fontSize: 12, opacity: 0.78, display: 'inline-flex', alignItems: 'center' }}>
             Settings live behind ⚙️
@@ -691,7 +788,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               snoozeMistake(active.id, 5 * 60_000);
               refresh();
             }}
-            disabled={drillMode ? !drillIlQ : !active}
+            disabled={drillMode ? (drillKind === 'interval' ? !drillIlQ : !drillTriadQ) : !active}
             title={drillMode ? 'Skip (next drill question)' : 'Skip this item for now (snooze 5 minutes)'}
           >
             Skip
@@ -759,8 +856,18 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             state={inheritedState}
             title="A fast interval drill from your mistakes (wide register: G2+)."
           >
-            Drill
+            Interval drill
           </Link>
+          {triadStats.length > 0 ? (
+            <Link
+              className="pill"
+              to={`/review?drill=1&kind=triad${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
+              state={inheritedState}
+              title="A fast triad-quality drill from your mistakes (wide register: G2+)."
+            >
+              Triad drill
+            </Link>
+          ) : null}
           <Link
             className="pill"
             to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
@@ -783,7 +890,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               .join(',')}${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
             state={inheritedState}
           >
-            Top misses ({intervalStats
+            Top interval misses ({intervalStats
               .slice(0, 3)
               .map((x) => SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`)
               .join(', ')})
@@ -796,6 +903,35 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               state={inheritedState}
             >
               {SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`} ×{x.count}
+            </Link>
+          ))}
+        </div>
+      ) : null}
+
+      {!drillMode && triadStats.length > 0 ? (
+        <div style={{ marginTop: 8, fontSize: 12, opacity: 0.85, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ opacity: 0.9 }}>Triad drills:</span>
+          <Link
+            className="pill"
+            to={`/review?drill=1&kind=triad&qualities=${triadStats
+              .slice(0, 2)
+              .map((x) => x.quality)
+              .join(',')}${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
+            state={inheritedState}
+          >
+            Top misses ({triadStats
+              .slice(0, 2)
+              .map((x) => triadQualityLabel(x.quality))
+              .join(', ')})
+          </Link>
+          {triadStats.slice(0, 3).map((x) => (
+            <Link
+              key={x.quality}
+              className="pill"
+              to={`/review?drill=1&kind=triad&qualities=${x.quality}${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
+              state={inheritedState}
+            >
+              {triadQualityLabel(x.quality)} ×{x.count}
             </Link>
           ))}
         </div>
@@ -1053,37 +1189,89 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       ) : null}
 
       {drillMode ? (
-        drillIlQ ? (
+        drillKind === 'interval' ? (
+          drillIlQ ? (
+            <>
+              <div className={`result r_${result}`}>
+                {result === 'idle' && drillIlQ.prompt}
+                {result === 'correct' && `Nice — ${drillIlQ.correct} (${intervalLongName(drillIlQ.correct)})`}
+                {result === 'wrong' && `Not quite — it was ${drillIlQ.correct} (${intervalLongName(drillIlQ.correct)}).`}
+              </div>
+
+              <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                {drillIlQ.choices.map((c) => (
+                  <button key={c} className="secondary" onClick={() => chooseInterval(c)}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
+                Focus: {drillFocusSemitones.map((s) => SEMITONE_TO_LABEL[s] ?? `${s}st`).join(', ')}
+              </div>
+            </>
+          ) : drillFocusSemitones.length === 0 ? (
+            <div className="result r_idle">No interval mistakes yet. Do a test/exam, miss something, then come back for a drill.</div>
+          ) : (
+            <div className="result r_correct">
+              <div style={{ fontSize: 14, opacity: 0.95 }}>Drill complete — {drillCorrect}/{DRILL_TOTAL} correct.</div>
+              <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
+                <Link
+                  className="linkBtn"
+                  to={`/review?drill=1&semitones=${drillFocusSemitones.join(',')}${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
+                  state={inheritedState}
+                >
+                  Restart drill
+                </Link>
+                <Link className="linkBtn" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
+                  Warm‑up
+                </Link>
+                <Link className="linkBtn" to={`/review?manage=1${stationFilter ? `&station=${stationFilter}` : ''}#manage`} state={inheritedState}>
+                  Manage mistakes
+                </Link>
+                {practiceDoneTo ? (
+                  <Link className="linkBtn primaryLink" to={practiceDoneTo}>
+                    Back to practice
+                  </Link>
+                ) : null}
+                <Link className="linkBtn" to={stationFilter ? `/review?station=${stationFilter}` : '/review'} state={inheritedState}>
+                  Back to review
+                </Link>
+              </div>
+              <div style={{ marginTop: 8, fontSize: 12, opacity: 0.78 }}>
+                {sched.nextDueAt ? `Next due in ${msToHuman(sched.nextDueAt - now)}.` : 'Nothing due right now.'}
+              </div>
+            </div>
+          )
+        ) : drillTriadQ ? (
           <>
             <div className={`result r_${result}`}>
-              {result === 'idle' && drillIlQ.prompt}
-              {result === 'correct' && `Nice — ${drillIlQ.correct} (${intervalLongName(drillIlQ.correct)})`}
-              {result === 'wrong' && `Not quite — it was ${drillIlQ.correct} (${intervalLongName(drillIlQ.correct)}).`}
+              {result === 'idle' && drillTriadQ.prompt}
+              {result === 'correct' && `Nice — ${triadQualityLabel(drillTriadQ.quality)}.`}
+              {result === 'wrong' && `Not quite — it was ${triadQualityLabel(drillTriadQ.quality)}.`}
             </div>
 
             <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-              {drillIlQ.choices.map((c) => (
-                <button key={c} className="secondary" onClick={() => chooseInterval(c)}>
-                  {c}
+              {drillTriadQ.choices.map((c) => (
+                <button key={c} className="secondary" onClick={() => chooseTriad(c)}>
+                  {triadQualityLabel(c)}
                 </button>
               ))}
             </div>
 
             <div style={{ marginTop: 10, fontSize: 12, opacity: 0.8 }}>
-              Focus: {drillFocusSemitones.map((s) => SEMITONE_TO_LABEL[s] ?? `${s}st`).join(', ')}
+              Focus: {drillFocusQualities.map((q) => triadQualityLabel(q)).join(', ')}
             </div>
           </>
-        ) : drillFocusSemitones.length === 0 ? (
-          <div className="result r_idle">No interval mistakes yet. Do a test/exam, miss something, then come back for a drill.</div>
+        ) : drillFocusQualities.length === 0 ? (
+          <div className="result r_idle">No triad-quality mistakes yet. Do a test/exam, miss something, then come back for a drill.</div>
         ) : (
           <div className="result r_correct">
-            <div style={{ fontSize: 14, opacity: 0.95 }}>
-              Drill complete — {drillCorrect}/{DRILL_TOTAL} correct.
-            </div>
+            <div style={{ fontSize: 14, opacity: 0.95 }}>Drill complete — {drillCorrect}/{DRILL_TOTAL} correct.</div>
             <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
               <Link
                 className="linkBtn"
-                to={`/review?drill=1&semitones=${drillFocusSemitones.join(',')}${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
+                to={`/review?drill=1&kind=triad&qualities=${drillFocusQualities.join(',')}${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
                 state={inheritedState}
               >
                 Restart drill
@@ -1109,6 +1297,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           </div>
         )
       ) : !active ? (
+
         <div className={`result ${warmupMode && warmupQueue.length > 0 && doneCount > 0 ? 'r_correct' : 'r_idle'}`}>
           {totalCount === 0 ? (
             'No mistakes queued. Go do a station and come back if you miss something.'
