@@ -395,6 +395,23 @@ export function PracticePage({ progress }: { progress: Progress }) {
             </Link>
           ) : null}
 
+          {hasTriadMistakes ? (
+            <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontSize: 12, opacity: 0.75 }}>Triad shortcuts:</span>
+              {(['major', 'minor', 'diminished'] as const).map((q) => (
+                <Link
+                  key={q}
+                  className="pill"
+                  to={`/review?drill=1&kind=triad&qualities=${encodeURIComponent(q)}`}
+                  state={{ exitTo: '/practice' }}
+                  title={`Drill ${triadQualityLabel(q)} only (wide register: G2+)`}
+                >
+                  {triadQualityLabel(q)}
+                </Link>
+              ))}
+            </div>
+          ) : null}
+
           {hasIntervalMistakes && intervalStatsTop.length ? (
             <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               <span style={{ fontSize: 12, opacity: 0.75 }}>Drill shortcuts:</span>
