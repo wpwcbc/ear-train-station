@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { nextUnlockedIncomplete } from '../lib/stations';
-import { intervalMistakeStatsFrom, loadMistakes, mistakeCountForStation, mistakeScheduleSummary } from '../lib/mistakes';
+import { intervalMistakeStatsFrom, loadMistakes, mistakeCountForStation, mistakeScheduleSummary, triadMistakeStatsFrom } from '../lib/mistakes';
 import { STATIONS } from '../lib/stations';
 import { SEMITONE_TO_LABEL } from '../exercises/interval';
+import { triadQualityLabel } from '../exercises/triad';
 import { getABVariant } from '../lib/ab';
 import { getWorkoutDayDone, getWorkoutDone, getWorkoutStreak, localDayKey, setWorkoutDone, subDays } from '../lib/workout';
 
@@ -67,8 +68,11 @@ export function PracticePage({ progress }: { progress: Progress }) {
   }, [navigate, searchParams]);
 
   const sched = mistakeScheduleSummary(now);
-  const intervalStatsTop = intervalMistakeStatsFrom(loadMistakes()).slice(0, 3);
+  const mistakes = loadMistakes();
+  const intervalStatsTop = intervalMistakeStatsFrom(mistakes).slice(0, 3);
+  const triadStatsTop = triadMistakeStatsFrom(mistakes).slice(0, 2);
   const hasIntervalMistakes = intervalStatsTop.length > 0;
+  const hasTriadMistakes = triadStatsTop.length > 0;
 
   const workoutCopyVariant = getABVariant('practice_today_workout_copy_v1');
 
@@ -376,6 +380,20 @@ export function PracticePage({ progress }: { progress: Progress }) {
               </span>
             ) : null}
           </Link>
+
+          {hasTriadMistakes ? (
+            <Link
+              className="linkBtn"
+              to={`/review?drill=1&kind=triad&qualities=${encodeURIComponent(triadStatsTop.map((x) => x.quality).join(','))}`}
+              state={{ exitTo: '/practice' }}
+              title={`Triad-quality drill from your mistakes: ${triadStatsTop.map((x) => triadQualityLabel(x.quality)).join(', ')} (wide register: G2+).`}
+            >
+              Triad misses drill
+              {triadStatsTop.length ? (
+                <span style={{ marginLeft: 8, fontSize: 12, opacity: 0.8 }}>({triadStatsTop.map((x) => triadQualityLabel(x.quality)).join(', ')})</span>
+              ) : null}
+            </Link>
+          ) : null}
 
           {hasIntervalMistakes && intervalStatsTop.length ? (
             <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>

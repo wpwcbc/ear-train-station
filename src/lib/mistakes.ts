@@ -322,6 +322,8 @@ export function mistakeCountForStation(sourceStationId: StationId, opts?: { dueO
 
 export type IntervalMistakeStat = { semitones: number; count: number; weight: number };
 
+export type TriadMistakeStat = { quality: 'major' | 'minor' | 'diminished'; count: number; weight: number };
+
 /**
  * Lightweight stats used to power “Top misses” drill affordances.
  * Weight favors intervals you miss repeatedly.
@@ -343,4 +345,26 @@ export function intervalMistakeStats(now = Date.now()): IntervalMistakeStat[] {
   // now is unused for now but kept for future due-weighting.
   void now;
   return intervalMistakeStatsFrom(loadMistakes());
+}
+
+/**
+ * Lightweight stats for triad-quality “Top misses” drills.
+ * Weight favors qualities you miss repeatedly.
+ */
+export function triadMistakeStatsFrom(mistakes: Mistake[]): TriadMistakeStat[] {
+  const map = new Map<TriadMistakeStat['quality'], TriadMistakeStat>();
+  for (const m of mistakes) {
+    if (m.kind !== 'triadQuality') continue;
+    const w = 1 + Math.min(5, m.wrongCount ?? 0);
+    const cur = map.get(m.quality) ?? { quality: m.quality, count: 0, weight: 0 };
+    cur.count += 1;
+    cur.weight += w;
+    map.set(m.quality, cur);
+  }
+  return [...map.values()].sort((a, b) => b.weight - a.weight || b.count - a.count);
+}
+
+export function triadMistakeStats(now = Date.now()): TriadMistakeStat[] {
+  void now;
+  return triadMistakeStatsFrom(loadMistakes());
 }
