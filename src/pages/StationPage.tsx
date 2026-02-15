@@ -368,6 +368,10 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     setPractice(true);
     setPracticeFocusIntervals(null);
     setPracticeWeightedSemitones(weighted.length ? weighted : null);
+
+    // Micro-guidance: make it explicit this isn't “hard mode”, it's “practice your misses”.
+    setToast({ text: 'Targeted mix: weighted toward your recent misses.' });
+
     resetIntervalTestLike();
   }
 
@@ -3014,7 +3018,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
             className="linkBtn"
             style={{ fontSize: 12, padding: '6px 10px' }}
             onClick={startIntervalTargetedMix}
-            title="Practice a targeted mix weighted toward your recent misses"
+            title="Practice a targeted mix weighted toward your recent misses (shows up after you’ve missed something)"
           >
             Targeted mix
           </button>
