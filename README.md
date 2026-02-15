@@ -107,6 +107,7 @@ Comparable patterns / references:
 Implementation notes:
 - Interval stations keep a lightweight **miss histogram** (+ last-missed timestamp) in `localStorage` (separate from the capped/de-duped review queue).
 - This powers the end-of-test “most missed” summary (now also shows roughly when you last missed each top interval) and the **Targeted mix** (weighted practice). For practice weighting, older misses gently **decay over time** (7‑day half-life) so the mix doesn’t stay anchored to ancient mistakes; recency still gets a tiny extra bump so practice feels responsive.
+- In interval **tests/exams**, once you’ve missed something, a small **Targeted mix** button appears in the top meta row (near Review/Harmonic tips) for one-tap “practice your mistakes” — inspired by Duolingo’s Practice Hub idea of targeted review: https://blog.duolingo.com/how-duolingo-works-with-learners/
 - In practice mode, correct answers gently **cool down** that interval’s miss count (−1) so targeted mixes can adapt as you improve.
 - If ⚙️ “Intervals: replay correct + retry once” is enabled, the **first miss** replays the correction and offers one immediate retest; we only advance the question / increment wrong-hearts after the retest is used.
 - End-of-test now also has an **All miss stats** expander: one-tap drill any interval you’ve missed (top 12 shown), plus a **Review top 5** shortcut to practice your biggest misses as a focused set.
