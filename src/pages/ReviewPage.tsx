@@ -18,7 +18,7 @@ import {
 import { bumpReviewAttempt, bumpReviewClear } from '../lib/quests';
 import { SETTINGS_EVENT, loadSettings } from '../lib/settings';
 import { promptSpeedFactors } from '../lib/promptTiming';
-import { localDayKey, setWorkoutDone } from '../lib/workout';
+import { getWorkoutDone, localDayKey, setWorkoutDone } from '../lib/workout';
 import { piano } from '../audio/piano';
 import { playIntervalPrompt, playRootThenChordPrompt, playTonicTargetPrompt } from '../audio/prompts';
 import { makeNoteNameReviewQuestion } from '../exercises/noteName';
@@ -617,11 +617,26 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     (!drillMode && warmupMode && !active && warmupQueue.length > 0 && doneCount > 0) ||
     (!drillMode && !warmupMode && !active && dueCount === 0 && doneCount > 0);
 
+  // Duolingo-ish: completing a workout session grants a small XP bonus once per session per day.
+  const WORKOUT_BONUS_XP = 8;
+  const [workoutBonusAwarded, setWorkoutBonusAwarded] = useState(0);
+
   useEffect(() => {
     if (!workoutSession) return;
     if (!workoutComplete) return;
-    setWorkoutDone(localDayKey(), workoutSession);
-  }, [workoutComplete, workoutSession]);
+
+    const dayKey = localDayKey();
+    const already = getWorkoutDone(dayKey, workoutSession);
+
+    // Always mark as done (idempotent).
+    setWorkoutDone(dayKey, workoutSession);
+
+    // Only award once per (day, session).
+    if (!already) {
+      setProgress(applyStudyReward(progress, WORKOUT_BONUS_XP));
+      setWorkoutBonusAwarded(WORKOUT_BONUS_XP);
+    }
+  }, [workoutComplete, workoutSession, progress, setProgress]);
 
   useEffect(() => {
     if (nextDue == null) return;
@@ -1226,6 +1241,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           ) : (
             <div className="result r_correct">
               <div style={{ fontSize: 14, opacity: 0.95 }}>Drill complete — {drillCorrect}/{DRILL_TOTAL} correct.</div>
+            {workoutBonusAwarded > 0 ? (
+              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Workout bonus: +{workoutBonusAwarded} XP.</div>
+            ) : null}
               <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
                 <Link
                   className="linkBtn"
@@ -1279,6 +1297,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
         ) : (
           <div className="result r_correct">
             <div style={{ fontSize: 14, opacity: 0.95 }}>Drill complete — {drillCorrect}/{DRILL_TOTAL} correct.</div>
+            {workoutBonusAwarded > 0 ? (
+              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Workout bonus: +{workoutBonusAwarded} XP.</div>
+            ) : null}
             <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
               <Link
                 className="linkBtn"
@@ -1317,6 +1338,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               <div style={{ fontSize: 14, opacity: 0.95 }}>
                 Warm‑up complete — cleared <b>{Math.min(doneCount, warmupQueue.length)}</b> / {warmupQueue.length}.
               </div>
+              {workoutBonusAwarded > 0 ? (
+                <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Workout bonus: +{workoutBonusAwarded} XP.</div>
+              ) : null}
               <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
                 <Link className="linkBtn" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
                   Restart warm‑up
@@ -1342,6 +1366,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               <div style={{ fontSize: 14, opacity: 0.95 }}>
                 All caught up — cleared <b>{doneCount}</b> item{doneCount === 1 ? '' : 's'}.
               </div>
+              {workoutBonusAwarded > 0 ? (
+                <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Workout bonus: +{workoutBonusAwarded} XP.</div>
+              ) : null}
               <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
                 <Link className="linkBtn primaryLink" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
                   Continue (warm‑up)

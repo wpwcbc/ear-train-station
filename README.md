@@ -134,6 +134,7 @@ Rule of thumb: avoid hardcoding `60–71` or other magic MIDI ranges inside stat
 - Lessons can optionally enable **Retry once on mistakes** (Twist items) from **⚙️**.
 - Review is spaced by default; if nothing is due you can still run a short **Warm‑up** set (practice early) from your queue.
 - Practice Hub links are **deep-linkable**; the UI also offers **Copy link** buttons next to workout sessions / drills so you can share or bookmark a specific practice set.
+- Completing a **workout session** from Practice Hub grants a small **XP bonus** (once per session per day) — Duolingo-ish, but anti-farm.
 - Review → **Manage mistakes** shows examples with due/streak meta; you can **Snooze 1h** (defer) or Remove (with Undo) to keep the queue healthy.
 
 ## Mobile / iOS notes
