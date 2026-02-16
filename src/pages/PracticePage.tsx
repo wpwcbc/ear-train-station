@@ -215,15 +215,26 @@ export function PracticePage({ progress }: { progress: Progress }) {
           const newLabelB = continueId ? 'Learn something new (continue)' : 'Learn something new';
 
           // If the user has a review queue, prioritize a drill.
-          // BUT: only if they actually have interval mistakes — otherwise the drill would be empty.
-          // Alternate daily so it feels less repetitive.
-          const drillTo = hasIntervalMistakes ? '/review?drill=1' : '/review?warmup=1&n=5';
-          const drillLabel = hasIntervalMistakes ? 'Top misses drill' : 'Quick warm‑up';
-          const drillLabelB = hasIntervalMistakes ? 'Quick drill' : 'Warm up';
+          // BUT: only if they actually have mistakes for that drill — otherwise it would be empty.
+          // Tiny heuristic: if triad mistakes dominate (by weight), pick a triad drill sometimes.
+          // (Still deterministic-ish via day rotation, so it won’t feel random.)
+          const intervalWeight = intervalStatsTop.reduce((acc, s) => acc + s.weight, 0);
+          const triadWeight = triadStatsTop.reduce((acc, s) => acc + s.weight, 0);
 
-          const drillTitle = hasIntervalMistakes
-            ? 'A fast interval drill from your mistakes (wide register: G2+).'
-            : 'No interval mistakes yet — do a quick warm‑up from your queue instead.';
+          const preferTriadDrill = hasTriadMistakes && triadWeight > intervalWeight * 1.15;
+
+          const drillKind: 'interval' | 'triad' = preferTriadDrill ? 'triad' : 'interval';
+          const hasChosenMistakes = drillKind === 'triad' ? hasTriadMistakes : hasIntervalMistakes;
+
+          const drillTo = hasChosenMistakes ? (drillKind === 'triad' ? '/review?drill=1&kind=triad' : '/review?drill=1') : '/review?warmup=1&n=5';
+          const drillLabel = hasChosenMistakes ? (drillKind === 'triad' ? 'Triad misses drill' : 'Top misses drill') : 'Quick warm‑up';
+          const drillLabelB = hasChosenMistakes ? 'Quick drill' : 'Warm up';
+
+          const drillTitle = hasChosenMistakes
+            ? drillKind === 'triad'
+              ? 'A fast triad-quality drill from your mistakes (wide register: G2+).'
+              : 'A fast interval drill from your mistakes (wide register: G2+).'
+            : 'No mistakes yet for a drill — do a quick warm‑up from your queue instead.';
 
           const pickSecond = () => {
             if (!hasQueue) return { to: newTo, labelA: newLabel, labelB: newLabelB, title: 'Learn something new' };
