@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { CopyLinkButton } from '../components/CopyLinkButton';
 import type { Progress } from '../lib/progress';
 import { nextUnlockedIncomplete } from '../lib/stations';
 import { intervalMistakeStatsFrom, loadMistakes, mistakeCountForStation, mistakeScheduleSummary, triadMistakeStatsFrom } from '../lib/mistakes';
@@ -249,7 +250,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
           const secondExitTo = second.to.startsWith('/lesson/') ? '/practice?workoutDone=2' : '/practice';
 
           return (
-            <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
               <Link
                 className="linkBtn"
                 to={reviewTo}
@@ -258,9 +259,12 @@ export function PracticePage({ progress }: { progress: Progress }) {
               >
                 {workoutCopyVariant === 'A' ? reviewLabel : reviewLabelB}{workout1Done ? ' ✓' : ''}
               </Link>
+              <CopyLinkButton to={reviewTo} label="Copy workout session 1 link" />
+
               <Link className="linkBtn" to={secondTo} state={{ exitTo: secondExitTo }} title={second.title}>
                 {workoutCopyVariant === 'A' ? second.labelA : second.labelB}{workout2Done ? ' ✓' : ''}
               </Link>
+              <CopyLinkButton to={secondTo} label="Copy workout session 2 link" />
             </div>
           );
         })()}
@@ -366,45 +370,58 @@ export function PracticePage({ progress }: { progress: Progress }) {
             );
           })()}
 
-          <Link
-            className="linkBtn"
-            to={
-              hasIntervalMistakes
-                ? `/review?drill=1&semitones=${encodeURIComponent(intervalStatsTop.map((x) => x.semitones).join(','))}`
-                : '/review?warmup=1&n=5'
-            }
-            state={{ exitTo: '/practice' }}
-            title={
-              hasIntervalMistakes
-                ? `Drill focuses your top missed interval labels: ${intervalStatsTop
-                    .map((x) => SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`)
-                    .join(', ')}`
-                : 'No interval mistakes yet — warm‑up is the fastest way to practice your queue.'
-            }
-          >
-            {hasIntervalMistakes ? 'Top misses drill' : 'Quick warm‑up'}
-            {hasIntervalMistakes && intervalStatsTop.length ? (
-              <span style={{ marginLeft: 8, fontSize: 12, opacity: 0.8 }}>
-                ({intervalStatsTop
-                  .map((x) => SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`)
-                  .join(', ')})
-              </span>
-            ) : null}
-          </Link>
+          {(() => {
+            const to = hasIntervalMistakes
+              ? `/review?drill=1&semitones=${encodeURIComponent(intervalStatsTop.map((x) => x.semitones).join(','))}`
+              : '/review?warmup=1&n=5';
 
-          {hasTriadMistakes ? (
-            <Link
-              className="linkBtn"
-              to={`/review?drill=1&kind=triad&qualities=${encodeURIComponent(triadStatsTop.map((x) => x.quality).join(','))}`}
-              state={{ exitTo: '/practice' }}
-              title={`Triad-quality drill from your mistakes: ${triadStatsTop.map((x) => triadQualityLabel(x.quality)).join(', ')} (wide register: G2+).`}
-            >
-              Triad misses drill
-              {triadStatsTop.length ? (
-                <span style={{ marginLeft: 8, fontSize: 12, opacity: 0.8 }}>({triadStatsTop.map((x) => triadQualityLabel(x.quality)).join(', ')})</span>
-              ) : null}
-            </Link>
-          ) : null}
+            return (
+              <>
+                <Link
+                  className="linkBtn"
+                  to={to}
+                  state={{ exitTo: '/practice' }}
+                  title={
+                    hasIntervalMistakes
+                      ? `Drill focuses your top missed interval labels: ${intervalStatsTop
+                          .map((x) => SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`)
+                          .join(', ')}`
+                      : 'No interval mistakes yet — warm‑up is the fastest way to practice your queue.'
+                  }
+                >
+                  {hasIntervalMistakes ? 'Top misses drill' : 'Quick warm‑up'}
+                  {hasIntervalMistakes && intervalStatsTop.length ? (
+                    <span style={{ marginLeft: 8, fontSize: 12, opacity: 0.8 }}>
+                      ({intervalStatsTop
+                        .map((x) => SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`)
+                        .join(', ')})
+                    </span>
+                  ) : null}
+                </Link>
+                <CopyLinkButton to={to} label="Copy interval drill link" />
+              </>
+            );
+          })()}
+
+          {hasTriadMistakes ? (() => {
+            const to = `/review?drill=1&kind=triad&qualities=${encodeURIComponent(triadStatsTop.map((x) => x.quality).join(','))}`;
+            return (
+              <>
+                <Link
+                  className="linkBtn"
+                  to={to}
+                  state={{ exitTo: '/practice' }}
+                  title={`Triad-quality drill from your mistakes: ${triadStatsTop.map((x) => triadQualityLabel(x.quality)).join(', ')} (wide register: G2+).`}
+                >
+                  Triad misses drill
+                  {triadStatsTop.length ? (
+                    <span style={{ marginLeft: 8, fontSize: 12, opacity: 0.8 }}>({triadStatsTop.map((x) => triadQualityLabel(x.quality)).join(', ')})</span>
+                  ) : null}
+                </Link>
+                <CopyLinkButton to={to} label="Copy triad drill link" />
+              </>
+            );
+          })() : null}
 
           {hasTriadMistakes ? (
             <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
