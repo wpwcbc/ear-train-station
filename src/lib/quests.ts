@@ -1,10 +1,12 @@
 export type QuestState = {
-  version: 1;
+  version: 2;
   /** YYYY-MM-DD in local time. */
   ymd: string | null;
   reviewAttemptsToday: number;
   reviewClearsToday: number;
   stationsCompletedToday: number;
+  /** One-time daily reward guard (Quest chest). */
+  chestClaimedToday: boolean;
 };
 
 const KEY = 'ets_quests_v1';
@@ -19,11 +21,12 @@ function todayYmd() {
 
 export function defaultQuestState(): QuestState {
   return {
-    version: 1,
+    version: 2,
     ymd: null,
     reviewAttemptsToday: 0,
     reviewClearsToday: 0,
     stationsCompletedToday: 0,
+    chestClaimedToday: false,
   };
 }
 
@@ -40,7 +43,7 @@ export function loadQuestState(): QuestState {
     const raw = localStorage.getItem(KEY);
     if (!raw) return normalizeForToday(defaultQuestState());
     const parsed = JSON.parse(raw) as QuestState;
-    if (!parsed || parsed.version !== 1) return normalizeForToday(defaultQuestState());
+    if (!parsed || parsed.version !== 2) return normalizeForToday(defaultQuestState());
     return normalizeForToday({ ...defaultQuestState(), ...parsed });
   } catch {
     return normalizeForToday(defaultQuestState());
@@ -67,4 +70,8 @@ export function bumpReviewClear(n = 1) {
 
 export function bumpStationCompleted(n = 1) {
   updateQuestState((q) => ({ ...q, stationsCompletedToday: Math.max(0, q.stationsCompletedToday + n) }));
+}
+
+export function markChestClaimed() {
+  updateQuestState((q) => ({ ...q, chestClaimedToday: true }));
 }

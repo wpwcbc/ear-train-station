@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { Link } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
-import { loadQuestState, type QuestState } from '../lib/quests';
+import { applyStudyReward } from '../lib/progress';
+import { loadQuestState, markChestClaimed, type QuestState } from '../lib/quests';
 import { useMistakeStats } from '../lib/hooks/useMistakeStats';
 
 function clamp(n: number, min: number, max: number) {
@@ -17,7 +18,13 @@ function ProgressBar({ pct }: { pct: number }) {
   );
 }
 
-export function QuestsPage({ progress }: { progress: Progress }) {
+export function QuestsPage({
+  progress,
+  setProgress,
+}: {
+  progress: Progress;
+  setProgress: Dispatch<SetStateAction<Progress>>;
+}) {
   const stats = useMistakeStats();
   const [q, setQ] = useState<QuestState>(() => loadQuestState());
 
@@ -54,6 +61,9 @@ export function QuestsPage({ progress }: { progress: Progress }) {
 
   const allDone = questDailyXp.done && questReview.done && questStations.done;
 
+  const CHEST_XP = 10;
+  const canClaimChest = allDone && !q.chestClaimedToday;
+
   return (
     <div className="page">
       <div className="rowBetween">
@@ -80,6 +90,38 @@ export function QuestsPage({ progress }: { progress: Progress }) {
           Tip: if you’re short on time, do Review first — it’s the fastest XP and makes tomorrow easier.
         </div>
       )}
+
+      <div className="card" style={{ marginTop: 12, border: allDone ? '1px solid rgba(92, 231, 158, 0.35)' : undefined }}>
+        <div style={{ fontSize: 14, fontWeight: 850 }}>Quest chest</div>
+        <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
+          Clear all 3 quests to unlock a one-time XP bonus.
+        </div>
+        <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ fontSize: 12, opacity: 0.85 }}>
+            Reward: <b>+{CHEST_XP} XP</b>
+            {q.chestClaimedToday ? <span style={{ marginLeft: 8, opacity: 0.9 }}>✓ claimed</span> : null}
+          </div>
+          <button
+            className={canClaimChest ? 'btnPrimary' : 'btn'}
+            disabled={!canClaimChest}
+            title={
+              q.chestClaimedToday
+                ? 'Already claimed today'
+                : allDone
+                  ? 'Claim your daily Quest reward'
+                  : 'Finish all quests to unlock'
+            }
+            onClick={() => {
+              if (!canClaimChest) return;
+              markChestClaimed();
+              setQ(loadQuestState());
+              setProgress((p) => applyStudyReward(p, CHEST_XP));
+            }}
+          >
+            {q.chestClaimedToday ? 'Claimed' : allDone ? `Claim +${CHEST_XP} XP` : 'Locked'}
+          </button>
+        </div>
+      </div>
 
       <div className="gridCards" style={{ marginTop: 12 }}>
         <div className="card">

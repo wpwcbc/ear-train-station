@@ -137,7 +137,7 @@ function App() {
           />
 
           <Route path="/practice" element={<PracticePage progress={progress} />} />
-          <Route path="/quests" element={<QuestsPage progress={progress} />} />
+          <Route path="/quests" element={<QuestsPage progress={progress} setProgress={setProgress} />} />
           <Route path="/leaderboard" element={<LeaguePage progress={progress} />} />
           <Route path="/profile" element={<ProfilePage progress={progress} setProgress={setProgress} />} />
         </Route>
