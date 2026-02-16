@@ -29,6 +29,7 @@ import { makeFunctionFamilyQuestion, type FunctionFamily } from '../exercises/fu
 import { MAJOR_KEYS } from '../lib/theory/major';
 import { DEFAULT_WIDE_REGISTER_MAX_MIDI, WIDE_REGISTER_MIN_MIDI } from '../lib/registerPolicy';
 import { STATIONS } from '../lib/stations';
+import { mulberry32 } from '../lib/rng';
 
 function msToHuman(ms: number): string {
   if (ms <= 0) return 'now';
@@ -332,7 +333,11 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     // Tests/exams: wide register (>= G2). Keep drills aligned with that.
     const maxTriadInterval = 7;
     const span = Math.max(1, (DEFAULT_WIDE_REGISTER_MAX_MIDI - maxTriadInterval) - WIDE_REGISTER_MIN_MIDI + 1);
-    const rootMidi = WIDE_REGISTER_MIN_MIDI + ((seed * 10_000 + 7100 + drillIndex) % span);
+
+    // Use deterministic RNG (instead of modulo cycling) so roots feel less “patterny” across sessions.
+    const rng = mulberry32(seed * 10_000 + 7100 + drillIndex);
+    const rootMidi = WIDE_REGISTER_MIN_MIDI + Math.floor(rng() * span);
+
     const q = drillFocusQualities[(seed + drillIndex) % drillFocusQualities.length] ?? drillFocusQualities[0]!;
 
     return makeTriadQualityReviewQuestion({
