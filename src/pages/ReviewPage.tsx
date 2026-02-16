@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { CopyLinkButton } from '../components/CopyLinkButton';
 import { useHotkeys } from '../lib/hooks/useHotkeys';
 import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
@@ -69,6 +70,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const loc = useLocation();
   const navigate = useNavigate();
   const inheritedState = loc.state;
+
+  const shareTo = `${loc.pathname}${loc.search}${loc.hash || ''}`;
 
   const [seed, setSeed] = useState(1);
   const [searchParams] = useSearchParams();
@@ -726,6 +729,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           ) : null}
         </div>
         <div style={{ textAlign: 'right', fontSize: 12, opacity: 0.85 }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 6 }}>
+            <CopyLinkButton to={shareTo} label="Copy this review link" />
+          </div>
           {drillMode ? (
             <>
               <div>
