@@ -27,6 +27,7 @@ export function QuestsPage({
 }) {
   const stats = useMistakeStats();
   const [q, setQ] = useState<QuestState>(() => loadQuestState());
+  const [toast, setToast] = useState<null | { text: string }>(null);
 
   useEffect(() => {
     function bump() {
@@ -39,6 +40,12 @@ export function QuestsPage({
       window.removeEventListener('storage', bump);
     };
   }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => setToast(null), 2200);
+    return () => window.clearTimeout(t);
+  }, [toast]);
 
   // Quests are intentionally simple: they push the loop (learn → review → streak).
   const questDailyXp = useMemo(() => {
@@ -66,6 +73,11 @@ export function QuestsPage({
 
   return (
     <div className="page">
+      {toast ? (
+        <div className="pwaToast" role="status" aria-live="polite">
+          <span className="pwaToast__text">{toast.text}</span>
+        </div>
+      ) : null}
       <div className="rowBetween">
         <div>
           <h1 className="h1">Quests</h1>
@@ -91,7 +103,10 @@ export function QuestsPage({
         </div>
       )}
 
-      <div className="card" style={{ marginTop: 12, border: allDone ? '1px solid rgba(92, 231, 158, 0.35)' : undefined }}>
+      <div
+        className={`card questChestCard ${canClaimChest ? 'questChestCard--ready' : ''} ${q.chestClaimedToday ? 'questChestCard--claimed' : ''}`}
+        style={{ marginTop: 12, border: allDone ? '1px solid rgba(92, 231, 158, 0.35)' : undefined }}
+      >
         <div style={{ fontSize: 14, fontWeight: 850 }}>Quest chest</div>
         <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
           Clear all 3 quests to unlock a one-time XP bonus.
@@ -116,9 +131,10 @@ export function QuestsPage({
               markChestClaimed();
               setQ(loadQuestState());
               setProgress((p) => applyStudyReward(p, CHEST_XP));
+              setToast({ text: `Quest chest opened — +${CHEST_XP} XP` });
             }}
           >
-            {q.chestClaimedToday ? 'Claimed' : allDone ? `Claim +${CHEST_XP} XP` : 'Locked'}
+            {q.chestClaimedToday ? 'Claimed' : allDone ? `Open (+${CHEST_XP} XP)` : 'Locked'}
           </button>
         </div>
       </div>

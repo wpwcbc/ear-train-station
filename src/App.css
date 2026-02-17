@@ -1139,3 +1139,34 @@ button.choiceWrong {
 .pwaToast--warn {
   background: rgba(255, 245, 230, 0.98);
 }
+
+/* Quests: tiny reward polish (Duolingo-ish, but minimal) */
+.questChestCard {
+  position: relative;
+  overflow: hidden;
+}
+
+.questChestCard--ready {
+  background: linear-gradient(0deg, rgba(182, 242, 216, 0.35), rgba(141, 212, 255, 0.18));
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+}
+
+.questChestCard--ready::after {
+  content: '';
+  position: absolute;
+  inset: -30%;
+  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0) 55%);
+  transform: rotate(12deg);
+  pointer-events: none;
+  animation: questChestShimmer 2.6s ease-in-out infinite;
+}
+
+.questChestCard--claimed {
+  opacity: 0.92;
+}
+
+@keyframes questChestShimmer {
+  0% { transform: translateX(-8%) rotate(12deg); opacity: 0.55; }
+  55% { transform: translateX(8%) rotate(12deg); opacity: 0.75; }
+  100% { transform: translateX(-8%) rotate(12deg); opacity: 0.55; }
+}
