@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from
 import { Link } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
-import { computeQuestProgress, loadQuestState, markChestClaimed, type QuestState } from '../lib/quests';
+import { computeQuestProgress, loadQuestState, markChestClaimed, QUESTS_CHANGED_EVENT, type QuestState } from '../lib/quests';
 import { useMistakeStats } from '../lib/hooks/useMistakeStats';
 
 function clamp(n: number, min: number, max: number) {
@@ -35,9 +35,11 @@ export function QuestsPage({
     }
     window.addEventListener('focus', bump);
     window.addEventListener('storage', bump);
+    window.addEventListener(QUESTS_CHANGED_EVENT, bump);
     return () => {
       window.removeEventListener('focus', bump);
       window.removeEventListener('storage', bump);
+      window.removeEventListener(QUESTS_CHANGED_EVENT, bump);
     };
   }, []);
 

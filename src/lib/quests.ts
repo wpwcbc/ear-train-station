@@ -65,6 +65,19 @@ export function computeQuestProgress(progress: Progress, q: QuestState): QuestCo
 const KEY_V1 = 'ets_quests_v1';
 const KEY_V2 = 'ets_quests_v2';
 
+// Note: the browser "storage" event does NOT fire in the same tab that writes localStorage.
+// To keep UI (nav badge / quests page) in sync in-tab, we emit a tiny custom event.
+export const QUESTS_CHANGED_EVENT = 'ets_quests_changed';
+
+function emitQuestsChanged() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.dispatchEvent(new Event(QUESTS_CHANGED_EVENT));
+  } catch {
+    // Ignore: UI will update on focus / next render.
+  }
+}
+
 export function defaultQuestState(): QuestState {
   return {
     version: 2,
@@ -117,6 +130,7 @@ export function loadQuestState(): QuestState {
     try {
       localStorage.setItem(KEY_V2, JSON.stringify(normalized));
       localStorage.removeItem(KEY_V1);
+      emitQuestsChanged();
     } catch {
       // Ignore migration failures; caller still gets the normalized data.
     }
@@ -128,6 +142,7 @@ export function loadQuestState(): QuestState {
 
 export function saveQuestState(q: QuestState) {
   localStorage.setItem(KEY_V2, JSON.stringify(q));
+  emitQuestsChanged();
 }
 
 export function updateQuestState(fn: (q: QuestState) => QuestState) {

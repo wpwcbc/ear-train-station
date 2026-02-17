@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
-import { computeQuestProgress, loadQuestState, type QuestComputed } from '../lib/quests';
+import { computeQuestProgress, loadQuestState, QUESTS_CHANGED_EVENT, type QuestComputed } from '../lib/quests';
 import { ConfigDrawer } from './ConfigDrawer';
 
 type Tab = { to: string; label: string; icon: string; accent: string };
@@ -40,9 +40,11 @@ export function NavShell({
     bump();
     window.addEventListener('focus', bump);
     window.addEventListener('storage', bump);
+    window.addEventListener(QUESTS_CHANGED_EVENT, bump);
     return () => {
       window.removeEventListener('focus', bump);
       window.removeEventListener('storage', bump);
+      window.removeEventListener(QUESTS_CHANGED_EVENT, bump);
     };
   }, [progress]);
 
