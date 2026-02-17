@@ -7,7 +7,7 @@ import type { StationId, Progress } from '../lib/progress';
 import { applyStudyReward, markStationDone } from '../lib/progress';
 import { hasShownDailyGoalReachedToast, markDailyGoalReachedToastShown } from '../lib/dailyGoalToast';
 import { loadIntervalMissDetails, loadIntervalMissHistogram, recordIntervalMiss, recordIntervalPracticeHit } from '../lib/intervalStats';
-import { addMistake, loadMistakes, mistakeCountForStation } from '../lib/mistakes';
+import { addMistake, loadMistakes, MISTAKES_CHANGED_EVENT, mistakeCountForStation } from '../lib/mistakes';
 import { bumpStationCompleted } from '../lib/quests';
 import { STATIONS, nextStationId, isStationUnlocked } from '../lib/stations';
 import { sectionIdByExamId, sectionStationsByExamId } from '../lib/sectionStations';
@@ -184,9 +184,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
     }
     window.addEventListener('focus', bump);
     window.addEventListener('storage', bump);
+    window.addEventListener(MISTAKES_CHANGED_EVENT, bump);
     return () => {
       window.removeEventListener('focus', bump);
       window.removeEventListener('storage', bump);
+      window.removeEventListener(MISTAKES_CHANGED_EVENT, bump);
     };
   }, []);
 

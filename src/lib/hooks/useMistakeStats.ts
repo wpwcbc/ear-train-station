@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { loadMistakes } from '../mistakes';
+import { loadMistakes, MISTAKES_CHANGED_EVENT } from '../mistakes';
 
 export type MistakeStats = {
   due: number;
@@ -32,9 +32,11 @@ export function useMistakeStats(nowMs?: number): MistakeStats {
 
     window.addEventListener('focus', bump);
     window.addEventListener('storage', bump);
+    window.addEventListener(MISTAKES_CHANGED_EVENT, bump);
     return () => {
       window.removeEventListener('focus', bump);
       window.removeEventListener('storage', bump);
+      window.removeEventListener(MISTAKES_CHANGED_EVENT, bump);
     };
   }, []);
 

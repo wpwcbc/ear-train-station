@@ -105,6 +105,8 @@ Comparable patterns / references:
   - https://blog.duolingo.com/keeping-you-at-the-frontier-of-learning-with-adaptive-lessons/
 
 Implementation notes:
+- Review mistake queue is stored in `localStorage` under `ets_mistakes_v2` (best-effort migration from `ets_mistakes_v1`).
+- Because browser `storage` events don’t fire in-tab, we also emit a tiny `ets_mistakes_changed` custom event on writes so Map/Practice/Review counts update immediately.
 - Interval stations keep a lightweight **miss histogram** (+ last-missed timestamp) in `localStorage` (separate from the capped/de-duped review queue).
 - This powers the end-of-test “most missed” summary (now also shows roughly when you last missed each top interval) and the **Targeted mix** (weighted practice). For practice weighting, older misses gently **decay over time** (7‑day half-life) so the mix doesn’t stay anchored to ancient mistakes; recency still gets a tiny extra bump so practice feels responsive.
 - In interval **tests/exams**, once you’ve missed something, a small **Targeted mix** button appears in the top meta row (near Review/Harmonic tips) for one-tap “practice your mistakes” — inspired by Duolingo’s Practice Hub idea of targeted review: https://blog.duolingo.com/how-duolingo-works-with-learners/

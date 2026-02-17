@@ -3,7 +3,14 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { CopyLinkButton } from '../components/CopyLinkButton';
 import type { Progress } from '../lib/progress';
 import { nextUnlockedIncomplete } from '../lib/stations';
-import { intervalMistakeStatsFrom, loadMistakes, mistakeCountForStation, mistakeScheduleSummary, triadMistakeStatsFrom } from '../lib/mistakes';
+import {
+  intervalMistakeStatsFrom,
+  loadMistakes,
+  MISTAKES_CHANGED_EVENT,
+  mistakeCountForStation,
+  mistakeScheduleSummary,
+  triadMistakeStatsFrom,
+} from '../lib/mistakes';
 import { STATIONS } from '../lib/stations';
 import { SEMITONE_TO_LABEL } from '../exercises/interval';
 import { triadQualityLabel } from '../exercises/triad';
@@ -35,9 +42,11 @@ export function PracticePage({ progress }: { progress: Progress }) {
     }
     window.addEventListener('focus', bump);
     window.addEventListener('storage', bump);
+    window.addEventListener(MISTAKES_CHANGED_EVENT, bump);
     return () => {
       window.removeEventListener('focus', bump);
       window.removeEventListener('storage', bump);
+      window.removeEventListener(MISTAKES_CHANGED_EVENT, bump);
     };
   }, []);
 

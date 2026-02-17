@@ -7,6 +7,7 @@ import { applyStudyReward } from '../lib/progress';
 import {
   applyReviewResult,
   loadMistakes,
+  MISTAKES_CHANGED_EVENT,
   mistakeScheduleSummaryFrom,
   requiredClearStreak,
   saveMistakes,
@@ -105,6 +106,12 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const drillMode = drillModeRaw && !manageMode;
   const warmupMode = warmupModeRaw && !manageMode;
 
+  // Optional “hard-focus”: practice only harder items (wrongCount>=3).
+  // Kept as a deep-link param (knowledge-only; no new settings surface).
+  const hardRaw = (searchParams.get('hard') || '').trim();
+  const hardModeRaw = hardRaw === '1' || hardRaw === 'true' || hardRaw === 'yes';
+  const hardMode = hardModeRaw && !manageMode && !drillMode;
+
   // Optional session length (e.g. “quick warm‑up”):
   // - Default stays 10 (Duolingo-ish mistakes sessions often cap at ~10 items).
   // - Clamp to avoid huge accidental values.
@@ -122,6 +129,15 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     // Avoid accidentally forcing Manage open when the user is just changing set size.
     next.delete('manage');
     next.set('n', String(n));
+    const qs = next.toString();
+    return `/review${qs ? `?${qs}` : ''}`;
+  };
+
+  const reviewLinkWithHard = (on: boolean) => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('manage');
+    if (on) next.set('hard', '1');
+    else next.delete('hard');
     const qs = next.toString();
     return `/review${qs ? `?${qs}` : ''}`;
   };
@@ -176,10 +192,12 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     window.addEventListener('focus', bump);
     window.addEventListener('storage', bump);
     window.addEventListener(SETTINGS_EVENT, bump);
+    window.addEventListener(MISTAKES_CHANGED_EVENT, bump);
     return () => {
       window.removeEventListener('focus', bump);
       window.removeEventListener('storage', bump);
       window.removeEventListener(SETTINGS_EVENT, bump);
+      window.removeEventListener(MISTAKES_CHANGED_EVENT, bump);
     };
   }, []);
 
@@ -206,6 +224,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       .sort((a, b) => (a.dueAt ?? a.addedAt) - (b.dueAt ?? b.addedAt) || b.addedAt - a.addedAt);
   }, [filtered, now]);
 
+  const dueHard = useMemo(() => due.filter((m) => (m.wrongCount ?? 0) >= 3), [due]);
+
   // Warm-up: when nothing is due, let users optionally practice a short set early.
   // Inspired by Duolingo's behavior: if you have no "new" mistakes, you can still run a short session with older ones.
   const warmupQueue = useMemo(() => {
@@ -221,6 +241,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       })
       .slice(0, sessionN);
   }, [filtered, warmupMode, sessionN]);
+
+  const warmupHardQueue = useMemo(() => warmupQueue.filter((m) => (m.wrongCount ?? 0) >= 3), [warmupQueue]);
 
   const intervalStats = useMemo(() => {
     const map = new Map<number, { semitones: number; count: number; weight: number }>();
@@ -353,7 +375,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
   const active = (drillMode
     ? undefined
-    : ((warmupMode ? warmupQueue[0] : due[0]) as Mistake | undefined)) as Mistake | undefined;
+    : ((warmupMode
+        ? (hardMode ? (warmupHardQueue[0] ?? warmupQueue[0]) : warmupQueue[0])
+        : (hardMode ? (dueHard[0] ?? due[0]) : due[0])) as Mistake | undefined)) as Mistake | undefined;
 
   const noteQ = useMemo(() => {
     if (!active || active.kind !== 'noteName') return null;
@@ -843,6 +867,16 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             {n}{sessionN === n ? ' ✓' : ''}
           </Link>
         ))}
+        <span style={{ opacity: 0.5 }}>•</span>
+        <Link
+          className="pill"
+          to={reviewLinkWithHard(!hardMode)}
+          state={inheritedState}
+          style={{ fontSize: 12 }}
+          title={hardMode ? 'Disable hard-focus (show full queue)' : 'Hard-focus: only items with wrongCount≥3'}
+        >
+          {hardMode ? 'Hard ✓' : 'Hard'}
+        </Link>
         {nRaw ? (
           <span style={{ opacity: 0.85 }} title="You’re currently using a custom n=… in the URL.">
             (n={sessionN})

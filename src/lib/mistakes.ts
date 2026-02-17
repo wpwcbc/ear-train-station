@@ -85,6 +85,19 @@ const KEY_V2 = 'ets_mistakes_v2';
 const KEY_V1 = 'ets_mistakes_v1';
 const MAX = 50;
 
+// Note: the browser "storage" event does NOT fire in the same tab that writes localStorage.
+// To keep UI (Map/Practice/Review counts) in sync in-tab, we emit a tiny custom event.
+export const MISTAKES_CHANGED_EVENT = 'ets_mistakes_changed';
+
+function emitMistakesChanged() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.dispatchEvent(new Event(MISTAKES_CHANGED_EVENT));
+  } catch {
+    // Ignore: UI will update on focus / next render.
+  }
+}
+
 function normalize(m: Mistake | MistakeV1): Mistake {
   const now = Date.now();
   const dueAt = typeof (m as Mistake).dueAt === 'number' ? (m as Mistake).dueAt : (m as MistakeV1).addedAt ?? now;
@@ -112,7 +125,12 @@ export function loadMistakes(): Mistake[] {
   const v1 = localStorage.getItem(KEY_V1);
   if (v1) {
     const migrated = safeParse(v1);
-    saveMistakes(migrated);
+    try {
+      saveMistakes(migrated);
+      localStorage.removeItem(KEY_V1);
+    } catch {
+      // Ignore migration failures; caller still gets the migrated data.
+    }
     return migrated;
   }
 
@@ -121,6 +139,7 @@ export function loadMistakes(): Mistake[] {
 
 export function saveMistakes(m: Mistake[]) {
   localStorage.setItem(KEY_V2, JSON.stringify(m.slice(0, MAX)));
+  emitMistakesChanged();
 }
 
 function deDupeKey(m: Mistake): string {
