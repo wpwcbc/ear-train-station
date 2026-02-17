@@ -114,6 +114,12 @@ Implementation notes:
 - When you enter practice from the end-of-test summary, the header shows what mode you’re in (focused vs targeted) + gives you **Clear focus** and **Exit practice**.
 - If the weighting feels stale after you improve, you can **clear interval miss stats** from ⚙️ (station-scoped).
 
+### Quests: daily mini-goals + chest
+
+- Quests are intentionally simple: they push the loop **learn → review → streak**.
+- When you’ve completed all 3 quests, the **Quest chest** becomes claimable **once per day** (anti-farm).
+- The Quests tab shows a small badge when there’s quest progress to do, and a stronger badge when the chest is ready.
+
 ### Register rules
 
 - **Lessons:** stable register (one octave around middle C).

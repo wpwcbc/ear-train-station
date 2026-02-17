@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from
 import { Link } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
-import { loadQuestState, markChestClaimed, type QuestState } from '../lib/quests';
+import { computeQuestProgress, loadQuestState, markChestClaimed, type QuestState } from '../lib/quests';
 import { useMistakeStats } from '../lib/hooks/useMistakeStats';
 
 function clamp(n: number, min: number, max: number) {
@@ -48,28 +48,27 @@ export function QuestsPage({
   }, [toast]);
 
   // Quests are intentionally simple: they push the loop (learn → review → streak).
+  const qp = useMemo(() => computeQuestProgress(progress, q), [progress, q]);
+
   const questDailyXp = useMemo(() => {
-    const goal = Math.max(5, progress.dailyGoalXp || 20);
-    const today = Math.max(0, progress.dailyXpToday || 0);
-    return { goal, today, pct: goal > 0 ? (today / goal) * 100 : 0, done: today >= goal };
-  }, [progress.dailyGoalXp, progress.dailyXpToday]);
+    const pct = qp.dailyXpGoal > 0 ? (qp.dailyXpToday / qp.dailyXpGoal) * 100 : 0;
+    return { goal: qp.dailyXpGoal, today: qp.dailyXpToday, pct, done: qp.dailyXpDone };
+  }, [qp.dailyXpGoal, qp.dailyXpToday, qp.dailyXpDone]);
 
   const questReview = useMemo(() => {
-    const goal = 6;
-    const today = q.reviewAttemptsToday;
-    return { goal, today, pct: (today / goal) * 100, done: today >= goal };
-  }, [q.reviewAttemptsToday]);
+    const pct = qp.reviewGoal > 0 ? (qp.reviewToday / qp.reviewGoal) * 100 : 0;
+    return { goal: qp.reviewGoal, today: qp.reviewToday, pct, done: qp.reviewDone };
+  }, [qp.reviewGoal, qp.reviewToday, qp.reviewDone]);
 
   const questStations = useMemo(() => {
-    const goal = 1;
-    const today = q.stationsCompletedToday;
-    return { goal, today, pct: (today / goal) * 100, done: today >= goal };
-  }, [q.stationsCompletedToday]);
+    const pct = qp.stationsGoal > 0 ? (qp.stationsToday / qp.stationsGoal) * 100 : 0;
+    return { goal: qp.stationsGoal, today: qp.stationsToday, pct, done: qp.stationsDone };
+  }, [qp.stationsGoal, qp.stationsToday, qp.stationsDone]);
 
-  const allDone = questDailyXp.done && questReview.done && questStations.done;
+  const allDone = qp.allDone;
 
   const CHEST_XP = 10;
-  const canClaimChest = allDone && !q.chestClaimedToday;
+  const canClaimChest = qp.chestReady;
 
   return (
     <div className="page">

@@ -1,3 +1,5 @@
+import type { Progress } from './progress';
+
 export type QuestState = {
   version: 2;
   /** YYYY-MM-DD in local time. */
@@ -8,6 +10,54 @@ export type QuestState = {
   /** One-time daily reward guard (Quest chest). */
   chestClaimedToday: boolean;
 };
+
+export type QuestComputed = {
+  dailyXpGoal: number;
+  dailyXpToday: number;
+  dailyXpDone: boolean;
+  reviewGoal: number;
+  reviewToday: number;
+  reviewDone: boolean;
+  stationsGoal: number;
+  stationsToday: number;
+  stationsDone: boolean;
+  allDone: boolean;
+  chestReady: boolean;
+  hasWork: boolean;
+};
+
+export function computeQuestProgress(progress: Progress, q: QuestState): QuestComputed {
+  const dailyXpGoal = Math.max(5, progress.dailyGoalXp || 20);
+  const dailyXpToday = Math.max(0, progress.dailyXpToday || 0);
+  const dailyXpDone = dailyXpToday >= dailyXpGoal;
+
+  const reviewGoal = 6;
+  const reviewToday = q.reviewAttemptsToday;
+  const reviewDone = reviewToday >= reviewGoal;
+
+  const stationsGoal = 1;
+  const stationsToday = q.stationsCompletedToday;
+  const stationsDone = stationsToday >= stationsGoal;
+
+  const allDone = dailyXpDone && reviewDone && stationsDone;
+  const chestReady = allDone && !q.chestClaimedToday;
+  const hasWork = chestReady || !allDone;
+
+  return {
+    dailyXpGoal,
+    dailyXpToday,
+    dailyXpDone,
+    reviewGoal,
+    reviewToday,
+    reviewDone,
+    stationsGoal,
+    stationsToday,
+    stationsDone,
+    allDone,
+    chestReady,
+    hasWork,
+  };
+}
 
 const KEY = 'ets_quests_v1';
 

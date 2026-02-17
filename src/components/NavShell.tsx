@@ -1,6 +1,7 @@
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
+import { computeQuestProgress, loadQuestState, type QuestComputed } from '../lib/quests';
 import { ConfigDrawer } from './ConfigDrawer';
 
 type Tab = { to: string; label: string; icon: string; accent: string };
@@ -21,8 +22,27 @@ export function NavShell({
   setProgress: (p: Progress) => void;
 }) {
   const [configOpen, setConfigOpen] = useState(false);
+  const [quests, setQuests] = useState<QuestComputed | null>(null);
   const loc = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    function bump() {
+      try {
+        const q = loadQuestState();
+        setQuests(computeQuestProgress(progress, q));
+      } catch {
+        setQuests(null);
+      }
+    }
+    bump();
+    window.addEventListener('focus', bump);
+    window.addEventListener('storage', bump);
+    return () => {
+      window.removeEventListener('focus', bump);
+      window.removeEventListener('storage', bump);
+    };
+  }, [progress]);
 
   const activeTab = useMemo(() => {
     // Match by prefix, so /learn/section/* still maps to Learn.
@@ -63,8 +83,17 @@ export function NavShell({
               style={{ '--item-accent': t.accent } as CSSProperties}
               className={({ isActive }) => `navItem ${isActive ? 'active' : ''}`}
             >
-              <span className="navIcon" aria-hidden>
-                {t.icon}
+              <span className="navIconWrap">
+                <span className="navIcon" aria-hidden>
+                  {t.icon}
+                </span>
+                {t.to === '/quests' && quests?.hasWork ? (
+                  <span
+                    className={`navBadge ${quests.chestReady ? 'navBadge--ready' : ''}`}
+                    aria-label={quests.chestReady ? 'Quest chest ready' : 'Quests in progress'}
+                    title={quests.chestReady ? 'Quest chest ready' : 'Quests in progress'}
+                  />
+                ) : null}
               </span>
               <span className="navLabel">{t.label}</span>
             </NavLink>
@@ -89,8 +118,17 @@ export function NavShell({
               style={{ '--item-accent': t.accent } as CSSProperties}
               className={({ isActive }) => `bottomItem ${isActive ? 'active' : ''}`}
             >
-              <span className="bottomIcon" aria-hidden>
-                {t.icon}
+              <span className="bottomIconWrap">
+                <span className="bottomIcon" aria-hidden>
+                  {t.icon}
+                </span>
+                {t.to === '/quests' && quests?.hasWork ? (
+                  <span
+                    className={`navBadge navBadge--bottom ${quests.chestReady ? 'navBadge--ready' : ''}`}
+                    aria-label={quests.chestReady ? 'Quest chest ready' : 'Quests in progress'}
+                    title={quests.chestReady ? 'Quest chest ready' : 'Quests in progress'}
+                  />
+                ) : null}
               </span>
               <span className="bottomLabel">{t.label}</span>
             </NavLink>
