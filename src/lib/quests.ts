@@ -59,15 +59,11 @@ export function computeQuestProgress(progress: Progress, q: QuestState): QuestCo
   };
 }
 
-const KEY = 'ets_quests_v1';
-
-function todayYmd() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
+// Storage key versioning:
+// - v1 existed briefly with the same shape/version=2, but the key name was misleading.
+// - v2 is the canonical key going forward; we migrate v1 → v2 on load.
+const KEY_V1 = 'ets_quests_v1';
+const KEY_V2 = 'ets_quests_v2';
 
 export function defaultQuestState(): QuestState {
   return {
@@ -80,33 +76,63 @@ export function defaultQuestState(): QuestState {
   };
 }
 
-function normalizeForToday(q: QuestState): QuestState {
-  const ymd = todayYmd();
-  if (q.ymd !== ymd) {
-    return { ...defaultQuestState(), ymd };
-  }
+export function ymdFromDate(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function todayYmd() {
+  return ymdFromDate(new Date());
+}
+
+export function normalizeQuestStateForYmd(q: QuestState, ymd: string): QuestState {
+  if (q.ymd !== ymd) return { ...defaultQuestState(), ymd };
   return q;
 }
 
-export function loadQuestState(): QuestState {
+function parseMaybeQuestState(raw: string | null): QuestState | null {
+  if (!raw) return null;
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return normalizeForToday(defaultQuestState());
     const parsed = JSON.parse(raw) as QuestState;
-    if (!parsed || parsed.version !== 2) return normalizeForToday(defaultQuestState());
-    return normalizeForToday({ ...defaultQuestState(), ...parsed });
+    if (!parsed || parsed.version !== 2) return null;
+    return { ...defaultQuestState(), ...parsed };
   } catch {
-    return normalizeForToday(defaultQuestState());
+    return null;
   }
 }
 
+export function loadQuestState(): QuestState {
+  const ymd = todayYmd();
+
+  // Prefer v2.
+  const v2 = parseMaybeQuestState(localStorage.getItem(KEY_V2));
+  if (v2) return normalizeQuestStateForYmd(v2, ymd);
+
+  // Migrate v1 → v2 (best-effort).
+  const v1 = parseMaybeQuestState(localStorage.getItem(KEY_V1));
+  if (v1) {
+    const normalized = normalizeQuestStateForYmd(v1, ymd);
+    try {
+      localStorage.setItem(KEY_V2, JSON.stringify(normalized));
+      localStorage.removeItem(KEY_V1);
+    } catch {
+      // Ignore migration failures; caller still gets the normalized data.
+    }
+    return normalized;
+  }
+
+  return normalizeQuestStateForYmd(defaultQuestState(), ymd);
+}
+
 export function saveQuestState(q: QuestState) {
-  localStorage.setItem(KEY, JSON.stringify(q));
+  localStorage.setItem(KEY_V2, JSON.stringify(q));
 }
 
 export function updateQuestState(fn: (q: QuestState) => QuestState) {
   const cur = loadQuestState();
-  const next = normalizeForToday(fn(cur));
+  const next = normalizeQuestStateForYmd(fn(cur), todayYmd());
   saveQuestState(next);
 }
 

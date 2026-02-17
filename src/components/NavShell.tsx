@@ -26,6 +26,8 @@ export function NavShell({
   const loc = useLocation();
   const navigate = useNavigate();
 
+  const onQuests = loc.pathname === '/quests' || loc.pathname.startsWith('/quests/');
+
   useEffect(() => {
     function bump() {
       try {
@@ -87,7 +89,7 @@ export function NavShell({
                 <span className="navIcon" aria-hidden>
                   {t.icon}
                 </span>
-                {t.to === '/quests' && quests?.hasWork ? (
+                {t.to === '/quests' && quests?.hasWork && !onQuests ? (
                   <span
                     className={`navBadge ${quests.chestReady ? 'navBadge--ready' : ''}`}
                     aria-label={quests.chestReady ? 'Quest chest ready' : 'Quests in progress'}
@@ -122,7 +124,7 @@ export function NavShell({
                 <span className="bottomIcon" aria-hidden>
                   {t.icon}
                 </span>
-                {t.to === '/quests' && quests?.hasWork ? (
+                {t.to === '/quests' && quests?.hasWork && !onQuests ? (
                   <span
                     className={`navBadge navBadge--bottom ${quests.chestReady ? 'navBadge--ready' : ''}`}
                     aria-label={quests.chestReady ? 'Quest chest ready' : 'Quests in progress'}

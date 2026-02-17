@@ -118,7 +118,8 @@ Implementation notes:
 
 - Quests are intentionally simple: they push the loop **learn → review → streak**.
 - When you’ve completed all 3 quests, the **Quest chest** becomes claimable **once per day** (anti-farm).
-- The Quests tab shows a small badge when there’s quest progress to do, and a stronger badge when the chest is ready.
+- The Quests tab shows a small badge when there’s quest progress to do, and a stronger badge when the chest is ready (badge is hidden while you’re already on Quests).
+- Quest state is stored in `localStorage` under `ets_quests_v2` (with a best-effort migration from the old `ets_quests_v1` key).
 
 ### Register rules
 
