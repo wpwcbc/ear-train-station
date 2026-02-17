@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { loadMistakes, saveMistakes } from '../src/lib/mistakes.ts';
+import { loadMistakes, MISTAKES_CHANGED_EVENT, saveMistakes } from '../src/lib/mistakes.ts';
 
 function makeMemStorage() {
   const m = new Map<string, string>();
@@ -53,10 +53,20 @@ test('loadMistakes migrates ets_mistakes_v1 → ets_mistakes_v2 (fills review fi
   assert.equal(storage.getItem('ets_mistakes_v1'), null);
 });
 
-test('saveMistakes writes to ets_mistakes_v2', () => {
+test('saveMistakes writes to ets_mistakes_v2 (and emits ets_mistakes_changed in-tab)', () => {
   const storage = makeMemStorage();
   // @ts-expect-error test shim
   globalThis.localStorage = storage;
+
+  // Minimal window shim: EventTarget supports addEventListener/dispatchEvent.
+  const win = new EventTarget();
+  // @ts-expect-error test shim
+  globalThis.window = win;
+
+  let fired = 0;
+  win.addEventListener(MISTAKES_CHANGED_EVENT, () => {
+    fired += 1;
+  });
 
   saveMistakes([
     {
@@ -72,4 +82,5 @@ test('saveMistakes writes to ets_mistakes_v2', () => {
   ]);
 
   assert.ok(storage.getItem('ets_mistakes_v2'));
+  assert.equal(fired, 1);
 });
