@@ -379,6 +379,17 @@ export function PracticePage({ progress }: { progress: Progress }) {
             );
           })()}
 
+          {sched.hard ? (
+            <Link
+              className="linkBtn"
+              to="/review?hard=1"
+              state={{ exitTo: '/practice' }}
+              title="Hard focus = only items you’ve missed 3+ times (wrongCount≥3)."
+            >
+              Hard focus ({sched.hard})
+            </Link>
+          ) : null}
+
           {(() => {
             const to = hasIntervalMistakes
               ? `/review?drill=1&semitones=${encodeURIComponent(intervalStatsTop.map((x) => x.semitones).join(','))}`
