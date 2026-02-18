@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useReactiveNow } from '../lib/hooks/useReactiveNow';
 import { CopyLinkButton } from '../components/CopyLinkButton';
 import type { Progress } from '../lib/progress';
 import { nextUnlockedIncomplete } from '../lib/stations';
@@ -35,20 +36,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    function bump() {
-      setNow(Date.now());
-    }
-    window.addEventListener('focus', bump);
-    window.addEventListener('storage', bump);
-    window.addEventListener(MISTAKES_CHANGED_EVENT, bump);
-    return () => {
-      window.removeEventListener('focus', bump);
-      window.removeEventListener('storage', bump);
-      window.removeEventListener(MISTAKES_CHANGED_EVENT, bump);
-    };
-  }, []);
+  const now = useReactiveNow([MISTAKES_CHANGED_EVENT]);
 
   const [workoutToast, setWorkoutToast] = useState<null | { session: 1 | 2; at: number }>(null);
 
