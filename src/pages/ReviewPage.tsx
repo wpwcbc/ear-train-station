@@ -162,6 +162,10 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const gap = (ms: number) => Math.round(ms * timing.gap);
   const [result, setResult] = useState<'idle' | 'correct' | 'wrong'>('idle');
   const [doneCount, setDoneCount] = useState(0);
+  const [sessionRight, setSessionRight] = useState(0);
+  const [sessionWrong, setSessionWrong] = useState(0);
+  const [sessionSkip, setSessionSkip] = useState(0);
+  const [sessionXp, setSessionXp] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [mistakes, setMistakes] = useState<Mistake[]>(() => loadMistakes());
   const [undo, setUndo] = useState<UndoState | null>(null);
@@ -200,6 +204,24 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       window.removeEventListener(MISTAKES_CHANGED_EVENT, bump);
     };
   }, []);
+
+  // Reset per-session counters when URL params change (so switching filters/modes starts a fresh set).
+  useEffect(() => {
+    setResult('idle');
+    setDoneCount(0);
+    setSessionRight(0);
+    setSessionWrong(0);
+    setSessionSkip(0);
+    setSessionXp(0);
+
+    // Drill-only state
+    setDrillIndex(0);
+    setDrillCorrect(0);
+    setDrillWrong(0);
+
+    // New random seed so the first prompt changes when toggling filters.
+    setSeed((x) => x + 1);
+  }, [loc.search, loc.hash]);
 
   // Auto-clear the Undo window after ~15s so we don't keep stale actions around.
   useEffect(() => {
@@ -546,6 +568,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     // Quests: count the attempt regardless of correctness.
     bumpReviewAttempt(1);
 
+    if (outcome === 'correct') setSessionRight((n) => n + 1);
+    else setSessionWrong((n) => n + 1);
+
     let cleared = false;
     updateMistake(active.id, (m) => {
       const next = applyReviewResult(m, outcome, Date.now());
@@ -556,6 +581,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     if (outcome === 'correct' && cleared) {
       bumpReviewClear(1);
       setProgress(applyStudyReward(progress, 4));
+      setSessionXp((x) => x + 4);
       setResult('correct');
       setDoneCount((n) => n + 1);
     } else {
@@ -807,6 +833,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                 </div>
               ) : null}
               <div>Cleared: {doneCount}</div>
+              <div style={{ opacity: 0.85 }} title="This session">
+                Session: {sessionRight} ✓ · {sessionWrong} ✗ · {sessionSkip} skip · +{sessionXp} XP
+              </div>
             </>
           )}
         </div>
@@ -849,6 +878,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                 return;
               }
               if (!active) return;
+              setSessionSkip((n) => n + 1);
               // Push it back a bit so the next due item can surface.
               snoozeMistake(active.id, 5 * 60_000);
               refresh();
@@ -1387,6 +1417,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               <div style={{ fontSize: 14, opacity: 0.95 }}>
                 Warm‑up complete — cleared <b>{Math.min(doneCount, warmupQueue.length)}</b> / {warmupQueue.length}.
               </div>
+              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Session: {sessionRight} ✓ · {sessionWrong} ✗ · {sessionSkip} skip · +{sessionXp} XP</div>
               {workoutBonusAwarded > 0 ? (
                 <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Workout bonus: +{workoutBonusAwarded} XP.</div>
               ) : null}
@@ -1415,6 +1446,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               <div style={{ fontSize: 14, opacity: 0.95 }}>
                 All caught up — cleared <b>{doneCount}</b> item{doneCount === 1 ? '' : 's'}.
               </div>
+              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Session: {sessionRight} ✓ · {sessionWrong} ✗ · {sessionSkip} skip · +{sessionXp} XP</div>
               {workoutBonusAwarded > 0 ? (
                 <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Workout bonus: +{workoutBonusAwarded} XP.</div>
               ) : null}
