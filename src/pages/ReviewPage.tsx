@@ -226,6 +226,16 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
   const dueHard = useMemo(() => due.filter((m) => (m.wrongCount ?? 0) >= 3), [due]);
 
+  const hardClearsRemaining = useMemo(() => {
+    // “Hard” items need a longer correct streak to clear (currently 3 in a row).
+    // Surface the remaining clears so Review feels more “live” and less mysterious.
+    return dueHard.reduce((acc, m) => {
+      const need = requiredClearStreak(m);
+      const have = m.correctStreak ?? 0;
+      return acc + Math.max(0, need - have);
+    }, 0);
+  }, [dueHard]);
+
   // Warm-up: when nothing is due, let users optionally practice a short set early.
   // Inspired by Duolingo's behavior: if you have no "new" mistakes, you can still run a short session with older ones.
   const warmupQueue = useMemo(() => {
@@ -791,6 +801,11 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                   Due: {dueCount} / {totalCount}
                 </div>
               )}
+              {!drillMode && !warmupMode && dueHard.length ? (
+                <div title="Hard = wrongCount≥3. Each hard item needs 3 correct clears in a row.">
+                  Hard due: {dueHard.length} · Clears left: {hardClearsRemaining}
+                </div>
+              ) : null}
               <div>Cleared: {doneCount}</div>
             </>
           )}
