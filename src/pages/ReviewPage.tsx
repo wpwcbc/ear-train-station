@@ -32,6 +32,7 @@ import { MAJOR_KEYS } from '../lib/theory/major';
 import { DEFAULT_WIDE_REGISTER_MAX_MIDI, WIDE_REGISTER_MIN_MIDI } from '../lib/registerPolicy';
 import { STATIONS } from '../lib/stations';
 import { mulberry32 } from '../lib/rng';
+import { reviewSessionSignature } from '../lib/reviewSession';
 
 function msToHuman(ms: number): string {
   if (ms <= 0) return 'now';
@@ -205,7 +206,10 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     };
   }, []);
 
-  // Reset per-session counters when URL params change (so switching filters/modes starts a fresh set).
+  const sessionSig = useMemo(() => reviewSessionSignature({ search: loc.search, hash: loc.hash }), [loc.search, loc.hash]);
+
+  // Reset per-session counters when *session-defining* URL params change
+  // (so switching filters/modes starts a fresh set, but unrelated query params won't).
   useEffect(() => {
     setResult('idle');
     setDoneCount(0);
@@ -221,7 +225,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
     // New random seed so the first prompt changes when toggling filters.
     setSeed((x) => x + 1);
-  }, [loc.search, loc.hash]);
+  }, [sessionSig]);
 
   // Auto-clear the Undo window after ~15s so we don't keep stale actions around.
   useEffect(() => {
