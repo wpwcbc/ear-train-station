@@ -3,6 +3,7 @@ import type { Progress, StationId } from '../lib/progress';
 import { defaultProgress, loadProgress, saveProgress } from '../lib/progress';
 import { defaultSettings, loadSettings, saveSettings, type Settings } from '../lib/settings';
 import { clearIntervalMissHistogram, loadIntervalMissHistogram } from '../lib/intervalStats';
+import { loadReviewSessionHistory, REVIEW_SESSION_HISTORY_KEY, type ReviewSessionHistoryEntryV1 } from '../lib/reviewSessionHistory';
 import { intervalLabel } from '../exercises/interval';
 import {
   clearPianoSoundfontCache,
@@ -45,6 +46,8 @@ export function ConfigDrawer(props: {
   const [offlineUpdatedAtMs, setOfflineUpdatedAtMs] = useState<number | null>(null);
   const [offlineDownloading, setOfflineDownloading] = useState(false);
   const [offlineDetail, setOfflineDetail] = useState<string | null>(null);
+
+  const [historyBump, setHistoryBump] = useState(0);
 
   // Whenever it opens, reload latest settings.
   useEffect(() => {
@@ -137,6 +140,34 @@ export function ConfigDrawer(props: {
 
     return { stationId: sid, top: rows.slice(0, 5) };
   }, [props.stationId, props.open]);
+
+  const reviewHistory = useMemo(() => {
+    if (!props.open) return [] as ReviewSessionHistoryEntryV1[];
+    // historyBump forces re-read after clearing while drawer stays open.
+    void historyBump;
+    return loadReviewSessionHistory();
+  }, [props.open, historyBump]);
+
+  const reviewHistoryStats = useMemo(() => {
+    const entries = reviewHistory;
+
+    function acc(e: ReviewSessionHistoryEntryV1) {
+      const denom = e.right + e.wrong;
+      return denom > 0 ? e.right / denom : 0;
+    }
+
+    const last10 = entries.slice(-10);
+    const last50 = entries.slice(-50);
+    const avg10 = last10.length ? last10.reduce((s, e) => s + acc(e), 0) / last10.length : 0;
+    const avg50 = last50.length ? last50.reduce((s, e) => s + acc(e), 0) / last50.length : 0;
+
+    return {
+      count: entries.length,
+      avg10,
+      avg50,
+      last10,
+    };
+  }, [reviewHistory]);
 
   if (!props.open) return null;
 
@@ -605,6 +636,66 @@ export function ConfigDrawer(props: {
 
         <div className="configSection">
           <div className="configH">Data</div>
+
+          <div className="configRow" style={{ alignItems: 'start' }}>
+            <span className="configLabel">Review history (dev)</span>
+            <span className="configValue" style={{ justifySelf: 'start', whiteSpace: 'normal' }}>
+              {reviewHistoryStats.count ? (
+                <>
+                  {reviewHistoryStats.count} sessions saved · avg acc last 10: {(reviewHistoryStats.avg10 * 100).toFixed(0)}% · last 50: {(reviewHistoryStats.avg50 * 100).toFixed(0)}%
+                  <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8, whiteSpace: 'pre-wrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' }}>
+                    {reviewHistoryStats.last10
+                      .slice()
+                      .reverse()
+                      .map((e) => {
+                        const denom = e.right + e.wrong;
+                        const a = denom > 0 ? (e.right / denom) * 100 : 0;
+                        const when = new Date(e.at);
+                        return `${when.toLocaleDateString()} ${when.toLocaleTimeString()} · ${e.mode}${e.station ? ` · ${e.station}` : ''} · n=${e.n}${e.hard ? ' · hard' : ''} · acc ${a.toFixed(0)}% · xp ${e.xp}`;
+                      })
+                      .join('\n')}
+                  </div>
+                </>
+              ) : (
+                <>No review session history yet (key: <code>{REVIEW_SESSION_HISTORY_KEY}</code>).</>
+              )}
+            </span>
+            <div className="configActions" style={{ flexWrap: 'wrap' }}>
+              <button
+                className="ghost"
+                disabled={!reviewHistoryStats.count}
+                onClick={async () => {
+                  try {
+                    const txt = JSON.stringify(reviewHistory, null, 2);
+                    await navigator.clipboard.writeText(txt);
+                  } catch {
+                    // ignore
+                  }
+                }}
+                aria-label="Copy review session history"
+                title="Copy JSON to clipboard"
+              >
+                Copy
+              </button>
+              <button
+                className="ghost"
+                disabled={!reviewHistoryStats.count}
+                onClick={() => {
+                  const ok = window.confirm('Clear review session history? (This only removes local session stats.)');
+                  if (!ok) return;
+                  try {
+                    localStorage.removeItem(REVIEW_SESSION_HISTORY_KEY);
+                  } finally {
+                    setHistoryBump((x) => x + 1);
+                  }
+                }}
+                aria-label="Clear review session history"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
           <div className="configRow">
             <span className="configLabel">Reset everything</span>
             <span className="configValue" style={{ justifySelf: 'start' }}>
