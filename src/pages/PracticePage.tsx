@@ -16,6 +16,8 @@ import { STATIONS } from '../lib/stations';
 import { SEMITONE_TO_LABEL } from '../exercises/interval';
 import { triadQualityLabel } from '../exercises/triad';
 import { getABVariant } from '../lib/ab';
+import { loadReviewSessionHistory } from '../lib/reviewSessionHistory';
+import { computeReviewHistoryStats } from '../lib/reviewHistoryStats';
 import { getWorkoutDayDone, getWorkoutDone, getWorkoutStreak, localDayKey, setWorkoutDone, subDays } from '../lib/workout';
 
 function msToHuman(ms: number): string {
@@ -71,6 +73,12 @@ export function PracticePage({ progress }: { progress: Progress }) {
   const triadStatsTop = triadMistakeStatsFrom(mistakes).slice(0, 2);
   const hasIntervalMistakes = intervalStatsTop.length > 0;
   const hasTriadMistakes = triadStatsTop.length > 0;
+
+  const reviewHistoryStats = (() => {
+    // Best-effort: Practice page reads history, but does not expose raw data here.
+    const entries = loadReviewSessionHistory();
+    return computeReviewHistoryStats(entries);
+  })();
 
   const workoutCopyVariant = getABVariant('practice_today_workout_copy_v1');
 
@@ -266,6 +274,44 @@ export function PracticePage({ progress }: { progress: Progress }) {
           );
         })()}
       </div>
+
+      {reviewHistoryStats.count ? (
+        <div className="card" style={{ marginTop: 12 }}>
+          <h2 className="h2">Recent performance</h2>
+          <div style={{ fontSize: 12, opacity: 0.8 }}>From your last Review sessions (not drills).</div>
+
+          <div style={{ marginTop: 6, fontSize: 14, opacity: 0.9 }}>
+            Avg accuracy (last 10): <b>{Math.round(reviewHistoryStats.avg10 * 100)}%</b>
+            {reviewHistoryStats.count >= 50 ? (
+              <span style={{ marginLeft: 8, fontSize: 12, opacity: 0.8 }} title="Average accuracy over your last 50 recorded sessions.">
+                · last 50: {Math.round(reviewHistoryStats.avg50 * 100)}%
+              </span>
+            ) : null}
+          </div>
+
+          {reviewHistoryStats.stationsNeedsLove.length ? (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontSize: 12, opacity: 0.8 }}>Needs love</div>
+              <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                {reviewHistoryStats.stationsNeedsLove.slice(0, 3).map((r) => (
+                  <Link
+                    key={r.station}
+                    className="pill"
+                    to={`/review?station=${encodeURIComponent(r.station)}`}
+                    state={{ exitTo: '/practice' }}
+                    title={`Avg accuracy: ${Math.round(r.avgAcc * 100)}% across ${r.sessions} sessions`}
+                  >
+                    {r.stationName} · {Math.round(r.avgAcc * 100)}%
+                  </Link>
+                ))}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+                Tip: if accuracy is low, do a quick Review session for that station, then retry a lesson/test.
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="card" style={{ marginTop: 12 }}>
         <h2 className="h2">Daily goal</h2>

@@ -4,7 +4,8 @@ import { defaultProgress, loadProgress, saveProgress } from '../lib/progress';
 import { defaultSettings, loadSettings, saveSettings, type Settings } from '../lib/settings';
 import { clearIntervalMissHistogram, loadIntervalMissHistogram } from '../lib/intervalStats';
 import { loadReviewSessionHistory, REVIEW_SESSION_HISTORY_KEY, type ReviewSessionHistoryEntryV1 } from '../lib/reviewSessionHistory';
-import { STATIONS } from '../lib/stations';
+import { computeReviewHistoryStats } from '../lib/reviewHistoryStats';
+// (stations list now handled in computeReviewHistoryStats)
 import { intervalLabel } from '../exercises/interval';
 import {
   clearPianoSoundfontCache,
@@ -149,70 +150,7 @@ export function ConfigDrawer(props: {
     return loadReviewSessionHistory();
   }, [props.open, historyBump]);
 
-  const reviewHistoryStats = useMemo(() => {
-    const entries = reviewHistory;
-
-    function acc(e: ReviewSessionHistoryEntryV1) {
-      const denom = e.right + e.wrong;
-      return denom > 0 ? e.right / denom : 0;
-    }
-
-    function stationLabel(id: string): string {
-      const s = STATIONS.find((x) => x.id === id);
-      return s?.title ?? id;
-    }
-
-    const last10 = entries.slice(-10);
-    const last50 = entries.slice(-50);
-    const avg10 = last10.length ? last10.reduce((s, e) => s + acc(e), 0) / last10.length : 0;
-    const avg50 = last50.length ? last50.reduce((s, e) => s + acc(e), 0) / last50.length : 0;
-
-    // Station-level summary (last 50). Ignore drills since they’re targeted follow-ups.
-    const stationRows = new Map<
-      string,
-      { station: string; stationName: string; sessions: number; sumAcc: number; sumXp: number; lastAt: number }
-    >();
-    for (const e of last50) {
-      if (e.mode === 'drill') continue;
-      if (!e.station) continue;
-      const key = e.station;
-      const row = stationRows.get(key) ?? {
-        station: key,
-        stationName: stationLabel(key),
-        sessions: 0,
-        sumAcc: 0,
-        sumXp: 0,
-        lastAt: 0,
-      };
-      row.sessions += 1;
-      row.sumAcc += acc(e);
-      row.sumXp += e.xp;
-      row.lastAt = Math.max(row.lastAt, e.at);
-      stationRows.set(key, row);
-    }
-
-    const stationsMost = Array.from(stationRows.values())
-      .map((r) => ({
-        ...r,
-        avgAcc: r.sessions ? r.sumAcc / r.sessions : 0,
-        avgXp: r.sessions ? r.sumXp / r.sessions : 0,
-      }))
-      .sort((a, b) => b.sessions - a.sessions || b.lastAt - a.lastAt || a.stationName.localeCompare(b.stationName));
-
-    const stationsNeedsLove = stationsMost
-      .filter((r) => r.sessions >= 2)
-      .slice()
-      .sort((a, b) => a.avgAcc - b.avgAcc || b.sessions - a.sessions || b.lastAt - a.lastAt);
-
-    return {
-      count: entries.length,
-      avg10,
-      avg50,
-      last10,
-      stationsMost: stationsMost.slice(0, 5),
-      stationsNeedsLove: stationsNeedsLove.slice(0, 5),
-    };
-  }, [reviewHistory]);
+  const reviewHistoryStats = useMemo(() => computeReviewHistoryStats(reviewHistory), [reviewHistory]);
 
   if (!props.open) return null;
 
