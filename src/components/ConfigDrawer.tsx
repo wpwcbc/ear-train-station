@@ -638,26 +638,30 @@ export function ConfigDrawer(props: {
           <div className="configH">Data</div>
 
           <div className="configRow" style={{ alignItems: 'start' }}>
-            <span className="configLabel">Review history (dev)</span>
+            <span className="configLabel">Review stats</span>
             <span className="configValue" style={{ justifySelf: 'start', whiteSpace: 'normal' }}>
               {reviewHistoryStats.count ? (
                 <>
-                  {reviewHistoryStats.count} sessions saved · avg acc last 10: {(reviewHistoryStats.avg10 * 100).toFixed(0)}% · last 50: {(reviewHistoryStats.avg50 * 100).toFixed(0)}%
-                  <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8, whiteSpace: 'pre-wrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' }}>
-                    {reviewHistoryStats.last10
-                      .slice()
-                      .reverse()
-                      .map((e) => {
-                        const denom = e.right + e.wrong;
-                        const a = denom > 0 ? (e.right / denom) * 100 : 0;
-                        const when = new Date(e.at);
-                        return `${when.toLocaleDateString()} ${when.toLocaleTimeString()} · ${e.mode}${e.station ? ` · ${e.station}` : ''} · n=${e.n}${e.hard ? ' · hard' : ''} · acc ${a.toFixed(0)}% · xp ${e.xp}`;
-                      })
-                      .join('\n')}
-                  </div>
+                  {reviewHistoryStats.count} sessions saved · avg accuracy last 10: {(reviewHistoryStats.avg10 * 100).toFixed(0)}% · last 50: {(reviewHistoryStats.avg50 * 100).toFixed(0)}%
+
+                  <details style={{ marginTop: 6 }}>
+                    <summary style={{ cursor: 'pointer', fontSize: 12, opacity: 0.85 }}>Show last 10 sessions</summary>
+                    <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8, whiteSpace: 'pre-wrap', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' }}>
+                      {reviewHistoryStats.last10
+                        .slice()
+                        .reverse()
+                        .map((e) => {
+                          const denom = e.right + e.wrong;
+                          const a = denom > 0 ? (e.right / denom) * 100 : 0;
+                          const when = new Date(e.at);
+                          return `${when.toLocaleDateString()} ${when.toLocaleTimeString()} · ${e.mode}${e.station ? ` · ${e.station}` : ''} · n=${e.n}${e.hard ? ' · hard' : ''} · acc ${a.toFixed(0)}% · xp ${e.xp}`;
+                        })
+                        .join('\n')}
+                    </div>
+                  </details>
                 </>
               ) : (
-                <>No review session history yet (key: <code>{REVIEW_SESSION_HISTORY_KEY}</code>).</>
+                <>No review session history yet.</>
               )}
             </span>
             <div className="configActions" style={{ flexWrap: 'wrap' }}>
