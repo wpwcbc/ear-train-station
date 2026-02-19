@@ -18,6 +18,7 @@ import { triadQualityLabel } from '../exercises/triad';
 import { getABVariant } from '../lib/ab';
 import { loadReviewSessionHistory } from '../lib/reviewSessionHistory';
 import { computeReviewHistoryStats } from '../lib/reviewHistoryStats';
+import { computePracticeNextUpFromStats } from '../lib/practiceNextUp';
 import { getWorkoutDayDone, getWorkoutDone, getWorkoutStreak, localDayKey, setWorkoutDone, subDays } from '../lib/workout';
 
 function msToHuman(ms: number): string {
@@ -114,6 +115,14 @@ export function PracticePage({ progress }: { progress: Progress }) {
     .filter((x) => (sched.dueNow > 0 ? x.due > 0 : x.queued > 0))
     .sort((a, b) => b.due - a.due || b.queued - a.queued);
 
+  const nextUp = computePracticeNextUpFromStats({
+    dueNow: sched.dueNow,
+    totalQueued: sched.total,
+    topDueStationId: stationCounts[0]?.id ?? null,
+    reviewHistoryStats,
+    continueLessonId: continueId,
+  });
+
   return (
     <div className="page">
       <h1 className="h1">Practice</h1>
@@ -140,6 +149,17 @@ export function PracticePage({ progress }: { progress: Progress }) {
           </div>
         </div>
       ) : null}
+
+      <div className="card" style={{ marginTop: 12 }}>
+        <h2 className="h2">Next up</h2>
+        <div style={{ fontSize: 12, opacity: 0.8 }}>{nextUp.reason}</div>
+        <div style={{ marginTop: 10, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Link className="linkBtn" to={nextUp.to} state={{ exitTo: '/practice' }}>
+            {nextUp.label}
+          </Link>
+          <CopyLinkButton to={nextUp.to} label="Copy next up link" />
+        </div>
+      </div>
 
       <div className="card" style={{ marginTop: 12 }} data-ab={workoutCopyVariant}>
         <h2 className="h2">{workoutCopyVariant === 'A' ? 'Today’s workout' : 'Daily drills'}</h2>

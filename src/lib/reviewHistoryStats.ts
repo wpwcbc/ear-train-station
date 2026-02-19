@@ -87,7 +87,7 @@ export function computeReviewHistoryStats(entries: ReviewSessionHistoryEntryV1[]
     .sort((a, b) => a.avgAcc - b.avgAcc || b.sessions - a.sessions || b.lastAt - a.lastAt);
 
   return {
-    count: entries.length,
+    count: noDrill.length,
     avg10,
     avg50,
     last10,

@@ -17,6 +17,7 @@ test('computeReviewHistoryStats: avg10/avg50 ignore drills', () => {
   // last10 includes only non-drill (2 sessions): 80% + 50% = 65%
   assert.equal(Math.round(s.avg10 * 100), 65);
   assert.equal(s.last10.length, 2);
+  assert.equal(s.count, 2);
 });
 
 test('computeReviewHistoryStats: needsLove orders by avgAcc (min 2 sessions)', () => {
