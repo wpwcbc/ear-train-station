@@ -33,6 +33,7 @@ import { DEFAULT_WIDE_REGISTER_MAX_MIDI, WIDE_REGISTER_MIN_MIDI } from '../lib/r
 import { STATIONS } from '../lib/stations';
 import { mulberry32 } from '../lib/rng';
 import { reviewSessionSignature } from '../lib/reviewSession';
+import { recordReviewSession } from '../lib/reviewSessionHistory';
 
 function msToHuman(ms: number): string {
   if (ms <= 0) return 'now';
@@ -59,6 +60,34 @@ function mistakeShortLabel(m: Mistake): string {
   if (m.kind === 'scaleDegreeName') return `Scale degree: ${m.key} — ${m.degree}`;
   if (m.kind === 'majorScaleDegree') return `Major scale: ${m.key} — ${m.degree}`;
   return `Function: ${m.key} — ${m.degree}`;
+}
+
+type SessionMissKey = string;
+
+function sessionMissKeyFromMistake(m: Mistake): SessionMissKey {
+  if (m.kind === 'intervalLabel') return `interval:${m.semitones}`;
+  if (m.kind === 'triadQuality') return `triad:${m.quality}`;
+  return `kind:${m.kind}`;
+}
+
+function sessionMissLabel(key: SessionMissKey): string {
+  const [kind, value] = key.split(':', 2);
+  if (kind === 'interval') {
+    const semis = parseInt(value ?? '', 10);
+    const label = SEMITONE_TO_LABEL[semis] ?? `${semis}st`;
+    return `Interval ${label}`;
+  }
+  if (kind === 'triad') return `Triad ${triadQualityLabel((value ?? 'major') as TriadQuality)}`;
+  if (kind === 'kind') return `${value}`;
+  return key;
+}
+
+function topSessionMisses(misses: Record<string, number>, limit = 3): Array<{ key: SessionMissKey; count: number }> {
+  return Object.entries(misses)
+    .map(([key, count]) => ({ key, count }))
+    .filter((x) => x.count > 0)
+    .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key))
+    .slice(0, limit);
 }
 
 function stationLabel(id: string): string {
@@ -167,12 +196,15 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const [sessionWrong, setSessionWrong] = useState(0);
   const [sessionSkip, setSessionSkip] = useState(0);
   const [sessionXp, setSessionXp] = useState(0);
+  const [sessionMisses, setSessionMisses] = useState<Record<string, number>>({});
   const [now, setNow] = useState(() => Date.now());
   const [mistakes, setMistakes] = useState<Mistake[]>(() => loadMistakes());
   const [undo, setUndo] = useState<UndoState | null>(null);
   const [expandedKinds, setExpandedKinds] = useState<Record<string, boolean>>({});
+  const [workoutBonusAwarded, setWorkoutBonusAwarded] = useState(0);
 
   const manageRef = useRef<HTMLDetailsElement | null>(null);
+  const recordedSessionSigRef = useRef<string | null>(null);
   const [manageOpen, setManageOpen] = useState<boolean>(() => manageMode);
 
   useEffect(() => {
@@ -208,6 +240,28 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
   const sessionSig = useMemo(() => reviewSessionSignature({ search: loc.search, hash: loc.hash }), [loc.search, loc.hash]);
 
+  const sessionAttempts = sessionRight + sessionWrong;
+  const sessionAccuracyPct = sessionAttempts > 0 ? Math.round((100 * sessionRight) / sessionAttempts) : 0;
+  const topMisses = useMemo(() => topSessionMisses(sessionMisses, 3), [sessionMisses]);
+
+  const topMissDrillTo = useMemo(() => {
+    if (topMisses.length === 0) return null as string | null;
+    const keys = topMisses.map((x) => x.key);
+    const stationQS = stationFilter ? `&station=${encodeURIComponent(stationFilter)}` : '';
+
+    const interval = keys.filter((k) => k.startsWith('interval:')).map((k) => parseInt(k.split(':')[1] ?? '', 10)).filter((n) => Number.isFinite(n));
+    if (interval.length === keys.length) {
+      return `/review?drill=1&kind=interval&semitones=${interval.join(',')}${stationQS}&n=${sessionN}`;
+    }
+
+    const triad = keys.filter((k) => k.startsWith('triad:')).map((k) => (k.split(':')[1] ?? '').trim()).filter(Boolean);
+    if (triad.length === keys.length) {
+      return `/review?drill=1&kind=triad&qualities=${triad.join(',')}${stationQS}&n=${sessionN}`;
+    }
+
+    return `/review?drill=1${stationQS}&n=${sessionN}`;
+  }, [topMisses, stationFilter, sessionN]);
+
   // Reset per-session counters when *session-defining* URL params change
   // (so switching filters/modes starts a fresh set, but unrelated query params won't).
   useEffect(() => {
@@ -217,6 +271,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     setSessionWrong(0);
     setSessionSkip(0);
     setSessionXp(0);
+    setSessionMisses({});
+    recordedSessionSigRef.current = null;
 
     // Drill-only state
     setDrillIndex(0);
@@ -415,6 +471,49 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
         ? (hardMode ? (warmupHardQueue[0] ?? warmupQueue[0]) : warmupQueue[0])
         : (hardMode ? (dueHard[0] ?? due[0]) : due[0])) as Mistake | undefined)) as Mistake | undefined;
 
+  // Persist a lightweight session history (best-effort) once the session completes.
+  useEffect(() => {
+    const attemptsNonDrill = sessionRight + sessionWrong + sessionSkip;
+    const completed = drillMode ? drillIndex >= DRILL_TOTAL && (drillCorrect + drillWrong > 0) : !active && attemptsNonDrill > 0;
+    if (!completed) return;
+    if (recordedSessionSigRef.current === sessionSig) return;
+
+    recordedSessionSigRef.current = sessionSig;
+
+    const mode = drillMode ? 'drill' : warmupMode ? 'warmup' : 'review';
+    const xpTotal = sessionXp + workoutBonusAwarded;
+
+    recordReviewSession({
+      v: 1,
+      at: Date.now(),
+      mode,
+      station: stationFilter || undefined,
+      n: sessionN,
+      hard: hardMode,
+      right: drillMode ? drillCorrect : sessionRight,
+      wrong: drillMode ? drillWrong : sessionWrong,
+      skip: drillMode ? 0 : sessionSkip,
+      xp: xpTotal,
+    });
+  }, [
+    active,
+    drillMode,
+    warmupMode,
+    hardMode,
+    stationFilter,
+    sessionN,
+    sessionSig,
+    DRILL_TOTAL,
+    drillIndex,
+    drillCorrect,
+    drillWrong,
+    sessionRight,
+    sessionWrong,
+    sessionSkip,
+    sessionXp,
+    workoutBonusAwarded,
+  ]);
+
   const noteQ = useMemo(() => {
     if (!active || active.kind !== 'noteName') return null;
     return makeNoteNameReviewQuestion({ seed: seed * 1000 + 901, midi: active.midi, choiceCount: 4 });
@@ -572,8 +671,13 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     // Quests: count the attempt regardless of correctness.
     bumpReviewAttempt(1);
 
-    if (outcome === 'correct') setSessionRight((n) => n + 1);
-    else setSessionWrong((n) => n + 1);
+    if (outcome === 'correct') {
+      setSessionRight((n) => n + 1);
+    } else {
+      setSessionWrong((n) => n + 1);
+      const key = sessionMissKeyFromMistake(active);
+      setSessionMisses((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }));
+    }
 
     let cleared = false;
     updateMistake(active.id, (m) => {
@@ -605,6 +709,15 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     } else {
       setDrillWrong((n) => n + 1);
       setResult('wrong');
+
+      if (drillKind === 'interval' && drillIlQ) {
+        const key = `interval:${drillIlQ.semitones}`;
+        setSessionMisses((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }));
+      }
+      if (drillKind === 'triad' && drillTriadQ) {
+        const key = `triad:${drillTriadQ.quality}`;
+        setSessionMisses((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }));
+      }
     }
 
     // Advance immediately; drills are fast + continuous.
@@ -683,7 +796,6 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
   // Duolingo-ish: completing a workout session grants a small XP bonus once per session per day.
   const WORKOUT_BONUS_XP = 8;
-  const [workoutBonusAwarded, setWorkoutBonusAwarded] = useState(0);
 
   useEffect(() => {
     if (!workoutSession) return;
@@ -838,7 +950,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               ) : null}
               <div>Cleared: {doneCount}</div>
               <div style={{ opacity: 0.85 }} title="This session">
-                Session: {sessionRight} ✓ · {sessionWrong} ✗ · {sessionSkip} skip · +{sessionXp} XP
+                Session: {sessionAccuracyPct}% · {sessionRight} ✓ · {sessionWrong} ✗ · {sessionSkip} skip · +{sessionXp} XP
               </div>
             </>
           )}
@@ -1421,7 +1533,14 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               <div style={{ fontSize: 14, opacity: 0.95 }}>
                 Warm‑up complete — cleared <b>{Math.min(doneCount, warmupQueue.length)}</b> / {warmupQueue.length}.
               </div>
-              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Session: {sessionRight} ✓ · {sessionWrong} ✗ · {sessionSkip} skip · +{sessionXp} XP</div>
+              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
+                Session: {sessionAccuracyPct}% · {sessionRight} ✓ · {sessionWrong} ✗ · {sessionSkip} skip · +{sessionXp} XP
+              </div>
+              {topMisses.length ? (
+                <div style={{ marginTop: 6, fontSize: 12, opacity: 0.82 }}>
+                  Top misses: {topMisses.map((x) => `${sessionMissLabel(x.key)}×${x.count}`).join(' · ')}
+                </div>
+              ) : null}
               {workoutBonusAwarded > 0 ? (
                 <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Workout bonus: +{workoutBonusAwarded} XP.</div>
               ) : null}
@@ -1429,6 +1548,11 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                 <Link className="linkBtn" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
                   Restart warm‑up
                 </Link>
+                {topMissDrillTo ? (
+                  <Link className="linkBtn" to={topMissDrillTo} state={inheritedState}>
+                    Practice misses
+                  </Link>
+                ) : null}
                 <Link className="linkBtn" to={`/review?drill=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
                   Drill top misses
                 </Link>
@@ -1450,7 +1574,14 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               <div style={{ fontSize: 14, opacity: 0.95 }}>
                 All caught up — cleared <b>{doneCount}</b> item{doneCount === 1 ? '' : 's'}.
               </div>
-              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Session: {sessionRight} ✓ · {sessionWrong} ✗ · {sessionSkip} skip · +{sessionXp} XP</div>
+              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
+                Session: {sessionAccuracyPct}% · {sessionRight} ✓ · {sessionWrong} ✗ · {sessionSkip} skip · +{sessionXp} XP
+              </div>
+              {topMisses.length ? (
+                <div style={{ marginTop: 6, fontSize: 12, opacity: 0.82 }}>
+                  Top misses: {topMisses.map((x) => `${sessionMissLabel(x.key)}×${x.count}`).join(' · ')}
+                </div>
+              ) : null}
               {workoutBonusAwarded > 0 ? (
                 <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Workout bonus: +{workoutBonusAwarded} XP.</div>
               ) : null}
@@ -1458,6 +1589,11 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                 <Link className="linkBtn primaryLink" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
                   Continue (warm‑up)
                 </Link>
+                {topMissDrillTo ? (
+                  <Link className="linkBtn" to={topMissDrillTo} state={inheritedState}>
+                    Practice misses
+                  </Link>
+                ) : null}
                 <Link className="linkBtn" to={`/review?drill=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
                   Drill top misses
                 </Link>

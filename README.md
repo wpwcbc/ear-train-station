@@ -144,7 +144,8 @@ Rule of thumb: avoid hardcoding `60–71` or other magic MIDI ranges inside stat
 - Review is spaced by default; if nothing is due you can still run a short **Warm‑up** set (practice early) from your queue.
 - Practice Hub links are **deep-linkable**; the UI also offers **Copy link** buttons next to workout sessions / drills so you can share or bookmark a specific practice set.
 - Completing a **workout session** from Practice Hub grants a small **XP bonus** (once per session per day) — Duolingo-ish, but anti-farm.
-- Review sessions show a tiny **session summary** (right/wrong/skip + XP earned), and switching URL params (hard/station/n/warmup/drill) resets the counters so each deep-link feels like a fresh set.
+- Review sessions show a tiny **session summary** (accuracy + right/wrong/skip + XP earned), and switching URL params (hard/station/n/warmup/drill) resets the counters so each deep-link feels like a fresh set.
+- On completion, Review/Warm‑up/Drill writes a lightweight session log to `localStorage` under `ets_review_session_history_v1` (capped, best-effort) so we can add stats later without introducing a new UI surface yet.
 - Review → **Manage mistakes** shows examples with due/streak meta; you can **Snooze 1h** (defer) or Remove (with Undo) to keep the queue healthy.
 
 ## Mobile / iOS notes
