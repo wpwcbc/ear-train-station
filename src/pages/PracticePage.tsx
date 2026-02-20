@@ -106,14 +106,21 @@ export function PracticePage({ progress }: { progress: Progress }) {
 
   // Surface the most actionable review sources first.
   // If nothing is due right now, still show where your queue is concentrated.
-  const stationCounts = STATIONS.map((s) => ({
+  const stationCountsAll = STATIONS.map((s) => ({
     id: s.id,
     title: s.title,
     due: mistakeCountForStation(s.id, { dueOnly: true }),
     queued: mistakeCountForStation(s.id),
-  }))
+  }));
+
+  const stationCounts = stationCountsAll
     .filter((x) => (sched.dueNow > 0 ? x.due > 0 : x.queued > 0))
     .sort((a, b) => b.due - a.due || b.queued - a.queued);
+
+  const stationHotspots = stationCountsAll
+    .filter((x) => x.queued > 0)
+    .sort((a, b) => b.due - a.due || b.queued - a.queued)
+    .slice(0, 3);
 
   const nextUp = computePracticeNextUpFromStats({
     dueNow: sched.dueNow,
@@ -199,7 +206,9 @@ export function PracticePage({ progress }: { progress: Progress }) {
         </div>
 
         {(() => {
-          const topDueStation = stationCounts[0]?.id ?? null;
+          const topDue = stationCounts[0] ?? null;
+          const topDueStation = topDue?.id ?? null;
+          const topDueStationTitle = topDue?.title ?? null;
 
           // Deterministic-ish daily rotation:
           // - Session #1 is always “Review”, but becomes Warm-up when nothing is due yet.
@@ -217,22 +226,24 @@ export function PracticePage({ progress }: { progress: Progress }) {
           const reviewBase = hasDue ? '/review' : hasQueue ? '/review?warmup=1&n=5' : '/review';
           const reviewToBase = topDueStation && rotate === 0 ? `${reviewBase}${reviewBase.includes('?') ? '&' : '?'}station=${topDueStation}` : reviewBase;
           const reviewTo = withWorkout(reviewToBase, 1);
+          const stationTag = topDueStationTitle || topDueStation;
+
           const reviewLabel = hasDue
             ? topDueStation && rotate === 0
-              ? `Review (${sched.dueNow} due · ${topDueStation})`
+              ? `Review (${sched.dueNow} due · ${stationTag})`
               : `Review (${sched.dueNow} due)`
             : hasQueue
               ? topDueStation && rotate === 0
-                ? `Warm‑up (${topDueStation})`
+                ? `Warm‑up (${stationTag})`
                 : 'Warm‑up review'
               : 'Review';
           const reviewLabelB = hasDue
             ? topDueStation && rotate === 0
-              ? `Review now (${topDueStation})`
+              ? `Review now (${stationTag})`
               : 'Review now'
             : hasQueue
               ? topDueStation && rotate === 0
-                ? `Warm up (${topDueStation})`
+                ? `Warm up (${stationTag})`
                 : 'Warm up'
               : 'Review';
 
@@ -410,6 +421,30 @@ export function PracticePage({ progress }: { progress: Progress }) {
             {sched.dueNow === 0 && sched.nextDueAt ? (
               <span style={{ fontSize: 12, opacity: 0.75 }}>Next due in {msToHuman(sched.nextDueAt - now)}</span>
             ) : null}
+          </div>
+        ) : null}
+
+        {stationHotspots.length ? (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: 12, opacity: 0.8 }}>Queue hotspots</div>
+            <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              {stationHotspots.map((s) => {
+                const hasDue = sched.dueNow > 0;
+                const to = hasDue && s.due > 0 ? `/review?station=${encodeURIComponent(s.id)}` : `/review?warmup=1&n=5&station=${encodeURIComponent(s.id)}`;
+                const tag = s.title || s.id;
+                return (
+                  <Link
+                    key={s.id}
+                    className="pill"
+                    to={to}
+                    state={{ exitTo: '/practice' }}
+                    title={`Due now: ${s.due} · Queued: ${s.queued}`}
+                  >
+                    {tag} · {s.due ? `${s.due} due` : `${s.queued} queued`}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         ) : null}
 
