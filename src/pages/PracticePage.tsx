@@ -424,30 +424,6 @@ export function PracticePage({ progress }: { progress: Progress }) {
           </div>
         ) : null}
 
-        {stationHotspots.length ? (
-          <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: 12, opacity: 0.8 }}>Queue hotspots</div>
-            <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              {stationHotspots.map((s) => {
-                const hasDue = sched.dueNow > 0;
-                const to = hasDue && s.due > 0 ? `/review?station=${encodeURIComponent(s.id)}` : `/review?warmup=1&n=5&station=${encodeURIComponent(s.id)}`;
-                const tag = s.title || s.id;
-                return (
-                  <Link
-                    key={s.id}
-                    className="pill"
-                    to={to}
-                    state={{ exitTo: '/practice' }}
-                    title={`Due now: ${s.due} · Queued: ${s.queued}`}
-                  >
-                    {tag} · {s.due ? `${s.due} due` : `${s.queued} queued`}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
-
         <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
           {(() => {
             const hasDue = sched.dueNow > 0;
@@ -480,96 +456,6 @@ export function PracticePage({ progress }: { progress: Progress }) {
             </Link>
           ) : null}
 
-          {(() => {
-            const to = hasIntervalMistakes
-              ? `/review?drill=1&semitones=${encodeURIComponent(intervalStatsTop.map((x) => x.semitones).join(','))}`
-              : '/review?warmup=1&n=5';
-
-            return (
-              <>
-                <Link
-                  className="linkBtn"
-                  to={to}
-                  state={{ exitTo: '/practice' }}
-                  title={
-                    hasIntervalMistakes
-                      ? `Drill focuses your top missed interval labels: ${intervalStatsTop
-                          .map((x) => SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`)
-                          .join(', ')}`
-                      : 'No interval mistakes yet — warm‑up is the fastest way to practice your queue.'
-                  }
-                >
-                  {hasIntervalMistakes ? 'Top misses drill' : 'Quick warm‑up'}
-                  {hasIntervalMistakes && intervalStatsTop.length ? (
-                    <span style={{ marginLeft: 8, fontSize: 12, opacity: 0.8 }}>
-                      ({intervalStatsTop
-                        .map((x) => SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`)
-                        .join(', ')})
-                    </span>
-                  ) : null}
-                </Link>
-                <CopyLinkButton to={to} label="Copy interval drill link" />
-              </>
-            );
-          })()}
-
-          {hasTriadMistakes ? (() => {
-            const to = `/review?drill=1&kind=triad&qualities=${encodeURIComponent(triadStatsTop.map((x) => x.quality).join(','))}`;
-            return (
-              <>
-                <Link
-                  className="linkBtn"
-                  to={to}
-                  state={{ exitTo: '/practice' }}
-                  title={`Triad-quality drill from your mistakes: ${triadStatsTop.map((x) => triadQualityLabel(x.quality)).join(', ')} (wide register: G2+).`}
-                >
-                  Triad misses drill
-                  {triadStatsTop.length ? (
-                    <span style={{ marginLeft: 8, fontSize: 12, opacity: 0.8 }}>({triadStatsTop.map((x) => triadQualityLabel(x.quality)).join(', ')})</span>
-                  ) : null}
-                </Link>
-                <CopyLinkButton to={to} label="Copy triad drill link" />
-              </>
-            );
-          })() : null}
-
-          {hasTriadMistakes ? (
-            <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: 12, opacity: 0.75 }}>Triad shortcuts:</span>
-              {(['major', 'minor', 'diminished'] as const).map((q) => (
-                <Link
-                  key={q}
-                  className="pill"
-                  to={`/review?drill=1&kind=triad&qualities=${encodeURIComponent(q)}`}
-                  state={{ exitTo: '/practice' }}
-                  title={`Drill ${triadQualityLabel(q)} only (wide register: G2+)`}
-                >
-                  {triadQualityLabel(q)}
-                </Link>
-              ))}
-            </div>
-          ) : null}
-
-          {hasIntervalMistakes && intervalStatsTop.length ? (
-            <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: 12, opacity: 0.75 }}>Drill shortcuts:</span>
-              {intervalStatsTop.map((x) => {
-                const label = SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`;
-                return (
-                  <Link
-                    key={x.semitones}
-                    className="pill"
-                    to={`/review?drill=1&semitones=${encodeURIComponent(String(x.semitones))}`}
-                    state={{ exitTo: '/practice' }}
-                    title={`Drill ${label} only (wide register: G2+)`}
-                  >
-                    {label}
-                  </Link>
-                );
-              })}
-            </div>
-          ) : null}
-
           <Link className="linkBtn" to="/review?manage=1#manage" state={{ exitTo: '/practice' }} title="Browse and manage your Review queue (on-demand)">
             Manage mistakes
             {sched.total ? (
@@ -578,35 +464,155 @@ export function PracticePage({ progress }: { progress: Progress }) {
               </span>
             ) : null}
           </Link>
+
           {sched.total === 0 ? <span style={{ fontSize: 12, opacity: 0.75 }}>No mistakes yet — nice.</span> : null}
         </div>
 
-        {stationCounts.length ? (
-          <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>{sched.dueNow > 0 ? 'Most due by station' : 'Most queued by station'}</div>
-            <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-              {stationCounts.slice(0, 6).map((s) => {
-                const hasDue = sched.dueNow > 0;
-                const base = hasDue ? '/review' : '/review?warmup=1&n=5';
-                const to = `${base}${base.includes('?') ? '&' : '?'}station=${encodeURIComponent(s.id)}`;
-                const count = hasDue ? s.due : s.queued;
-                const label = s.title || s.id;
+        {sched.total > 0 ? (
+          <details style={{ marginTop: 10 }}>
+            <summary style={{ cursor: 'pointer', fontSize: 12, opacity: 0.85 }}>More review options</summary>
+
+            {stationHotspots.length ? (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ fontSize: 12, opacity: 0.8 }}>Queue hotspots</div>
+                <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                  {stationHotspots.map((s) => {
+                    const hasDue = sched.dueNow > 0;
+                    const to = hasDue && s.due > 0 ? `/review?station=${encodeURIComponent(s.id)}` : `/review?warmup=1&n=5&station=${encodeURIComponent(s.id)}`;
+                    const tag = s.title || s.id;
+                    return (
+                      <Link
+                        key={s.id}
+                        className="pill"
+                        to={to}
+                        state={{ exitTo: '/practice' }}
+                        title={`Due now: ${s.due} · Queued: ${s.queued}`}
+                      >
+                        {tag} · {s.due ? `${s.due} due` : `${s.queued} queued`}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
+              {(() => {
+                const to = hasIntervalMistakes
+                  ? `/review?drill=1&semitones=${encodeURIComponent(intervalStatsTop.map((x) => x.semitones).join(','))}`
+                  : '/review?warmup=1&n=5';
+
                 return (
-                  <Link key={s.id} className="pill" to={to} state={{ exitTo: '/practice' }} title={`${label} (${s.id})`}>
-                    {label} · {count}
-                  </Link>
+                  <>
+                    <Link
+                      className="linkBtn"
+                      to={to}
+                      state={{ exitTo: '/practice' }}
+                      title={
+                        hasIntervalMistakes
+                          ? `Drill focuses your top missed interval labels: ${intervalStatsTop
+                              .map((x) => SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`)
+                              .join(', ')}`
+                          : 'No interval mistakes yet — warm‑up is the fastest way to practice your queue.'
+                      }
+                    >
+                      {hasIntervalMistakes ? 'Top misses drill' : 'Quick warm‑up'}
+                      {hasIntervalMistakes && intervalStatsTop.length ? (
+                        <span style={{ marginLeft: 8, fontSize: 12, opacity: 0.8 }}>
+                          ({intervalStatsTop
+                            .map((x) => SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`)
+                            .join(', ')})
+                        </span>
+                      ) : null}
+                    </Link>
+                    <CopyLinkButton to={to} label="Copy interval drill link" />
+                  </>
                 );
-              })}
+              })()}
+
+              {hasTriadMistakes
+                ? (() => {
+                    const to = `/review?drill=1&kind=triad&qualities=${encodeURIComponent(triadStatsTop.map((x) => x.quality).join(','))}`;
+                    return (
+                      <>
+                        <Link
+                          className="linkBtn"
+                          to={to}
+                          state={{ exitTo: '/practice' }}
+                          title={`Triad-quality drill from your mistakes: ${triadStatsTop.map((x) => triadQualityLabel(x.quality)).join(', ')} (wide register: G2+).`}
+                        >
+                          Triad misses drill
+                          {triadStatsTop.length ? (
+                            <span style={{ marginLeft: 8, fontSize: 12, opacity: 0.8 }}>({triadStatsTop.map((x) => triadQualityLabel(x.quality)).join(', ')})</span>
+                          ) : null}
+                        </Link>
+                        <CopyLinkButton to={to} label="Copy triad drill link" />
+                      </>
+                    );
+                  })()
+                : null}
             </div>
-          </div>
+
+            {hasTriadMistakes ? (
+              <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: 12, opacity: 0.75 }}>Triad shortcuts:</span>
+                {(['major', 'minor', 'diminished'] as const).map((q) => (
+                  <Link
+                    key={q}
+                    className="pill"
+                    to={`/review?drill=1&kind=triad&qualities=${encodeURIComponent(q)}`}
+                    state={{ exitTo: '/practice' }}
+                    title={`Drill ${triadQualityLabel(q)} only (wide register: G2+).`}
+                  >
+                    {triadQualityLabel(q)}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+
+            {hasIntervalMistakes && intervalStatsTop.length ? (
+              <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: 12, opacity: 0.75 }}>Drill shortcuts:</span>
+                {intervalStatsTop.map((x) => {
+                  const label = SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`;
+                  return (
+                    <Link
+                      key={x.semitones}
+                      className="pill"
+                      to={`/review?drill=1&semitones=${encodeURIComponent(String(x.semitones))}`}
+                      state={{ exitTo: '/practice' }}
+                      title={`Drill ${label} only (wide register: G2+).`}
+                    >
+                      {label}
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : null}
+
+            {stationCounts.length ? (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>{sched.dueNow > 0 ? 'Most due by station' : 'Most queued by station'}</div>
+                <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                  {stationCounts.slice(0, 6).map((s) => {
+                    const hasDue = sched.dueNow > 0;
+                    const base = hasDue ? '/review' : '/review?warmup=1&n=5';
+                    const to = `${base}${base.includes('?') ? '&' : '?'}station=${encodeURIComponent(s.id)}`;
+                    const count = hasDue ? s.due : s.queued;
+                    const label = s.title || s.id;
+                    return (
+                      <Link key={s.id} className="pill" to={to} state={{ exitTo: '/practice' }} title={`${label} (${s.id})`}>
+                        {label} · {count}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+          </details>
         ) : (
           <div style={{ marginTop: 12, fontSize: 12, opacity: 0.75 }}>
-            {sched.total === 0
-              ? 'No mistakes queued yet. Miss something in a lesson/test and it’ll show up here.'
-              : sched.nextDueAt
-                ? `Nothing due right now — next due in ${msToHuman(sched.nextDueAt - now)}.`
-                : 'Nothing due right now.'}
-            {sched.total > 0 ? <span style={{ marginLeft: 6, opacity: 0.8 }}>Warm‑up is optional.</span> : null}
+            No mistakes queued yet. Miss something in a lesson/test and it’ll show up here.
           </div>
         )}
       </div>
