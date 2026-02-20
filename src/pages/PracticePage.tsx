@@ -588,11 +588,12 @@ export function PracticePage({ progress }: { progress: Progress }) {
               {stationCounts.slice(0, 6).map((s) => {
                 const hasDue = sched.dueNow > 0;
                 const base = hasDue ? '/review' : '/review?warmup=1&n=5';
-                const to = `${base}${base.includes('?') ? '&' : '?'}station=${s.id}`;
+                const to = `${base}${base.includes('?') ? '&' : '?'}station=${encodeURIComponent(s.id)}`;
                 const count = hasDue ? s.due : s.queued;
+                const label = s.title || s.id;
                 return (
-                  <Link key={s.id} className="pill" to={to} state={{ exitTo: '/practice' }} title={s.title}>
-                    {s.id} · {count}
+                  <Link key={s.id} className="pill" to={to} state={{ exitTo: '/practice' }} title={`${label} (${s.id})`}>
+                    {label} · {count}
                   </Link>
                 );
               })}
