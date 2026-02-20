@@ -10,6 +10,7 @@ export type NextUpInputs = {
   dueNow: number;
   totalQueued: number;
   topDueStationId?: string | null;
+  topDueStationName?: string | null;
   needsLoveTop?: { station: string; stationName: string; avgAcc: number } | null;
   continueLessonId?: string | null;
 };
@@ -27,10 +28,17 @@ export function computePracticeNextUp(i: NextUpInputs): NextUp {
   const total = Math.max(0, i.totalQueued || 0);
 
   if (dueNow > 0) {
-    const station = (i.topDueStationId || '').trim();
-    const to = station ? `/review?station=${encodeURIComponent(station)}` : '/review';
-    const label = dueNow >= 5 ? `Review now (${dueNow} due)` : 'Review now';
-    const reason = station ? `You’ve got items due now — focus on ${station}.` : `You’ve got ${dueNow} items due now.`;
+    const stationId = (i.topDueStationId || '').trim();
+    const stationName = (i.topDueStationName || '').trim();
+    const to = stationId ? `/review?station=${encodeURIComponent(stationId)}` : '/review';
+
+    const n = dueNow;
+    const label = stationName ? `Review now — ${stationName}` : n >= 5 ? `Review now (${n} due)` : 'Review now';
+
+    const reason = stationName
+      ? `You’ve got ${n} item${n === 1 ? '' : 's'} due now — focus on ${stationName}.`
+      : `You’ve got ${n} item${n === 1 ? '' : 's'} due now.`;
+
     return { to, label, reason };
   }
 
@@ -38,7 +46,8 @@ export function computePracticeNextUp(i: NextUpInputs): NextUp {
   if (needsLove && needsLove.station) {
     const to = `/review?station=${encodeURIComponent(needsLove.station)}`;
     const label = 'Needs love (quick review)';
-    const reason = `Your recent accuracy is low in ${needsLove.stationName}.`;
+    const pct = Math.round((needsLove.avgAcc || 0) * 100);
+    const reason = `Recent accuracy in ${needsLove.stationName}: ${pct}%.`;
     return { to, label, reason };
   }
 
@@ -71,6 +80,7 @@ export function computePracticeNextUpFromStats(params: {
   dueNow: number;
   totalQueued: number;
   topDueStationId?: string | null;
+  topDueStationName?: string | null;
   reviewHistoryStats?: ReviewHistoryStats | null;
   continueLessonId?: string | null;
 }): NextUp {
@@ -86,6 +96,7 @@ export function computePracticeNextUpFromStats(params: {
     dueNow: params.dueNow,
     totalQueued: params.totalQueued,
     topDueStationId: params.topDueStationId,
+    topDueStationName: params.topDueStationName,
     needsLoveTop,
     continueLessonId: params.continueLessonId,
   });

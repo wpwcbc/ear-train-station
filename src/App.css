@@ -1216,3 +1216,11 @@ button.choiceWrong {
   55% { transform: translateX(8%) rotate(12deg); opacity: 0.75; }
   100% { transform: translateX(-8%) rotate(12deg); opacity: 0.55; }
 }
+
+/* Text utilities */
+.clamp2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

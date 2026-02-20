@@ -119,6 +119,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
     dueNow: sched.dueNow,
     totalQueued: sched.total,
     topDueStationId: stationCounts[0]?.id ?? null,
+    topDueStationName: stationCounts[0]?.title ?? null,
     reviewHistoryStats,
     continueLessonId: continueId,
   });
@@ -152,7 +153,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
 
       <div className="card" style={{ marginTop: 12 }}>
         <h2 className="h2">Next up</h2>
-        <div style={{ fontSize: 12, opacity: 0.8 }}>{nextUp.reason}</div>
+        <div className="clamp2" style={{ fontSize: 12, opacity: 0.8 }}>{nextUp.reason}</div>
         <div style={{ marginTop: 10, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <Link className="linkBtn" to={nextUp.to} state={{ exitTo: '/practice' }}>
             {nextUp.label}
