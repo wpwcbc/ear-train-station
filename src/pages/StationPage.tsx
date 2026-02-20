@@ -3641,7 +3641,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
 
           <div style={{ marginTop: 10 }}>
             <PianoKeyboard
-              startMidi={43} // G2 — tests should never surface below this register
+              startMidi={WIDE_REGISTER_MIN_MIDI} // G2 — tests should never surface below this register
               octaves={4}
               onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
               highlighted={highlighted}
