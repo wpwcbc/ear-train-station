@@ -19,6 +19,7 @@ import { getABVariant } from '../lib/ab';
 import { loadReviewSessionHistory } from '../lib/reviewSessionHistory';
 import { computeReviewHistoryStats } from '../lib/reviewHistoryStats';
 import { computePracticeNextUpFromStats } from '../lib/practiceNextUp';
+import { WIDE_REGISTER_RANGE_TEXT } from '../lib/registerPolicy';
 import { getWorkoutDayDone, getWorkoutDone, getWorkoutStreak, localDayKey, setWorkoutDone, subDays } from '../lib/workout';
 
 function msToHuman(ms: number): string {
@@ -270,8 +271,8 @@ export function PracticePage({ progress }: { progress: Progress }) {
 
           const drillTitle = hasChosenMistakes
             ? drillKind === 'triad'
-              ? 'A fast triad-quality drill from your mistakes (wide register: G2+).'
-              : 'A fast interval drill from your mistakes (wide register: G2+).'
+              ? `A fast triad-quality drill from your mistakes (wide register: ${WIDE_REGISTER_RANGE_TEXT}).`
+              : `A fast interval drill from your mistakes (wide register: ${WIDE_REGISTER_RANGE_TEXT}).`
             : 'No mistakes yet for a drill — do a quick warm‑up from your queue instead.';
 
           const pickSecond = () => {
@@ -539,7 +540,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
                           className="linkBtn"
                           to={to}
                           state={{ exitTo: '/practice' }}
-                          title={`Triad-quality drill from your mistakes: ${triadStatsTop.map((x) => triadQualityLabel(x.quality)).join(', ')} (wide register: G2+).`}
+                          title={`Triad-quality drill from your mistakes: ${triadStatsTop.map((x) => triadQualityLabel(x.quality)).join(', ')} (wide register: ${WIDE_REGISTER_RANGE_TEXT}).`}
                         >
                           Triad misses drill
                           {triadStatsTop.length ? (
@@ -562,7 +563,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
                     className="pill"
                     to={`/review?drill=1&kind=triad&qualities=${encodeURIComponent(q)}`}
                     state={{ exitTo: '/practice' }}
-                    title={`Drill ${triadQualityLabel(q)} only (wide register: G2+).`}
+                    title={`Drill ${triadQualityLabel(q)} only (wide register: ${WIDE_REGISTER_RANGE_TEXT}).`}
                   >
                     {triadQualityLabel(q)}
                   </Link>
@@ -581,7 +582,7 @@ export function PracticePage({ progress }: { progress: Progress }) {
                       className="pill"
                       to={`/review?drill=1&semitones=${encodeURIComponent(String(x.semitones))}`}
                       state={{ exitTo: '/practice' }}
-                      title={`Drill ${label} only (wide register: G2+).`}
+                      title={`Drill ${label} only (wide register: ${WIDE_REGISTER_RANGE_TEXT}).`}
                     >
                       {label}
                     </Link>

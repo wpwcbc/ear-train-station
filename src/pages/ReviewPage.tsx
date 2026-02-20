@@ -29,7 +29,7 @@ import { degreeMeaning, makeScaleDegreeNameReviewQuestion, type ScaleDegreeName 
 import { makeMajorScaleDegreeReviewQuestion } from '../exercises/majorScale';
 import { makeFunctionFamilyQuestion, type FunctionFamily } from '../exercises/functionFamily';
 import { MAJOR_KEYS } from '../lib/theory/major';
-import { DEFAULT_WIDE_REGISTER_MAX_MIDI, WIDE_REGISTER_MIN_MIDI } from '../lib/registerPolicy';
+import { DEFAULT_WIDE_REGISTER_MAX_MIDI, WIDE_REGISTER_MIN_MIDI, WIDE_REGISTER_RANGE_TEXT } from '../lib/registerPolicy';
 import { STATIONS } from '../lib/stations';
 import { mulberry32 } from '../lib/rng';
 import { reviewSessionSignature } from '../lib/reviewSession';
@@ -902,8 +902,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           <p className="sub">
             {drillMode
               ? drillKind === 'triad'
-                ? 'Targeted triad-quality drills from your mistakes (wide register: G2+).'
-                : 'Targeted interval drills from your mistakes (wide register: G2+).'
+                ? `Targeted triad-quality drills from your mistakes (wide register: ${WIDE_REGISTER_RANGE_TEXT}).`
+                : `Targeted interval drills from your mistakes (wide register: ${WIDE_REGISTER_RANGE_TEXT}).`
               : warmupMode
                 ? 'A quick warm‑up set from your queue (even if nothing is due yet).'
                 : 'Spaced review of missed items. Clear an item by getting it right twice in a row (streak 2/2).'}
@@ -1075,7 +1075,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             className="pill"
             to={`/review?drill=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
             state={inheritedState}
-            title="A fast interval drill from your mistakes (wide register: G2+)."
+            title={`A fast interval drill from your mistakes (wide register: ${WIDE_REGISTER_RANGE_TEXT}).`}
           >
             Interval drill
           </Link>
@@ -1084,7 +1084,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               className="pill"
               to={`/review?drill=1&kind=triad${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
               state={inheritedState}
-              title="A fast triad-quality drill from your mistakes (wide register: G2+)."
+              title={`A fast triad-quality drill from your mistakes (wide register: ${WIDE_REGISTER_RANGE_TEXT}).`}
             >
               Triad drill
             </Link>

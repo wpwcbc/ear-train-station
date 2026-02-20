@@ -3352,7 +3352,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                 </div>
 
                 <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
-                  Lessons stable register; tests roam wider (G2+).
+                  {`Lessons stable register; tests roam wider (${WIDE_REGISTER_RANGE_TEXT}).`}
                 </div>
               </>
             }
@@ -3488,7 +3488,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                 </div>
 
                 <div style={{ fontSize: 12, opacity: 0.8, marginTop: 10 }}>
-                  Lessons stable register; tests roam wider (G2+).
+                  {`Lessons stable register; tests roam wider (${WIDE_REGISTER_RANGE_TEXT}).`}
                 </div>
               </>
             }
