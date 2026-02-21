@@ -17,6 +17,7 @@ import { loadSettings } from '../lib/settings';
 import { promptSpeedFactors } from '../lib/promptTiming';
 import {
   DEFAULT_WIDE_REGISTER_MAX_MIDI,
+  STABLE_KEYBOARD_PROPS,
   STABLE_REGISTER_MAX_MIDI,
   STABLE_REGISTER_MIN_MIDI,
   STABLE_REGISTER_RANGE_TEXT,
@@ -3160,8 +3161,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                   <StaffNote midi={noteQ.midi} spelling={noteQ.displaySpelling} showLegend={false} />
                   <div style={{ flex: 1, minWidth: 240 }}>
                     <PianoKeyboard
-                      startMidi={STABLE_REGISTER_MIN_MIDI}
-                      octaves={1}
+                      {...STABLE_KEYBOARD_PROPS}
                       onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
                       highlighted={highlighted}
                     />
@@ -3290,8 +3290,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                   <StaffNote midi={s1bQ.midi} spelling={s1bQ.displaySpelling} showLegend={false} />
                   <div style={{ flex: 1, minWidth: 240 }}>
                     <PianoKeyboard
-                      startMidi={STABLE_REGISTER_MIN_MIDI}
-                      octaves={1}
+                      {...STABLE_KEYBOARD_PROPS}
                       onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
                       highlighted={highlighted}
                     />
@@ -3434,8 +3433,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                   <StaffNote midi={s1cQ.midi} spelling={s1cQ.displaySpelling} showLegend={false} />
                   <div style={{ flex: 1, minWidth: 240 }}>
                     <PianoKeyboard
-                      startMidi={STABLE_REGISTER_MIN_MIDI}
-                      octaves={1}
+                      {...STABLE_KEYBOARD_PROPS}
                       onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
                       highlighted={highlighted}
                     />
@@ -3530,8 +3528,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             <StaffNote midi={t1bQ.midi} spelling={t1bQ.displaySpelling} showLegend={false} />
             <div style={{ flex: 1, minWidth: 240 }}>
               <PianoKeyboard
-                startMidi={STABLE_REGISTER_MIN_MIDI}
-                octaves={1}
+                {...STABLE_KEYBOARD_PROPS}
                 onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
                 highlighted={highlighted}
               />
@@ -4070,12 +4067,10 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
 
               <div style={{ marginTop: 10 }}>
                 <PianoKeyboard
-                  startMidi={STABLE_REGISTER_MIN_MIDI}
+                  {...STABLE_KEYBOARD_PROPS}
                   octaves={2}
                   onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
                   highlighted={highlighted}
-                  minMidi={STABLE_REGISTER_MIN_MIDI}
-                  maxMidi={STABLE_REGISTER_MAX_MIDI}
                 />
               </div>
             </>
@@ -4098,12 +4093,10 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
 
               <div style={{ marginTop: 10 }}>
                 <PianoKeyboard
-                  startMidi={STABLE_REGISTER_MIN_MIDI}
+                  {...STABLE_KEYBOARD_PROPS}
                   octaves={2}
                   onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
                   highlighted={highlighted}
-                  minMidi={STABLE_REGISTER_MIN_MIDI}
-                  maxMidi={STABLE_REGISTER_MAX_MIDI}
                 />
               </div>
             </>
@@ -4198,12 +4191,9 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                 </div>
 
                 <PianoKeyboard
-                  startMidi={STABLE_REGISTER_MIN_MIDI}
-                  octaves={1}
+                  {...STABLE_KEYBOARD_PROPS}
                   onPress={onPressS3}
                   highlighted={highlighted}
-                  minMidi={STABLE_REGISTER_MIN_MIDI}
-                  maxMidi={STABLE_REGISTER_MAX_MIDI}
                 />
 
                 {s3TestComplete ? (
@@ -4277,12 +4267,9 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
           </div>
 
           <PianoKeyboard
-            startMidi={STABLE_REGISTER_MIN_MIDI}
-            octaves={1}
+            {...STABLE_KEYBOARD_PROPS}
             onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
             highlighted={highlighted}
-            minMidi={STABLE_REGISTER_MIN_MIDI}
-            maxMidi={STABLE_REGISTER_MAX_MIDI}
           />
         </>
       ) : id === 'T5_TRIADS' ? (
@@ -4347,12 +4334,9 @@ reviewHref={(t5Index >= T5_TOTAL || t5Wrong >= HEARTS) && stationMistakeCount > 
           </div>
 
           <PianoKeyboard
-            startMidi={STABLE_REGISTER_MIN_MIDI}
-            octaves={1}
+            {...STABLE_KEYBOARD_PROPS}
             onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
             highlighted={highlighted}
-            minMidi={STABLE_REGISTER_MIN_MIDI}
-            maxMidi={STABLE_REGISTER_MAX_MIDI}
           />
         </>
       ) : id === 'T6_DIATONIC_TRIADS' ? (
@@ -4419,12 +4403,9 @@ reviewHref={(t6Index >= T6_TOTAL || t6Wrong >= HEARTS) && stationMistakeCount > 
           </div>
 
           <PianoKeyboard
-            startMidi={STABLE_REGISTER_MIN_MIDI}
-            octaves={1}
+            {...STABLE_KEYBOARD_PROPS}
             onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
             highlighted={highlighted}
-            minMidi={STABLE_REGISTER_MIN_MIDI}
-            maxMidi={STABLE_REGISTER_MAX_MIDI}
           />
         </>
       ) : id === 'T7_FUNCTIONS' ? (
