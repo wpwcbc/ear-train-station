@@ -1,7 +1,13 @@
 import { Link, useParams } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { SECTIONS, type SectionId } from '../lib/sections';
-import { isSectionExamUnlocked, sectionMissingForExam, sectionStations, sectionStationList } from '../lib/sectionStations';
+import {
+  isSectionExamUnlocked,
+  sectionMissingForExam,
+  sectionStations,
+  sectionStationList,
+  titleForStationId,
+} from '../lib/sectionStations';
 
 export function SectionExamPage({ progress }: { progress: Progress }) {
   const { sectionId } = useParams();
@@ -23,6 +29,10 @@ export function SectionExamPage({ progress }: { progress: Progress }) {
 
   const examUnlocked = isSectionExamUnlocked(progress, id);
   const missing = sectionMissingForExam(progress, id);
+
+  const examIdx = plan.stationIds.indexOf(plan.examId);
+  const prereqIds = (examIdx >= 0 ? plan.stationIds.slice(0, examIdx) : plan.stationIds).filter((sid) => sid !== plan.examId);
+  const prereqDone = prereqIds.filter((sid) => progress.stationDone[sid]).length;
 
   return (
     <div className="page">
@@ -47,13 +57,16 @@ export function SectionExamPage({ progress }: { progress: Progress }) {
           <div className="callout" style={{ marginTop: 10 }}>
             <div style={{ fontWeight: 700 }}>Locked</div>
             <div style={{ marginTop: 4, opacity: 0.85 }}>
-              Finish the earlier stations in this section to unlock the exam.
+              Finish the stations before this exam to unlock it.
+              <span style={{ marginLeft: 8, opacity: 0.75 }}>
+                ({prereqDone}/{prereqIds.length} done)
+              </span>
             </div>
             <ul style={{ marginTop: 8 }}>
               {missing.map((sid) => (
                 <li key={sid}>
                   <Link to={`/lesson/${sid}`} state={{ exitTo: `/learn/section/${id}/exam` }}>
-                    {sid}
+                    {titleForStationId(sid)}
                   </Link>
                 </li>
               ))}

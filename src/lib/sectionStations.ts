@@ -1,6 +1,6 @@
-import type { Progress, StationId } from './progress';
-import { STATIONS, type Station } from './stations';
-import type { SectionId } from './sections';
+import type { Progress, StationId } from './progress.ts';
+import { STATIONS, type Station } from './stations.ts';
+import type { SectionId } from './sections.ts';
 
 export type SectionStations = {
   /** Ordered stations shown for this section (subset of the global line). */
@@ -48,6 +48,11 @@ export function nextStationInSection(progress: Progress, sectionId: SectionId): 
 export function sectionStationList(sectionId: SectionId): Station[] {
   const ids = new Set(sectionStations(sectionId).stationIds);
   return STATIONS.filter((s) => ids.has(s.id));
+}
+
+/** Prefer human titles over ids wherever possible (guardrail against id leakage). */
+export function titleForStationId(stationId: StationId): string {
+  return STATIONS.find((s) => s.id === stationId)?.title ?? stationId;
 }
 
 /**
