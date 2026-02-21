@@ -9,6 +9,7 @@ import {
   saveQuestState,
   ymdFromDate,
 } from '../src/lib/quests.ts';
+import { defaultProgress } from '../src/lib/progress.ts';
 
 function makeMemStorage() {
   const m = new Map<string, string>();
@@ -53,7 +54,7 @@ test('normalizeQuestStateForYmd resets counters when date changes', () => {
 });
 
 test('computeQuestProgress: chestReady only when allDone and not claimed', () => {
-  const progress = { dailyGoalXp: 20, dailyXpToday: 20 } as any;
+  const progress = { ...defaultProgress(), dailyGoalXp: 20, dailyXpToday: 20 };
 
   const allDoneNotClaimed = {
     ...defaultQuestState(),

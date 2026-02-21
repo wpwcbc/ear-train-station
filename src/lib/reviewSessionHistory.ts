@@ -21,12 +21,25 @@ export function clampInt(n: unknown, fallback: number): number {
   return Number.isFinite(x) ? Math.trunc(x) : fallback;
 }
 
-export function normalizeHistoryEntryV1(input: ReviewSessionHistoryEntryV1): ReviewSessionHistoryEntryV1 {
+type ReviewSessionHistoryEntryV1Like = {
+  v: 1;
+  at: unknown;
+  mode: ReviewSessionMode;
+  station?: unknown;
+  n: unknown;
+  hard: unknown;
+  right: unknown;
+  wrong: unknown;
+  skip: unknown;
+  xp: unknown;
+};
+
+export function normalizeHistoryEntryV1(input: ReviewSessionHistoryEntryV1Like): ReviewSessionHistoryEntryV1 {
   return {
     v: 1,
     at: clampInt(input.at, Date.now()),
     mode: input.mode,
-    station: input.station,
+    station: typeof input.station === 'string' ? input.station : undefined,
     n: Math.max(1, clampInt(input.n, 10)),
     hard: !!input.hard,
     right: Math.max(0, clampInt(input.right, 0)),
@@ -53,21 +66,22 @@ export function loadReviewSessionHistory(storage: Pick<Storage, 'getItem'> = loc
     const out: ReviewSessionHistoryEntryV1[] = [];
     for (const x of parsed) {
       if (!x || typeof x !== 'object') continue;
-      const any = x as any;
-      if (any.v !== 1) continue;
-      if (any.mode !== 'review' && any.mode !== 'warmup' && any.mode !== 'drill') continue;
+      const obj = x as Record<string, unknown>;
+      if (obj.v !== 1) continue;
+      if (obj.mode !== 'review' && obj.mode !== 'warmup' && obj.mode !== 'drill') continue;
+      const mode = obj.mode as ReviewSessionMode;
       out.push(
         normalizeHistoryEntryV1({
           v: 1,
-          at: any.at,
-          mode: any.mode,
-          station: typeof any.station === 'string' ? any.station : undefined,
-          n: any.n,
-          hard: !!any.hard,
-          right: any.right,
-          wrong: any.wrong,
-          skip: any.skip,
-          xp: any.xp,
+          at: obj.at,
+          mode,
+          station: typeof obj.station === 'string' ? obj.station : undefined,
+          n: obj.n,
+          hard: !!obj.hard,
+          right: obj.right,
+          wrong: obj.wrong,
+          skip: obj.skip,
+          xp: obj.xp,
         })
       );
     }

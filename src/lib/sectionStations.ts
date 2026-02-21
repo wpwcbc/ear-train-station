@@ -51,7 +51,7 @@ export function sectionStationList(sectionId: SectionId): Station[] {
 }
 
 /** Prefer human titles over ids wherever possible (guardrail against id leakage). */
-export function titleForStationId(stationId: StationId): string {
+export function titleForStationId(stationId: string): string {
   return STATIONS.find((s) => s.id === stationId)?.title ?? stationId;
 }
 

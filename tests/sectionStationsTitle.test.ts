@@ -8,6 +8,6 @@ test('titleForStationId prefers human titles (no id leakage)', () => {
 });
 
 test('titleForStationId falls back to the id if unknown (safe default)', () => {
-  const unknown = 'S999_NOPE' as any;
+  const unknown = 'S999_NOPE';
   assert.equal(titleForStationId(unknown), unknown);
 });
