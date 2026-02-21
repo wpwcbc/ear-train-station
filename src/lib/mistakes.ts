@@ -304,11 +304,14 @@ export function requiredClearStreak(m: Mistake): number {
 
 export function applyReviewResult(m: Mistake, result: 'correct' | 'wrong', now = Date.now()): Mistake | null {
   if (result === 'wrong') {
+    // Don’t immediately re-serve the same item on the very next card.
+    // A tiny delay makes “mistake review” feel less punishing and more like an end-of-session re-test.
+    const retrySoonMs = 2 * 60_000;
     return {
       ...m,
       correctStreak: 0,
       wrongCount: (m.wrongCount ?? 0) + 1,
-      dueAt: now,
+      dueAt: now + retrySoonMs,
     };
   }
 

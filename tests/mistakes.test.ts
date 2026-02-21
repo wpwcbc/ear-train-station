@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { loadMistakes, MISTAKES_CHANGED_EVENT, saveMistakes } from '../src/lib/mistakes.ts';
+import { applyReviewResult, loadMistakes, MISTAKES_CHANGED_EVENT, requiredClearStreak, saveMistakes } from '../src/lib/mistakes.ts';
 
 function makeMemStorage() {
   const m = new Map<string, string>();
@@ -83,4 +83,54 @@ test('saveMistakes writes to ets_mistakes_v2 (and emits ets_mistakes_changed in-
 
   assert.ok(storage.getItem('ets_mistakes_v2'));
   assert.equal(fired, 1);
+});
+
+test('applyReviewResult wrong → resets streak, increments wrongCount, and schedules retry soon (not immediate)', () => {
+  const m: any = {
+    id: 'm1',
+    kind: 'noteName',
+    sourceStationId: 'S1_NOTES',
+    midi: 60,
+    addedAt: 0,
+    dueAt: 0,
+    correctStreak: 1,
+    wrongCount: 0,
+  };
+
+  const now = 1_000_000;
+  const next = applyReviewResult(m, 'wrong', now) as any;
+  assert.ok(next);
+  assert.equal(next.correctStreak, 0);
+  assert.equal(next.wrongCount, 1);
+  assert.ok(next.dueAt > now);
+  assert.ok(next.dueAt <= now + 5 * 60_000, 'expected a small retry delay');
+});
+
+test('applyReviewResult correct → schedules next rep; clears after required streak', () => {
+  const base: any = {
+    id: 'm1',
+    kind: 'intervalLabel',
+    sourceStationId: 'T3_INTERVALS',
+    rootMidi: 48,
+    semitones: 7,
+    addedAt: 0,
+    dueAt: 0,
+    correctStreak: 0,
+    wrongCount: 0,
+  };
+
+  const now = 2_000_000;
+  const after1 = applyReviewResult(base, 'correct', now) as any;
+  assert.ok(after1);
+  assert.equal(after1.correctStreak, 1);
+  assert.ok(after1.dueAt > now);
+
+  const after2 = applyReviewResult(after1, 'correct', now) as any;
+  // default required streak is 2 → should clear on second correct
+  assert.equal(after2, null);
+
+  const hard: any = { ...base, wrongCount: 3, correctStreak: 2 };
+  assert.equal(requiredClearStreak(hard), 3);
+  const clearedHard = applyReviewResult(hard, 'correct', now);
+  assert.equal(clearedHard, null);
 });
