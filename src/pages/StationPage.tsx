@@ -4070,10 +4070,12 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
 
               <div style={{ marginTop: 10 }}>
                 <PianoKeyboard
-                  startMidi={48}
-                  octaves={3}
+                  startMidi={STABLE_REGISTER_MIN_MIDI}
+                  octaves={2}
                   onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
                   highlighted={highlighted}
+                  minMidi={STABLE_REGISTER_MIN_MIDI}
+                  maxMidi={STABLE_REGISTER_MAX_MIDI}
                 />
               </div>
             </>
@@ -4096,10 +4098,12 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
 
               <div style={{ marginTop: 10 }}>
                 <PianoKeyboard
-                  startMidi={48}
-                  octaves={3}
+                  startMidi={STABLE_REGISTER_MIN_MIDI}
+                  octaves={2}
                   onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
                   highlighted={highlighted}
+                  minMidi={STABLE_REGISTER_MIN_MIDI}
+                  maxMidi={STABLE_REGISTER_MAX_MIDI}
                 />
               </div>
             </>
@@ -4194,8 +4198,8 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                 </div>
 
                 <PianoKeyboard
-                  startMidi={48}
-                  octaves={2}
+                  startMidi={STABLE_REGISTER_MIN_MIDI}
+                  octaves={1}
                   onPress={onPressS3}
                   highlighted={highlighted}
                   minMidi={STABLE_REGISTER_MIN_MIDI}
@@ -4273,10 +4277,12 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
           </div>
 
           <PianoKeyboard
-            startMidi={48}
-            octaves={2}
+            startMidi={STABLE_REGISTER_MIN_MIDI}
+            octaves={1}
             onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
             highlighted={highlighted}
+            minMidi={STABLE_REGISTER_MIN_MIDI}
+            maxMidi={STABLE_REGISTER_MAX_MIDI}
           />
         </>
       ) : id === 'T5_TRIADS' ? (
@@ -4341,10 +4347,12 @@ reviewHref={(t5Index >= T5_TOTAL || t5Wrong >= HEARTS) && stationMistakeCount > 
           </div>
 
           <PianoKeyboard
-            startMidi={48}
-            octaves={2}
+            startMidi={STABLE_REGISTER_MIN_MIDI}
+            octaves={1}
             onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
             highlighted={highlighted}
+            minMidi={STABLE_REGISTER_MIN_MIDI}
+            maxMidi={STABLE_REGISTER_MAX_MIDI}
           />
         </>
       ) : id === 'T6_DIATONIC_TRIADS' ? (
@@ -4411,10 +4419,12 @@ reviewHref={(t6Index >= T6_TOTAL || t6Wrong >= HEARTS) && stationMistakeCount > 
           </div>
 
           <PianoKeyboard
-            startMidi={48}
-            octaves={2}
+            startMidi={STABLE_REGISTER_MIN_MIDI}
+            octaves={1}
             onPress={(m) => piano.playMidi(m, { durationSec: dur(0.9), velocity: 0.9 })}
             highlighted={highlighted}
+            minMidi={STABLE_REGISTER_MIN_MIDI}
+            maxMidi={STABLE_REGISTER_MAX_MIDI}
           />
         </>
       ) : id === 'T7_FUNCTIONS' ? (
