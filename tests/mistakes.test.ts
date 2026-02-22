@@ -6,6 +6,7 @@ import {
   applyReviewResult,
   loadMistakes,
   MISTAKES_CHANGED_EVENT,
+  nextLocalTimeAt,
   requiredClearStreak,
   saveMistakes,
 } from '../src/lib/mistakes.ts';
@@ -115,6 +116,24 @@ test('applyReviewResult wrong → resets streak, increments wrongCount, and sche
     assert.ok(next.dueAt > now);
     assert.ok(next.dueAt <= now + 5 * 60_000, 'expected a small retry delay');
   }
+});
+
+test('nextLocalTimeAt returns the next occurrence of a local clock time', () => {
+  const nowAfter = new Date(2026, 1, 22, 16, 0, 0, 0).getTime();
+  const tAfter = nextLocalTimeAt(8, 0, nowAfter);
+  assert.ok(tAfter > nowAfter);
+  assert.ok(tAfter - nowAfter <= 24 * 60 * 60_000);
+  const dAfter = new Date(tAfter);
+  assert.equal(dAfter.getHours(), 8);
+  assert.equal(dAfter.getMinutes(), 0);
+
+  const nowBefore = new Date(2026, 1, 22, 7, 30, 0, 0).getTime();
+  const tBefore = nextLocalTimeAt(8, 0, nowBefore);
+  assert.ok(tBefore > nowBefore);
+  const dBefore = new Date(tBefore);
+  assert.equal(dBefore.getHours(), 8);
+  assert.equal(dBefore.getMinutes(), 0);
+  assert.equal(dBefore.getDate(), new Date(nowBefore).getDate(), 'expected same-day 08:00 when now is before 08:00');
 });
 
 test('applyReviewResult correct → schedules next rep; clears after required streak', () => {

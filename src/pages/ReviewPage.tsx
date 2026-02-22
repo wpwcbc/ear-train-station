@@ -9,6 +9,7 @@ import {
   loadMistakes,
   MISTAKES_CHANGED_EVENT,
   mistakeScheduleSummaryFrom,
+  nextLocalTimeAt,
   requiredClearStreak,
   saveMistakes,
   snoozeMistake,
@@ -1234,6 +1235,23 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                                 {x.label} ({dueIds.length})
                               </button>
                             ))}
+
+                            <button
+                              className="ghost"
+                              onClick={() => {
+                                const target = nextLocalTimeAt(8, 0, now);
+                                const ms = Math.max(60_000, target - now);
+
+                                const prev = loadMistakes();
+                                const changed = snoozeMistakes(dueIds, ms);
+                                if (changed <= 0) return;
+                                armUndo(prev, `Snoozed ${changed} due item${changed === 1 ? '' : 's'} until tomorrow morning.`);
+                                refresh();
+                              }}
+                              title={`Snooze all due ${kindLabel[s.kind] ?? s.kind} items until 08:00 local time (great for “done for today”)`}
+                            >
+                              Snooze due → tomorrow (08:00) ({dueIds.length})
+                            </button>
                           </>
                         );
                       })()}

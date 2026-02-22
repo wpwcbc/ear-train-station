@@ -224,6 +224,24 @@ export function snoozeMistakes(ids: string[], snoozeMs = 5 * 60_000, now = Date.
   return changed;
 }
 
+/**
+ * Returns the next local timestamp for a given clock time.
+ *
+ * Example: if now is 16:00 and hour=8, returns tomorrow 08:00 (local time).
+ * If now is 07:30 and hour=8, returns today 08:00.
+ */
+export function nextLocalTimeAt(hour: number, minute = 0, now = Date.now()): number {
+  const d = new Date(now);
+  const candidate = new Date(d);
+  candidate.setHours(hour, minute, 0, 0);
+
+  if (candidate.getTime() <= now) {
+    candidate.setDate(candidate.getDate() + 1);
+  }
+
+  return candidate.getTime();
+}
+
 export function dueMistakes(now = Date.now()): Mistake[] {
   const all = loadMistakes();
   return all
