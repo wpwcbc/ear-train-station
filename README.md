@@ -47,6 +47,11 @@ npm run build
 
 ## Pedagogy notes (current)
 
+### Learn path UX (Duolingo-ish)
+
+- Section exam pages can be **locked** until prerequisite stations are complete.
+- When an exam is locked, the section page shows a clear **Next up** CTA (deep-link to the first missing station), so the Learn flow never becomes a dead-end.
+
 ### Chord prompts: arpeggios first, block chords for checks
 
 - **Lessons** default to **arpeggiated** chord prompts (broken chords), because it’s easier to hear chord tones one-by-one.

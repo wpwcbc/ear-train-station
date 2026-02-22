@@ -2,7 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import type { Progress } from '../lib/progress';
 import { SECTIONS, type SectionId } from '../lib/sections';
 import { sectionNodes } from '../lib/sectionNodes';
-import { isSectionExamUnlocked, sectionStations } from '../lib/sectionStations';
+import { isSectionExamUnlocked, nextStationInSection, sectionStations } from '../lib/sectionStations';
 import { SectionRoute } from '../components/SectionRoute';
 import { WIDE_REGISTER_RANGE_TEXT } from '../lib/registerPolicy';
 
@@ -24,6 +24,7 @@ export function SectionDetailPage({ progress, setProgress: _setProgress }: { pro
   const plan = sectionStations(id);
   const nodes = sectionNodes(id);
   const examUnlocked = isSectionExamUnlocked(progress, id);
+  const nextUpStationId = nextStationInSection(progress, id);
 
   return (
     <div className="page sectionPage">
@@ -44,13 +45,23 @@ export function SectionDetailPage({ progress, setProgress: _setProgress }: { pro
               Jump to exam
             </Link>
           ) : (
-            <span
-              className="btnPrimary"
-              style={{ opacity: 0.55, cursor: 'not-allowed' }}
-              title="Finish the earlier stations in this section to unlock the exam."
-            >
-              Exam locked
-            </span>
+            <>
+              <Link
+                className="btnPrimary"
+                to={`/lesson/${nextUpStationId}`}
+                state={{ exitTo: `/learn/section/${id}` }}
+                title="Next up"
+              >
+                Next up
+              </Link>
+              <span
+                className="btn"
+                style={{ opacity: 0.7, cursor: 'not-allowed' }}
+                title="Finish the earlier stations in this section to unlock the exam."
+              >
+                Exam locked
+              </span>
+            </>
           )}
         </div>
       </div>
