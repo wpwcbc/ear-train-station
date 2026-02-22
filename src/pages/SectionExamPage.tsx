@@ -57,20 +57,39 @@ export function SectionExamPage({ progress }: { progress: Progress }) {
           <div className="callout" style={{ marginTop: 10 }}>
             <div style={{ fontWeight: 700 }}>Locked</div>
             <div style={{ marginTop: 4, opacity: 0.85 }}>
-              Finish the stations before this exam to unlock it.
+              Complete {missing.length} more {missing.length === 1 ? 'station' : 'stations'} to unlock this exam.
               <span style={{ marginLeft: 8, opacity: 0.75 }}>
                 ({prereqDone}/{prereqIds.length} done)
               </span>
             </div>
-            <ul style={{ marginTop: 8 }}>
-              {missing.map((sid) => (
-                <li key={sid}>
-                  <Link to={`/lesson/${sid}`} state={{ exitTo: `/learn/section/${id}/exam` }}>
-                    {titleForStationId(sid)}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+
+            {missing[0] ? (
+              <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                <Link
+                  className="linkBtn primaryLink"
+                  to={`/lesson/${missing[0]}`}
+                  state={{ exitTo: `/learn/section/${id}/exam` }}
+                >
+                  Next up: {titleForStationId(missing[0])}
+                </Link>
+                <span style={{ fontSize: 13, opacity: 0.75 }}>Finish this, then come back to start the exam.</span>
+              </div>
+            ) : null}
+
+            {missing.length > 1 ? (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, opacity: 0.85 }}>Remaining</div>
+                <ul style={{ marginTop: 6 }}>
+                  {missing.slice(1).map((sid) => (
+                    <li key={sid}>
+                      <Link to={`/lesson/${sid}`} state={{ exitTo: `/learn/section/${id}/exam` }}>
+                        {titleForStationId(sid)}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
