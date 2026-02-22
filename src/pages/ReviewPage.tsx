@@ -796,6 +796,23 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     (!drillMode && warmupMode && !active && warmupQueue.length > 0 && doneCount > 0) ||
     (!drillMode && !warmupMode && !active && dueCount === 0 && doneCount > 0);
 
+  // “End screen” completion state (Duolingo-ish): only show once the user actually attempted something.
+  const attemptsNonDrill = sessionRight + sessionWrong + sessionSkip;
+  const sessionComplete = drillMode
+    ? drillIndex >= DRILL_TOTAL && drillCorrect + drillWrong > 0
+    : !active && attemptsNonDrill > 0;
+
+  const sessionXpTotal = sessionXp + workoutBonusAwarded;
+
+  const sessionCompleteTitle = drillMode ? 'Drill complete' : warmupMode ? 'Warm‑up complete' : 'Review complete';
+  const sessionCompleteSubtitle = drillMode
+    ? 'Nice work — keep it fast and focused.'
+    : warmupMode
+      ? 'That’s a clean warm‑up. Small reps add up.'
+      : 'Nice work — consistency beats intensity.';
+
+  const nextDueIn = nextDue != null ? msToHuman(nextDue - now) : null;
+
   // Duolingo-ish: completing a workout session grants a small XP bonus once per session per day.
   const WORKOUT_BONUS_XP = 8;
 
@@ -1046,6 +1063,81 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           </span>
         ) : null}
       </div>
+
+      {sessionComplete ? (
+        <div className="card" style={{ marginTop: 12, border: '1px solid rgba(141, 212, 255, 0.6)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'baseline' }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 900 }}>{sessionCompleteTitle}</div>
+              <div style={{ marginTop: 4, fontSize: 12, opacity: 0.85 }}>{sessionCompleteSubtitle}</div>
+            </div>
+            <div style={{ textAlign: 'right', fontSize: 12, opacity: 0.85 }}>
+              <div>
+                Accuracy: <b>{sessionAccuracyPct}%</b>
+              </div>
+              <div>
+                {drillMode ? (
+                  <span>
+                    {drillCorrect} ✓ · {drillWrong} ✗
+                  </span>
+                ) : (
+                  <span>
+                    {sessionRight} ✓ · {sessionWrong} ✗ · {sessionSkip} skip
+                  </span>
+                )}
+              </div>
+              <div>
+                XP: <b>+{sessionXpTotal}</b>
+                {workoutBonusAwarded ? <span style={{ marginLeft: 6, opacity: 0.8 }}>(incl. +{workoutBonusAwarded} workout)</span> : null}
+              </div>
+            </div>
+          </div>
+
+          {!drillMode && !warmupMode ? (
+            <div style={{ marginTop: 10, fontSize: 12, opacity: 0.85 }}>
+              {dueCount === 0 ? (
+                <span>
+                  Queue cleared ✅ {nextDueIn ? <span style={{ marginLeft: 6, opacity: 0.8 }}>(next due {nextDueIn})</span> : null}
+                </span>
+              ) : (
+                <span>
+                  Remaining due: <b>{dueCount}</b> {nextDueIn ? <span style={{ marginLeft: 6, opacity: 0.8 }}>(next due {nextDueIn})</span> : null}
+                </span>
+              )}
+            </div>
+          ) : null}
+
+          {topMisses.length > 0 ? (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontSize: 12, opacity: 0.75 }}>Top misses (this session)</div>
+              <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {topMisses.map((m) => (
+                  <span key={m.key} className="pill" style={{ fontSize: 12 }} title="Most-missed patterns in this run">
+                    {sessionMissLabel(m.key)} ×{m.count}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+              {topMissDrillTo ? (
+                <Link className="btnPrimary" to={topMissDrillTo} state={inheritedState} title="Do a short targeted drill based on your misses">
+                  Drill these
+                </Link>
+              ) : null}
+              <Link className="btn" to={practiceDoneTo || '/practice'} state={inheritedState} title="Back to Practice hub">
+                Back to Practice
+              </Link>
+              <Link className="btn" to={drillMode ? '/review' : shareTo} state={inheritedState} title="Run another set">
+                Another set
+              </Link>
+            </div>
+            <div style={{ fontSize: 12, opacity: 0.75 }}>Next up: keep it daily — even 5 items counts.</div>
+          </div>
+        </div>
+      ) : null}
 
       {stationFilter ? (
         <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
