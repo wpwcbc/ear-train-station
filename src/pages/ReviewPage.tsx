@@ -205,6 +205,11 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const [expandedKinds, setExpandedKinds] = useState<Record<string, boolean>>({});
   const [workoutBonusAwarded, setWorkoutBonusAwarded] = useState(0);
 
+  const dailyGoal = Math.max(1, progress.dailyGoalXp || 0);
+  const dailyToday = Math.max(0, progress.dailyXpToday || 0);
+  const dailyPct = Math.min(100, Math.round((dailyToday / dailyGoal) * 100));
+  const dailyDone = dailyToday >= dailyGoal;
+
   const manageRef = useRef<HTMLDetailsElement | null>(null);
   const recordedSessionSigRef = useRef<string | null>(null);
   const [manageOpen, setManageOpen] = useState<boolean>(() => manageMode);
@@ -1558,6 +1563,17 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           ) : (
             <div className="result r_correct">
               <div style={{ fontSize: 14, opacity: 0.95 }}>Drill complete — {drillCorrect}/{DRILL_TOTAL} correct.</div>
+              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.82 }}>
+                Daily goal: <b>{Math.min(dailyToday, dailyGoal)}</b>/{dailyGoal} XP{dailyDone ? ' · reached' : ''}
+              </div>
+              <div
+                aria-label="Daily goal progress"
+                style={{ marginTop: 6, height: 8, borderRadius: 999, overflow: 'hidden', background: 'rgba(255,255,255,0.08)' }}
+              >
+                <div
+                  style={{ height: '100%', width: `${dailyPct}%`, background: dailyDone ? 'rgba(92,231,158,0.9)' : 'rgba(120,180,255,0.85)' }}
+                />
+              </div>
             {workoutBonusAwarded > 0 ? (
               <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Workout bonus: +{workoutBonusAwarded} XP.</div>
             ) : null}
@@ -1614,6 +1630,17 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
         ) : (
           <div className="result r_correct">
             <div style={{ fontSize: 14, opacity: 0.95 }}>Drill complete — {drillCorrect}/{DRILL_TOTAL} correct.</div>
+            <div style={{ marginTop: 6, fontSize: 12, opacity: 0.82 }}>
+              Daily goal: <b>{Math.min(dailyToday, dailyGoal)}</b>/{dailyGoal} XP{dailyDone ? ' · reached' : ''}
+            </div>
+            <div
+              aria-label="Daily goal progress"
+              style={{ marginTop: 6, height: 8, borderRadius: 999, overflow: 'hidden', background: 'rgba(255,255,255,0.08)' }}
+            >
+              <div
+                style={{ height: '100%', width: `${dailyPct}%`, background: dailyDone ? 'rgba(92,231,158,0.9)' : 'rgba(120,180,255,0.85)' }}
+              />
+            </div>
             {workoutBonusAwarded > 0 ? (
               <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Workout bonus: +{workoutBonusAwarded} XP.</div>
             ) : null}
@@ -1658,6 +1685,17 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
                 Session: {sessionAccuracyPct}% · {sessionRight} ✓ · {sessionWrong} ✗ · {sessionSkip} skip · +{sessionXp} XP
               </div>
+              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.82 }}>
+                Daily goal: <b>{Math.min(dailyToday, dailyGoal)}</b>/{dailyGoal} XP{dailyDone ? ' · reached' : ''}
+              </div>
+              <div
+                aria-label="Daily goal progress"
+                style={{ marginTop: 6, height: 8, borderRadius: 999, overflow: 'hidden', background: 'rgba(255,255,255,0.08)' }}
+              >
+                <div
+                  style={{ height: '100%', width: `${dailyPct}%`, background: dailyDone ? 'rgba(92,231,158,0.9)' : 'rgba(120,180,255,0.85)' }}
+                />
+              </div>
               {topMisses.length ? (
                 <div style={{ marginTop: 6, fontSize: 12, opacity: 0.82 }}>
                   Top misses: {topMisses.map((x) => `${sessionMissLabel(x.key)}×${x.count}`).join(' · ')}
@@ -1698,6 +1736,17 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               </div>
               <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
                 Session: {sessionAccuracyPct}% · {sessionRight} ✓ · {sessionWrong} ✗ · {sessionSkip} skip · +{sessionXp} XP
+              </div>
+              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.82 }}>
+                Daily goal: <b>{Math.min(dailyToday, dailyGoal)}</b>/{dailyGoal} XP{dailyDone ? ' · reached' : ''}
+              </div>
+              <div
+                aria-label="Daily goal progress"
+                style={{ marginTop: 6, height: 8, borderRadius: 999, overflow: 'hidden', background: 'rgba(255,255,255,0.08)' }}
+              >
+                <div
+                  style={{ height: '100%', width: `${dailyPct}%`, background: dailyDone ? 'rgba(92,231,158,0.9)' : 'rgba(120,180,255,0.85)' }}
+                />
               </div>
               {topMisses.length ? (
                 <div style={{ marginTop: 6, fontSize: 12, opacity: 0.82 }}>
