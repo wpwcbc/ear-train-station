@@ -242,6 +242,26 @@ export function nextLocalTimeAt(hour: number, minute = 0, now = Date.now()): num
   return candidate.getTime();
 }
 
+/**
+ * Snooze an item until the next occurrence of a local clock time.
+ *
+ * Example: snoozeUntilLocalTime(id, 8, 0) means “not due again until next 08:00”.
+ */
+export function snoozeMistakeUntilLocalTime(id: string, hour: number, minute = 0, now = Date.now()): void {
+  const target = nextLocalTimeAt(hour, minute, now);
+  const ms = Math.max(60_000, target - now);
+  snoozeMistake(id, ms, now);
+}
+
+/**
+ * Bulk version of snoozeMistakeUntilLocalTime(). Returns how many items were updated.
+ */
+export function snoozeMistakesUntilLocalTime(ids: string[], hour: number, minute = 0, now = Date.now()): number {
+  const target = nextLocalTimeAt(hour, minute, now);
+  const ms = Math.max(60_000, target - now);
+  return snoozeMistakes(ids, ms, now);
+}
+
 export function dueMistakes(now = Date.now()): Mistake[] {
   const all = loadMistakes();
   return all

@@ -9,11 +9,12 @@ import {
   loadMistakes,
   MISTAKES_CHANGED_EVENT,
   mistakeScheduleSummaryFrom,
-  nextLocalTimeAt,
   requiredClearStreak,
   saveMistakes,
   snoozeMistake,
+  snoozeMistakeUntilLocalTime,
   snoozeMistakes,
+  snoozeMistakesUntilLocalTime,
   updateMistake,
   type Mistake,
 } from '../lib/mistakes';
@@ -1239,11 +1240,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                             <button
                               className="ghost"
                               onClick={() => {
-                                const target = nextLocalTimeAt(8, 0, now);
-                                const ms = Math.max(60_000, target - now);
-
                                 const prev = loadMistakes();
-                                const changed = snoozeMistakes(dueIds, ms);
+                                const changed = snoozeMistakesUntilLocalTime(dueIds, 8, 0, now);
                                 if (changed <= 0) return;
                                 armUndo(prev, `Snoozed ${changed} due item${changed === 1 ? '' : 's'} until tomorrow morning.`);
                                 refresh();
@@ -1347,6 +1345,20 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                                 {s.label}
                               </button>
                             ))}
+
+                            <button
+                              className="ghost"
+                              onClick={() => {
+                                const prev = loadMistakes();
+                                snoozeMistakeUntilLocalTime(m.id, 8, 0, now);
+                                armUndo(prev, 'Snoozed 1 item until tomorrow morning.');
+                                refresh();
+                              }}
+                              title="Snooze this item until 08:00 local time (done for today)"
+                            >
+                              Snooze → tomorrow (08:00)
+                            </button>
+
                             <button
                               className="ghost"
                               onClick={() => {

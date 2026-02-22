@@ -9,6 +9,7 @@ import {
   nextLocalTimeAt,
   requiredClearStreak,
   saveMistakes,
+  snoozeMistakeUntilLocalTime,
 } from '../src/lib/mistakes.ts';
 
 function makeMemStorage() {
@@ -134,6 +135,36 @@ test('nextLocalTimeAt returns the next occurrence of a local clock time', () => 
   assert.equal(dBefore.getHours(), 8);
   assert.equal(dBefore.getMinutes(), 0);
   assert.equal(dBefore.getDate(), new Date(nowBefore).getDate(), 'expected same-day 08:00 when now is before 08:00');
+});
+
+test('snoozeMistakeUntilLocalTime sets dueAt to the next local clock time', () => {
+  const storage = makeMemStorage();
+  // @ts-expect-error test shim
+  globalThis.localStorage = storage;
+
+  // @ts-expect-error test shim
+  globalThis.window = new EventTarget();
+
+  const m1: Mistake = {
+    id: 'm1',
+    kind: 'noteName',
+    sourceStationId: 'S1_NOTES',
+    midi: 60,
+    addedAt: 1,
+    dueAt: 1,
+    correctStreak: 0,
+    wrongCount: 0,
+  };
+
+  saveMistakes([m1]);
+
+  const now = new Date(2026, 1, 22, 16, 0, 0, 0).getTime();
+  const target = nextLocalTimeAt(8, 0, now);
+  snoozeMistakeUntilLocalTime('m1', 8, 0, now);
+
+  const after = loadMistakes();
+  assert.equal(after.length, 1);
+  assert.equal(after[0].dueAt, target);
 });
 
 test('applyReviewResult correct → schedules next rep; clears after required streak', () => {
