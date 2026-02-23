@@ -1608,6 +1608,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                   style={{ height: '100%', width: `${dailyPct}%`, background: dailyDone ? 'rgba(92,231,158,0.9)' : 'rgba(120,180,255,0.85)' }}
                 />
               </div>
+              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.82 }}>
+                XP streak: <b>{progress.streakDays}</b> day{progress.streakDays === 1 ? '' : 's'} · Total XP: <b>{progress.xp}</b>
+              </div>
             {workoutBonusAwarded > 0 ? (
               <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Workout bonus: +{workoutBonusAwarded} XP.</div>
             ) : null}
@@ -1675,6 +1678,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                 style={{ height: '100%', width: `${dailyPct}%`, background: dailyDone ? 'rgba(92,231,158,0.9)' : 'rgba(120,180,255,0.85)' }}
               />
             </div>
+            <div style={{ marginTop: 6, fontSize: 12, opacity: 0.82 }}>
+              XP streak: <b>{progress.streakDays}</b> day{progress.streakDays === 1 ? '' : 's'} · Total XP: <b>{progress.xp}</b>
+            </div>
             {workoutBonusAwarded > 0 ? (
               <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Workout bonus: +{workoutBonusAwarded} XP.</div>
             ) : null}
@@ -1730,6 +1736,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                   style={{ height: '100%', width: `${dailyPct}%`, background: dailyDone ? 'rgba(92,231,158,0.9)' : 'rgba(120,180,255,0.85)' }}
                 />
               </div>
+              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.82 }}>
+                XP streak: <b>{progress.streakDays}</b> day{progress.streakDays === 1 ? '' : 's'} · Total XP: <b>{progress.xp}</b>
+              </div>
               {topMisses.length ? (
                 <div style={{ marginTop: 6, fontSize: 12, opacity: 0.82 }}>
                   Top misses: {topMisses.map((x) => `${sessionMissLabel(x.key)}×${x.count}`).join(' · ')}
@@ -1781,6 +1790,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                 <div
                   style={{ height: '100%', width: `${dailyPct}%`, background: dailyDone ? 'rgba(92,231,158,0.9)' : 'rgba(120,180,255,0.85)' }}
                 />
+              </div>
+              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.82 }}>
+                XP streak: <b>{progress.streakDays}</b> day{progress.streakDays === 1 ? '' : 's'} · Total XP: <b>{progress.xp}</b>
               </div>
               {topMisses.length ? (
                 <div style={{ marginTop: 6, fontSize: 12, opacity: 0.82 }}>
