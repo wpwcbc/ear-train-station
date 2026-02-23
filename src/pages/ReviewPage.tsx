@@ -1116,11 +1116,38 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             <div style={{ marginTop: 10 }}>
               <div style={{ fontSize: 12, opacity: 0.75 }}>Top misses (this session)</div>
               <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {topMisses.map((m) => (
-                  <span key={m.key} className="pill" style={{ fontSize: 12 }} title="Most-missed patterns in this run">
-                    {sessionMissLabel(m.key)} ×{m.count}
-                  </span>
-                ))}
+                {topMisses.map((m) => {
+                  const stationQS = stationFilter ? `&station=${encodeURIComponent(stationFilter)}` : '';
+                  const quickN = Math.max(3, Math.min(10, sessionN));
+
+                  const interval = m.key.startsWith('interval:') ? parseInt(m.key.split(':')[1] ?? '', 10) : NaN;
+                  const triad = m.key.startsWith('triad:') ? (m.key.split(':')[1] ?? '').trim() : '';
+
+                  const to = Number.isFinite(interval)
+                    ? `/review?drill=1&kind=interval&semitones=${interval}${stationQS}&n=${quickN}`
+                    : triad
+                      ? `/review?drill=1&kind=triad&qualities=${encodeURIComponent(triad)}${stationQS}&n=${quickN}`
+                      : null;
+
+                  const label = `${sessionMissLabel(m.key)} ×${m.count}`;
+
+                  return to ? (
+                    <Link
+                      key={m.key}
+                      className="pill"
+                      to={to}
+                      state={inheritedState}
+                      style={{ fontSize: 12 }}
+                      title="Drill this miss pattern (fast)"
+                    >
+                      {label}
+                    </Link>
+                  ) : (
+                    <span key={m.key} className="pill" style={{ fontSize: 12 }} title="Most-missed patterns in this run">
+                      {label}
+                    </span>
+                  );
+                })}
               </div>
             </div>
           ) : null}
