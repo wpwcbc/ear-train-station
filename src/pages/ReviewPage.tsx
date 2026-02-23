@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { CopyLinkButton } from '../components/CopyLinkButton';
+import { ConfettiBurst } from '../components/ConfettiBurst';
 import { useHotkeys } from '../lib/hooks/useHotkeys';
+import { usePrefersReducedMotion } from '../lib/usePrefersReducedMotion';
 import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
 import {
@@ -810,6 +812,23 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
   const sessionXpTotal = sessionXp + workoutBonusAwarded;
 
+  const reducedMotion = usePrefersReducedMotion();
+  const completionHeadingId = 'reviewCompletionHeading';
+  const primaryCtaRef = useRef<HTMLAnchorElement | null>(null);
+  const completionDidFocusRef = useRef(false);
+
+  useEffect(() => {
+    if (!sessionComplete) {
+      completionDidFocusRef.current = false;
+      return;
+    }
+    if (completionDidFocusRef.current) return;
+    completionDidFocusRef.current = true;
+
+    // Slight delay so the Link is in DOM & laid out.
+    window.setTimeout(() => primaryCtaRef.current?.focus(), 30);
+  }, [sessionComplete]);
+
   const sessionCompleteTitle = drillMode ? 'Drill complete' : warmupMode ? 'Warm‑up complete' : 'Review complete';
   const sessionCompleteSubtitle = drillMode
     ? 'Nice work — keep it fast and focused.'
@@ -1071,10 +1090,18 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       </div>
 
       {sessionComplete ? (
-        <div className="card" style={{ marginTop: 12, border: '1px solid rgba(141, 212, 255, 0.6)' }}>
+        <div
+          className="card"
+          role="region"
+          aria-labelledby={completionHeadingId}
+          style={{ marginTop: 12, border: '1px solid rgba(141, 212, 255, 0.6)', position: 'relative', overflow: 'hidden' }}
+        >
+          {!reducedMotion ? <ConfettiBurst active seed={seed} /> : null}
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'baseline' }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 900 }}>{sessionCompleteTitle}</div>
+            <div role="status" aria-live="polite" aria-atomic="true">
+              <div id={completionHeadingId} style={{ fontSize: 14, fontWeight: 900 }}>
+                {sessionCompleteTitle}
+              </div>
               <div style={{ marginTop: 4, fontSize: 12, opacity: 0.85 }}>{sessionCompleteSubtitle}</div>
             </div>
             <div style={{ textAlign: 'right', fontSize: 12, opacity: 0.85 }}>
@@ -1156,13 +1183,35 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
               {topMissDrillTo ? (
-                <Link className="btnPrimary" to={topMissDrillTo} state={inheritedState} title="Do a short targeted drill based on your misses">
+                <Link
+                  ref={(el) => {
+                    primaryCtaRef.current = el;
+                  }}
+                  className="btnPrimary"
+                  to={topMissDrillTo}
+                  state={inheritedState}
+                  title="Do a short targeted drill based on your misses"
+                >
                   Drill these
                 </Link>
+              ) : (
+                <Link
+                  ref={(el) => {
+                    primaryCtaRef.current = el;
+                  }}
+                  className="btn"
+                  to={practiceDoneTo || '/practice'}
+                  state={inheritedState}
+                  title="Back to Practice hub"
+                >
+                  Back to Practice
+                </Link>
+              )}
+              {topMissDrillTo ? (
+                <Link className="btn" to={practiceDoneTo || '/practice'} state={inheritedState} title="Back to Practice hub">
+                  Back to Practice
+                </Link>
               ) : null}
-              <Link className="btn" to={practiceDoneTo || '/practice'} state={inheritedState} title="Back to Practice hub">
-                Back to Practice
-              </Link>
               <Link className="btn" to={drillMode ? '/review' : shareTo} state={inheritedState} title="Run another set">
                 Another set
               </Link>
