@@ -154,6 +154,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     return Math.max(3, Math.min(30, n));
   })();
   const nQS = nRaw ? `&n=${sessionN}` : '';
+  const stationQS = stationFilter ? `&station=${encodeURIComponent(stationFilter)}` : '';
 
   // Convenience: quick deep-link session sizes (knowledge-only; no UI settings).
   const reviewLinkWithN = (n: number) => {
@@ -1166,7 +1167,13 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                 Another set
               </Link>
             </div>
-            <div style={{ fontSize: 12, opacity: 0.75 }}>Next up: keep it daily — even 5 items counts.</div>
+            <div style={{ fontSize: 12, opacity: 0.75 }}>
+              {dailyDone
+                ? 'Next up: you hit today’s goal — take a break, or start a new station.'
+                : dueCount > 0
+                  ? 'Next up: clear a few more due items — even 5 counts.'
+                  : 'Next up: keep it daily — even 5 items counts.'}
+            </div>
           </div>
         </div>
       ) : null}
@@ -1199,7 +1206,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           </button>
           <Link
             className="pill"
-            to={`/review?drill=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
+            to={`/review?drill=1${stationQS}${nQS}`}
             state={inheritedState}
             title={`A fast interval drill from your mistakes (wide register: ${WIDE_REGISTER_RANGE_TEXT}).`}
           >
@@ -1208,7 +1215,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           {triadStats.length > 0 ? (
             <Link
               className="pill"
-              to={`/review?drill=1&kind=triad${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
+              to={`/review?drill=1&kind=triad${stationQS}${nQS}`}
               state={inheritedState}
               title={`A fast triad-quality drill from your mistakes (wide register: ${WIDE_REGISTER_RANGE_TEXT}).`}
             >
@@ -1217,7 +1224,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           ) : null}
           <Link
             className="pill"
-            to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
+            to={`/review?warmup=1${stationQS}${nQS}`}
             state={inheritedState}
             title="Warm‑up set (even if nothing is due yet)"
           >
@@ -1234,7 +1241,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             to={`/review?drill=1&semitones=${intervalStats
               .slice(0, 3)
               .map((x) => x.semitones)
-              .join(',')}${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
+              .join(',')}${stationQS}${nQS}`}
             state={inheritedState}
           >
             Top interval misses ({intervalStats
@@ -1246,7 +1253,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             <Link
               key={x.semitones}
               className="pill"
-              to={`/review?drill=1&semitones=${x.semitones}${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
+              to={`/review?drill=1&semitones=${x.semitones}${stationQS}${nQS}`}
               state={inheritedState}
             >
               {SEMITONE_TO_LABEL[x.semitones] ?? `${x.semitones}st`} ×{x.count}
@@ -1263,7 +1270,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             to={`/review?drill=1&kind=triad&qualities=${triadStats
               .slice(0, 2)
               .map((x) => x.quality)
-              .join(',')}${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
+              .join(',')}${stationQS}${nQS}`}
             state={inheritedState}
           >
             Top misses ({triadStats
@@ -1275,7 +1282,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             <Link
               key={x.quality}
               className="pill"
-              to={`/review?drill=1&kind=triad&qualities=${x.quality}${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
+              to={`/review?drill=1&kind=triad&qualities=${x.quality}${stationQS}${nQS}`}
               state={inheritedState}
             >
               {triadQualityLabel(x.quality)} ×{x.count}
@@ -1607,15 +1614,15 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
                 <Link
                   className="linkBtn"
-                  to={`/review?drill=1&semitones=${drillFocusSemitones.join(',')}${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
+                  to={`/review?drill=1&semitones=${drillFocusSemitones.join(',')}${stationQS}${nQS}`}
                   state={inheritedState}
                 >
                   Restart drill
                 </Link>
-                <Link className="linkBtn" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
+                <Link className="linkBtn" to={`/review?warmup=1${stationQS}${nQS}`} state={inheritedState}>
                   Warm‑up
                 </Link>
-                <Link className="linkBtn" to={`/review?manage=1${stationFilter ? `&station=${stationFilter}` : ''}#manage`} state={inheritedState}>
+                <Link className="linkBtn" to={`/review?manage=1${stationQS}#manage`} state={inheritedState}>
                   Manage mistakes
                 </Link>
                 {practiceDoneTo ? (
@@ -1623,7 +1630,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                     Back to practice
                   </Link>
                 ) : null}
-                <Link className="linkBtn" to={stationFilter ? `/review?station=${stationFilter}` : '/review'} state={inheritedState}>
+                <Link className="linkBtn" to={stationFilter ? `/review?station=${encodeURIComponent(stationFilter)}` : '/review'} state={inheritedState}>
                   Back to review
                 </Link>
               </div>
@@ -1674,15 +1681,15 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
               <Link
                 className="linkBtn"
-                to={`/review?drill=1&kind=triad&qualities=${drillFocusQualities.join(',')}${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`}
+                to={`/review?drill=1&kind=triad&qualities=${drillFocusQualities.join(',')}${stationQS}${nQS}`}
                 state={inheritedState}
               >
                 Restart drill
               </Link>
-              <Link className="linkBtn" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
+              <Link className="linkBtn" to={`/review?warmup=1${stationQS}${nQS}`} state={inheritedState}>
                 Warm‑up
               </Link>
-              <Link className="linkBtn" to={`/review?manage=1${stationFilter ? `&station=${stationFilter}` : ''}#manage`} state={inheritedState}>
+              <Link className="linkBtn" to={`/review?manage=1${stationQS}#manage`} state={inheritedState}>
                 Manage mistakes
               </Link>
               {practiceDoneTo ? (
@@ -1690,7 +1697,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                   Back to practice
                 </Link>
               ) : null}
-              <Link className="linkBtn" to={stationFilter ? `/review?station=${stationFilter}` : '/review'} state={inheritedState}>
+              <Link className="linkBtn" to={stationFilter ? `/review?station=${encodeURIComponent(stationFilter)}` : '/review'} state={inheritedState}>
                 Back to review
               </Link>
             </div>
@@ -1732,7 +1739,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                 <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Workout bonus: +{workoutBonusAwarded} XP.</div>
               ) : null}
               <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
-                <Link className="linkBtn" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
+                <Link className="linkBtn" to={`/review?warmup=1${stationQS}${nQS}`} state={inheritedState}>
                   Restart warm‑up
                 </Link>
                 {topMissDrillTo ? (
@@ -1740,10 +1747,10 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                     Practice misses
                   </Link>
                 ) : null}
-                <Link className="linkBtn" to={`/review?drill=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
+                <Link className="linkBtn" to={`/review?drill=1${stationQS}${nQS}`} state={inheritedState}>
                   Drill top misses
                 </Link>
-                <Link className="linkBtn" to={`/review?manage=1${stationFilter ? `&station=${stationFilter}` : ''}#manage`} state={inheritedState}>
+                <Link className="linkBtn" to={`/review?manage=1${stationQS}#manage`} state={inheritedState}>
                   Manage mistakes
                 </Link>
                 {practiceDoneTo ? (
@@ -1784,7 +1791,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                 <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>Workout bonus: +{workoutBonusAwarded} XP.</div>
               ) : null}
               <div style={{ marginTop: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
-                <Link className="linkBtn primaryLink" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
+                <Link className="linkBtn primaryLink" to={`/review?warmup=1${stationQS}${nQS}`} state={inheritedState}>
                   Continue (warm‑up)
                 </Link>
                 {topMissDrillTo ? (
@@ -1792,10 +1799,10 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                     Practice misses
                   </Link>
                 ) : null}
-                <Link className="linkBtn" to={`/review?drill=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
+                <Link className="linkBtn" to={`/review?drill=1${stationQS}${nQS}`} state={inheritedState}>
                   Drill top misses
                 </Link>
-                <Link className="linkBtn" to={`/review?manage=1${stationFilter ? `&station=${stationFilter}` : ''}#manage`} state={inheritedState}>
+                <Link className="linkBtn" to={`/review?manage=1${stationQS}#manage`} state={inheritedState}>
                   Manage mistakes
                 </Link>
                 {practiceDoneTo ? (
@@ -1839,10 +1846,10 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
               {dueCount === 0 ? (
                 <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'baseline' }}>
-                  <Link className="linkBtn" to={`/review?warmup=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
+                  <Link className="linkBtn" to={`/review?warmup=1${stationQS}${nQS}`} state={inheritedState}>
                     Warm‑up (practice early)
                   </Link>
-                  <Link className="linkBtn" to={`/review?drill=1${stationFilter ? `&station=${stationFilter}` : ''}${nQS}`} state={inheritedState}>
+                  <Link className="linkBtn" to={`/review?drill=1${stationQS}${nQS}`} state={inheritedState}>
                     Drill top misses
                   </Link>
                   <span style={{ fontSize: 12, opacity: 0.75 }}>
