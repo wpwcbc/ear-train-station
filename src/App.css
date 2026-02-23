@@ -1225,6 +1225,32 @@ button.choiceWrong {
   overflow: hidden;
 }
 
+/* Completion cards: keep CTAs reachable on short screens (mobile landscape / small height). */
+.completionCard {
+  /* Confetti lives outside normal flow; keep it contained. */
+}
+
+.completionCard__body {
+  position: relative;
+}
+
+@media (max-height: 720px) {
+  .completionCard__body {
+    max-height: calc(100vh - 260px);
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 2px; /* tiny gutter so scrollbar doesn’t cover text */
+  }
+}
+
+/* Keyboard: visible focus on tappable chips and CTAs (Duolingo-ish clarity). */
+.pill:focus-visible,
+.btn:focus-visible,
+.btnPrimary:focus-visible {
+  outline: 3px solid var(--route-red);
+  outline-offset: 2px;
+}
+
 /* Tiny celebration burst (used on completion cards). */
 .confettiBurst {
   pointer-events: none;

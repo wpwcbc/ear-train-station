@@ -52,6 +52,12 @@ npm run build
 - Section exam pages can be **locked** until prerequisite stations are complete.
 - When an exam is locked, the section page shows a clear **Next up** CTA (deep-link to the first missing station), so the Learn flow never becomes a dead-end.
 
+### Review completion screen (Duolingo-ish)
+
+- Review/Warm‑up/Drill sessions end with a small **completion recap** (accuracy, XP, top misses, and a clear next CTA).
+- Keyboard: when the completion card appears, focus moves to the **primary CTA**; chips/CTAs have visible `:focus-visible` styles.
+- On short mobile viewports, the completion card body may **scroll internally** so the CTAs remain reachable.
+
 ### Chord prompts: arpeggios first, block chords for checks
 
 - **Lessons** default to **arpeggiated** chord prompts (broken chords), because it’s easier to hear chord tones one-by-one.

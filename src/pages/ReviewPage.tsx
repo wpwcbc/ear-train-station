@@ -1091,13 +1091,14 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
       {sessionComplete ? (
         <div
-          className="card"
+          className="card completionCard"
           role="region"
           aria-labelledby={completionHeadingId}
           style={{ marginTop: 12, border: '1px solid rgba(141, 212, 255, 0.6)', position: 'relative', overflow: 'hidden' }}
         >
           {!reducedMotion ? <ConfettiBurst active seed={seed} /> : null}
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'baseline' }}>
+          <div className="completionCard__body">
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'baseline' }}>
             <div role="status" aria-live="polite" aria-atomic="true">
               <div id={completionHeadingId} style={{ fontSize: 14, fontWeight: 900 }}>
                 {sessionCompleteTitle}
@@ -1223,6 +1224,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
                   ? 'Next up: clear a few more due items — even 5 counts.'
                   : 'Next up: keep it daily — even 5 items counts.'}
             </div>
+          </div>
           </div>
         </div>
       ) : null}
