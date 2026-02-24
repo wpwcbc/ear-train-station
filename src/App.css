@@ -1236,10 +1236,13 @@ button.choiceWrong {
 
 @media (max-height: 720px) {
   .completionCard__body {
-    max-height: calc(100vh - 260px);
+    /* Keep content scrollable but leave room for iOS home-indicator safe area. */
+    max-height: calc(100vh - 260px - env(safe-area-inset-bottom, 0px));
     overflow: auto;
     -webkit-overflow-scrolling: touch;
     padding-right: 2px; /* tiny gutter so scrollbar doesn’t cover text */
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   }
 }
 
