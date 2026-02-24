@@ -1003,7 +1003,12 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button className="primary" disabled={drillMode ? (drillKind === 'interval' ? !drillIlQ : !drillTriadQ) : !active} onClick={playPrompt}>
+          <button
+            className="primary"
+            aria-keyshortcuts="Space Enter"
+            disabled={drillMode ? (drillKind === 'interval' ? !drillIlQ : !drillTriadQ) : !active}
+            onClick={playPrompt}
+          >
             {(drillMode && drillKind === 'interval') || active?.kind === 'intervalLabel'
               ? `Play (${settings.intervalPromptMode === 'harmonic' ? 'Harmonic' : 'Melodic'})`
               : 'Play'}
@@ -1029,6 +1034,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           </button>
           <button
             className="ghost"
+            aria-keyshortcuts="Backspace"
             onClick={() => {
               if (drillMode) {
                 if (!drillIlQ) return;
@@ -1632,8 +1638,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               </div>
 
               <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-                {drillIlQ.choices.map((c) => (
-                  <button key={c} className="secondary" onClick={() => chooseInterval(c)}>
+                {drillIlQ.choices.map((c, idx) => (
+                  <button key={c} className="secondary" aria-keyshortcuts={String(idx + 1)} onClick={() => chooseInterval(c)}>
                     {c}
                   </button>
                 ))}
@@ -1702,8 +1708,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             </div>
 
             <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-              {drillTriadQ.choices.map((c) => (
-                <button key={c} className="secondary" onClick={() => chooseTriad(c)}>
+              {drillTriadQ.choices.map((c, idx) => (
+                <button key={c} className="secondary" aria-keyshortcuts={String(idx + 1)} onClick={() => chooseTriad(c)}>
                   {triadQualityLabel(c)}
                 </button>
               ))}
@@ -1942,8 +1948,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {noteQ.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseNote(c)}>
+            {noteQ.choices.map((c, idx) => (
+              <button key={c} className="secondary" aria-keyshortcuts={String(idx + 1)} onClick={() => chooseNote(c)}>
                 {c}
               </button>
             ))}
@@ -1963,8 +1969,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {ilQ.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseInterval(c)}>
+            {ilQ.choices.map((c, idx) => (
+              <button key={c} className="secondary" aria-keyshortcuts={String(idx + 1)} onClick={() => chooseInterval(c)}>
                 {c}
               </button>
             ))}
@@ -1984,8 +1990,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {degQ.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseDegree(c)}>
+            {degQ.choices.map((c, idx) => (
+              <button key={c} className="secondary" aria-keyshortcuts={String(idx + 1)} onClick={() => chooseDegree(c)}>
                 {c}
               </button>
             ))}
@@ -2011,8 +2017,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {msQ.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseMajorScale(c)}>
+            {msQ.choices.map((c, idx) => (
+              <button key={c} className="secondary" aria-keyshortcuts={String(idx + 1)} onClick={() => chooseMajorScale(c)}>
                 {c}
               </button>
             ))}
@@ -2032,8 +2038,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {ffQ.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseFamily(c)}>
+            {ffQ.choices.map((c, idx) => (
+              <button key={c} className="secondary" aria-keyshortcuts={String(idx + 1)} onClick={() => chooseFamily(c)}>
                 {c}
               </button>
             ))}
@@ -2053,8 +2059,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            {triadQ.choices.map((c) => (
-              <button key={c} className="secondary" onClick={() => chooseTriad(c)}>
+            {triadQ.choices.map((c, idx) => (
+              <button key={c} className="secondary" aria-keyshortcuts={String(idx + 1)} onClick={() => chooseTriad(c)}>
                 {triadQualityLabel(c)}
               </button>
             ))}

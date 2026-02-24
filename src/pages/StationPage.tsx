@@ -3039,6 +3039,10 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         ) : null}
       </div>
 
+      <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+        Hotkeys: Space/Enter = Play/Hear • 1–9 = Answer • Backspace = Next/Restart
+      </div>
+
       {done ? (
         <div
           className="result r_correct"

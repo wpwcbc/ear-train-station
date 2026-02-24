@@ -56,6 +56,10 @@ npm run build
 
 - Review/Warm‑up/Drill sessions end with a small **completion recap** (accuracy, XP, top misses, and a clear next CTA).
 - Keyboard: when the completion card appears, focus moves to the **primary CTA**; chips/CTAs have visible `:focus-visible` styles.
+- Keyboard shortcuts (Review / stations):
+  - **Space / Enter** = Play / Hear
+  - **Backspace** = Skip (Review) / Next or Restart (stations)
+  - **1–9** = choose an answer
 - On short mobile viewports, the completion card body may **scroll internally** so the CTAs remain reachable.
 
 ### Chord prompts: arpeggios first, block chords for checks
