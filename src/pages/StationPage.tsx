@@ -3143,8 +3143,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                 </HintOverlay>
 
                 <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-                  <button className="primary" onClick={playPromptS1}>Play note</button>
-                  <button className="ghost" onClick={next}>Next</button>
+                  <button className="primary" aria-keyshortcuts="Space Enter" onClick={playPromptS1}>Play note</button>
+                  <button className="ghost" aria-keyshortcuts="Backspace" onClick={next}>Next</button>
                   <button className="secondary" onClick={() => setS1HintOpen(true)}>Hint</button>
                   <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
                     Test: {Math.min(s1Correct, S1_GOAL)}/{S1_GOAL}
@@ -3190,8 +3190,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                 </HintOverlay>
 
                 <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-                  <button className="primary" onClick={playPromptS1Twist}>Play note</button>
-                  <button className="ghost" onClick={resetS1Twist}>Restart</button>
+                  <button className="primary" aria-keyshortcuts="Space Enter" onClick={playPromptS1Twist}>Play note</button>
+                  <button className="ghost" aria-keyshortcuts="Backspace" onClick={resetS1Twist}>Restart</button>
                   <button className="secondary" onClick={() => setS1HintOpen(true)}>Hint</button>
                   <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
                     Q: {Math.min(s1TwistIndex + 1, S1_TWIST_TOTAL)}/{S1_TWIST_TOTAL} · Correct: {s1TwistCorrect}/{S1_TWIST_TOTAL} (need {S1_TWIST_PASS}) · Lives: {Math.max(0, HEARTS - s1TwistWrong)}/{HEARTS}
@@ -3266,7 +3266,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                 </HintOverlay>
 
                 <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-                  <button className="primary" onClick={playPromptS1B}>
+                  <button className="primary" aria-keyshortcuts="Space Enter" onClick={playPromptS1B}>
                     Play note
                   </button>
                   <button className="ghost" onClick={() => setSeed((x) => x + 1)}>
@@ -3321,10 +3321,10 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
                 </HintOverlay>
 
                 <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-                  <button className="primary" onClick={playPromptS1BTwist}>
+                  <button className="primary" aria-keyshortcuts="Space Enter" onClick={playPromptS1BTwist}>
                     Play note
                   </button>
-                  <button className="ghost" onClick={resetS1BTwist}>
+                  <button className="ghost" aria-keyshortcuts="Backspace" onClick={resetS1BTwist}>
                     Restart
                   </button>
                   <button className="secondary" onClick={() => setS1bHintOpen(true)}>
@@ -3415,8 +3415,8 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                 </HintOverlay>
 
                 <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-                  <button className="primary" onClick={playPromptS1C}>Play note</button>
-                  <button className="ghost" onClick={() => setSeed((x) => x + 1)}>Next</button>
+                  <button className="primary" aria-keyshortcuts="Space Enter" onClick={playPromptS1C}>Play note</button>
+                  <button className="ghost" aria-keyshortcuts="Backspace" onClick={() => setSeed((x) => x + 1)}>Next</button>
                   <button className="secondary" onClick={() => setS1cHintOpen(true)}>Hint</button>
                   <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
                     Test: {Math.min(s1cCorrect, S1C_GOAL)}/{S1C_GOAL}
@@ -3462,8 +3462,8 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                 </HintOverlay>
 
                 <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-                  <button className="primary" onClick={playPromptS1CTwist}>Play note</button>
-                  <button className="ghost" onClick={resetS1CTwist}>Restart</button>
+                  <button className="primary" aria-keyshortcuts="Space Enter" onClick={playPromptS1CTwist}>Play note</button>
+                  <button className="ghost" aria-keyshortcuts="Backspace" onClick={resetS1CTwist}>Restart</button>
                   <button className="secondary" onClick={() => setS1cHintOpen(true)}>Hint</button>
                   <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
                     Q: {Math.min(s1cTwistIndex + 1, S1C_TWIST_TOTAL)}/{S1C_TWIST_TOTAL} · Correct: {s1cTwistCorrect}/{S1C_TWIST_TOTAL} (need {S1C_TWIST_PASS}) · Lives: {Math.max(0, HEARTS - s1cTwistWrong)}/{HEARTS}
@@ -4022,7 +4022,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
       ) : id === 'S2_MAJOR_SCALE' ? (
         <>
           <div className="row">
-            <button className="primary" onClick={playPromptS2} disabled={!s2PatternDone}>
+            <button className="primary" aria-keyshortcuts="Space Enter" onClick={playPromptS2} disabled={!s2PatternDone}>
               Hear target step
             </button>
             <button
@@ -4167,7 +4167,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                 </div>
 
                 <div className="row">
-                  <button className="primary" onClick={playPromptS3} disabled={!s3WarmupDone}>
+                  <button className="primary" aria-keyshortcuts="Space Enter" onClick={playPromptS3} disabled={!s3WarmupDone}>
                     Play prompt
                   </button>
                   <button
@@ -4177,7 +4177,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
                   >
                     Root
                   </button>
-                  <button className="ghost" onClick={next}>
+                  <button className="ghost" aria-keyshortcuts="Backspace" onClick={next}>
                     Next
                   </button>
                   <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
@@ -4210,10 +4210,10 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
             twist={
               <>
                 <div className="row" style={{ gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <button className="primary" onClick={playPromptS3Twist}>
+                  <button className="primary" aria-keyshortcuts="Space Enter" onClick={playPromptS3Twist}>
                     Hear interval
                   </button>
-                  <button className="ghost" onClick={resetS3Twist}>
+                  <button className="ghost" aria-keyshortcuts="Backspace" onClick={resetS3Twist}>
                     Restart
                   </button>
                   <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
@@ -4244,7 +4244,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
       ) : id === 'S4_TRIADS' ? (
         <>
           <div className="row">
-            <button className="primary" onClick={playPromptS4}>Hear chord</button>
+            <button className="primary" aria-keyshortcuts="Space Enter" onClick={playPromptS4}>Hear chord</button>
             <button className="secondary" onClick={() => piano.playMidi(triadQ.rootMidi, { durationSec: dur(0.8), velocity: 0.9 })}>
               Root
             </button>
@@ -4254,7 +4254,7 @@ Context (sharp vs flat) depends on the key — we’ll cover that later. For now
               </button>
             ) : null}
 
-            <button className="ghost" onClick={next}>Next</button>
+            <button className="ghost" aria-keyshortcuts="Backspace" onClick={next}>Next</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Progress: {Math.min(s4Correct, S4_GOAL)}/{S4_GOAL}
             </div>
@@ -4310,14 +4310,14 @@ reviewHref={(t5Index >= T5_TOTAL || t5Wrong >= HEARTS) && stationMistakeCount > 
       ) : id === 'S5_DIATONIC_TRIADS' ? (
         <>
           <div className="row">
-            <button className="primary" onClick={playPromptS5}>Hear triad</button>
+            <button className="primary" aria-keyshortcuts="Space Enter" onClick={playPromptS5}>Hear triad</button>
             {chordMode === 'arp' ? (
               <button className="secondary" onClick={playPromptS5BlockPreview} title="Preview how tests/exams will sound">
                 Block
               </button>
             ) : null}
 
-            <button className="ghost" onClick={next}>Next</button>
+            <button className="ghost" aria-keyshortcuts="Backspace" onClick={next}>Next</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Progress: {Math.min(s5Correct, S5_GOAL)}/{S5_GOAL}
             </div>
@@ -4379,14 +4379,14 @@ reviewHref={(t6Index >= T6_TOTAL || t6Wrong >= HEARTS) && stationMistakeCount > 
       ) : id === 'S6_FUNCTIONS' ? (
         <>
           <div className="row">
-            <button className="primary" onClick={playPromptS6}>Hear chord</button>
+            <button className="primary" aria-keyshortcuts="Space Enter" onClick={playPromptS6}>Hear chord</button>
             {chordMode === 'arp' ? (
               <button className="secondary" onClick={playPromptS6BlockPreview} title="Preview how tests/exams will sound">
                 Block
               </button>
             ) : null}
 
-            <button className="ghost" onClick={next}>Next</button>
+            <button className="ghost" aria-keyshortcuts="Backspace" onClick={next}>Next</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Progress: {Math.min(s6Correct, S6_GOAL)}/{S6_GOAL}
             </div>
@@ -4449,11 +4449,11 @@ reviewHref={(t7Index >= T7_TOTAL || t7Wrong >= HEARTS) && stationMistakeCount > 
       ) : id === 'S7_DEGREES' ? (
         <>
           <div className="row">
-            <button className="primary" onClick={playPromptS7}>Hear degree</button>
+            <button className="primary" aria-keyshortcuts="Space Enter" onClick={playPromptS7}>Hear degree</button>
             <button className="ghost" onClick={playKeyHintS7} title="Hint: hear the key (do–mi–sol–do)">
               Hear key
             </button>
-            <button className="ghost" onClick={next}>Next</button>
+            <button className="ghost" aria-keyshortcuts="Backspace" onClick={next}>Next</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Progress: {Math.min(s7Correct, S7_GOAL)}/{S7_GOAL}
             </div>
@@ -4518,8 +4518,8 @@ reviewHref={(t7Index >= T7_TOTAL || t7Wrong >= HEARTS) && stationMistakeCount > 
       ) : id === 'S8_DEGREE_INTERVALS' ? (
         <>
           <div className="row">
-            <button className="primary" onClick={playPromptS8}>Hear tonic → degree</button>
-            <button className="ghost" onClick={next}>Next</button>
+            <button className="primary" aria-keyshortcuts="Space Enter" onClick={playPromptS8}>Hear tonic → degree</button>
+            <button className="ghost" aria-keyshortcuts="Backspace" onClick={next}>Next</button>
             <div style={{ marginLeft: 'auto', fontSize: 12, opacity: 0.85 }}>
               Progress: {Math.min(s8Correct, S8_GOAL)}/{S8_GOAL}
             </div>

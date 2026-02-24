@@ -20,10 +20,11 @@ export function ChoiceGrid<T extends string | number>({
 }) {
   return (
     <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-      {choices.map((c) => (
+      {choices.map((c, idx) => (
         <button
           key={String(c)}
           className={getButtonClassName ? getButtonClassName(c) : buttonClassName}
+          aria-keyshortcuts={idx < 9 ? String(idx + 1) : undefined}
           onClick={() => onChoose(c)}
           disabled={disabled}
         >
