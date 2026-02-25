@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { CopyLinkButton } from '../components/CopyLinkButton';
 import { ConfettiBurst } from '../components/ConfettiBurst';
+import { HotkeysOverlay } from '../components/HotkeysOverlay';
 import { useHotkeys } from '../lib/hooks/useHotkeys';
 import { usePrefersReducedMotion } from '../lib/usePrefersReducedMotion';
 import type { Progress } from '../lib/progress';
@@ -207,6 +208,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const [undo, setUndo] = useState<UndoState | null>(null);
   const [expandedKinds, setExpandedKinds] = useState<Record<string, boolean>>({});
   const [workoutBonusAwarded, setWorkoutBonusAwarded] = useState(0);
+  const [hotkeysOpen, setHotkeysOpen] = useState(false);
 
   const dailyGoal = Math.max(1, progress.dailyGoalXp || 0);
   const dailyToday = Math.max(0, progress.dailyXpToday || 0);
@@ -873,6 +875,9 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   // Hotkeys: Space/Enter = Play, Backspace = Skip, 1..9 = choose.
   useHotkeys({
     enabled: true,
+    keyMap: {
+      '?': () => setHotkeysOpen(true),
+    },
     onPrimary: () => {
       void playPrompt();
     },
@@ -940,6 +945,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
 
   return (
     <div className="card">
+      <HotkeysOverlay open={hotkeysOpen} onClose={() => setHotkeysOpen(false)} context="review" />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
         <div>
           <h1 className="title">{drillMode ? 'Review Drill' : warmupMode ? 'Warm‑up Review' : 'Review'}</h1>
@@ -1060,8 +1066,11 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
         </Link>
       </div>
 
-      <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-        Hotkeys: Space/Enter = Play • 1–9 = Answer • Backspace = Skip
+      <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75, display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
+        <div>Hotkeys: Space/Enter = Play • 1–9 = Answer • Backspace = Skip</div>
+        <button className="ghost" style={{ fontSize: 12, padding: '2px 8px' }} onClick={() => setHotkeysOpen(true)} aria-keyshortcuts="?" title="Keyboard shortcuts (hotkey: ?)">
+          ?
+        </button>
       </div>
 
       <div style={{ marginTop: 6, fontSize: 12, opacity: 0.78, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>

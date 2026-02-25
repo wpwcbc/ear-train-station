@@ -32,6 +32,7 @@ import { TestHeader } from '../components/TestHeader';
 import { ChoiceGrid } from '../components/ChoiceGrid';
 import { DuoBottomBar } from '../components/DuoBottomBar';
 import { HintOverlay, InfoCardPager, TTTRunner } from '../components/ttt';
+import { HotkeysOverlay } from '../components/HotkeysOverlay';
 // ConfigDrawer is handled by FocusShell in Focus Mode.
 import { useHotkeys } from '../lib/hooks/useHotkeys';
 import { piano } from '../audio/piano';
@@ -162,6 +163,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   const [mistakesThisVisit, setMistakesThisVisit] = useState(0);
 
   const [harmonicTipsOpen, setHarmonicTipsOpen] = useState(false);
+  const [hotkeysOpen, setHotkeysOpen] = useState(false);
 
   const trackMistake = (m: Parameters<typeof addMistake>[0]) => {
     setMistakesThisVisit((n) => n + 1);
@@ -176,6 +178,7 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
   // Close harmonic tips when changing station or switching prompt mode.
   useEffect(() => {
     setHarmonicTipsOpen(false);
+    setHotkeysOpen(false);
   }, [id, settings.intervalPromptMode]);
 
   useEffect(() => {
@@ -2683,11 +2686,14 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       else if (id === 'S8_DEGREE_INTERVALS') next();
       else if (id === 'T8_DEGREE_INTERVALS') resetT8();
     },
-    keyMap: showHarmonicTips
-      ? {
-          h: () => setHarmonicTipsOpen(true),
-        }
-      : undefined,
+    keyMap: {
+      '?': () => setHotkeysOpen(true),
+      ...(showHarmonicTips
+        ? {
+            h: () => setHarmonicTipsOpen(true),
+          }
+        : {}),
+    },
     onChoiceIndex: (idx) => {
       if (id === 'S1_NOTES') {
         if (s1TestComplete) {
@@ -2962,6 +2968,8 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
       ) : null}
 
 
+      <HotkeysOverlay open={hotkeysOpen} onClose={() => setHotkeysOpen(false)} context="station" />
+
       <HintOverlay
         open={harmonicTipsOpen}
         onClose={() => setHarmonicTipsOpen(false)}
@@ -3039,8 +3047,11 @@ export function StationPage({ progress, setProgress }: { progress: Progress; set
         ) : null}
       </div>
 
-      <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-        Hotkeys: Space/Enter = Play/Hear • 1–9 = Answer • Backspace = Next/Restart
+      <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75, display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
+        <div>Hotkeys: Space/Enter = Play/Hear • 1–9 = Answer • Backspace = Next/Restart</div>
+        <button className="ghost" style={{ fontSize: 12, padding: '2px 8px' }} onClick={() => setHotkeysOpen(true)} aria-keyshortcuts="?" title="Keyboard shortcuts (hotkey: ?)">
+          ?
+        </button>
       </div>
 
       {done ? (

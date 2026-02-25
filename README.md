@@ -60,6 +60,7 @@ npm run build
   - **Space / Enter** = Play / Hear
   - **Backspace** = Skip (Review) / Next or Restart (stations)
   - **1–9** = choose an answer
+  - **?** = show keyboard shortcuts help
 - On short mobile viewports, the completion card body may **scroll internally** so the CTAs remain reachable.
 
 ### Chord prompts: arpeggios first, block chords for checks
