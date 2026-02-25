@@ -127,7 +127,7 @@ export function HintOverlay({
           <div id={titleId} style={{ fontWeight: 900, letterSpacing: 0.2 }}>
             {title}
           </div>
-          <button className="ghost" onClick={onClose}>
+          <button className="ghost" onClick={onClose} aria-keyshortcuts="Escape" title="Close (Esc)">
             Close
           </button>
         </div>

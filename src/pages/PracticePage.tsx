@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { HotkeysOverlay } from '../components/HotkeysOverlay';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useReactiveNow } from '../lib/hooks/useReactiveNow';
 import { CopyLinkButton } from '../components/CopyLinkButton';
@@ -43,6 +44,26 @@ export function PracticePage({ progress }: { progress: Progress }) {
   const now = useReactiveNow([MISTAKES_CHANGED_EVENT]);
 
   const [workoutToast, setWorkoutToast] = useState<null | { session: 1 | 2; at: number }>(null);
+  const [hotkeysOpen, setHotkeysOpen] = useState(false);
+
+  // Global hotkey: `?` opens the shortcuts overlay.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Don’t hijack typing.
+      const t = e.target as HTMLElement | null;
+      const tag = (t?.tagName || '').toLowerCase();
+      const isTyping = tag === 'input' || tag === 'textarea' || (t as HTMLInputElement | null)?.isContentEditable;
+      if (isTyping) return;
+
+      if (e.key === '?') {
+        e.preventDefault();
+        setHotkeysOpen(true);
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   // If we return from Focus routes with a workout completion flag, persist it for today
   // and clean the URL (so refresh doesn't re-apply).
@@ -134,8 +155,16 @@ export function PracticePage({ progress }: { progress: Progress }) {
 
   return (
     <div className="page">
+      <HotkeysOverlay open={hotkeysOpen} onClose={() => setHotkeysOpen(false)} context="practice" />
+
       <h1 className="h1">Practice</h1>
       <p className="sub">Daily workout + spaced review (Duolingo-ish).</p>
+      <div style={{ marginTop: 6, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 12, opacity: 0.75 }}>Keyboard: press <b>?</b> for shortcuts.</span>
+        <button className="ghost" style={{ fontSize: 12, padding: '2px 8px' }} onClick={() => setHotkeysOpen(true)} aria-keyshortcuts="?" title="Keyboard shortcuts (hotkey: ?)">
+          ?
+        </button>
+      </div>
 
       {workoutToast ? (
         <div

@@ -31,6 +31,18 @@ export function HotkeysOverlay({
     <HintOverlay open={open} onClose={onClose} title="Keyboard shortcuts">
       <div style={{ display: 'grid', gap: 10 }}>
         <div>
+          <div style={{ fontWeight: 800, marginBottom: 4 }}>Open / close</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+            <K>?</K>
+            <span style={{ opacity: 0.85 }}>Show shortcuts</span>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 6 }}>
+            <K>Esc</K>
+            <span style={{ opacity: 0.85 }}>Close overlays</span>
+          </div>
+        </div>
+
+        <div>
           <div style={{ fontWeight: 800, marginBottom: 4 }}>Core</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
             <K>Space</K>
@@ -61,7 +73,7 @@ export function HotkeysOverlay({
         ) : null}
 
         <div style={{ opacity: 0.88, fontSize: 12, lineHeight: 1.45 }}>
-          Tip: shortcuts won’t fire while you’re typing in an input field.
+          Tip: shortcuts won’t fire while you’re typing in an input field. (Use Tab/Shift+Tab to move between buttons.)
         </div>
       </div>
     </HintOverlay>
