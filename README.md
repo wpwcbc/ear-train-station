@@ -61,6 +61,7 @@ npm run build
   - **Backspace** = Skip (Review) / Next or Restart (stations)
   - **1–9** = choose an answer
   - **?** = show keyboard shortcuts help
+  - **Esc** = close the shortcuts/help overlay
 - On short mobile viewports, the completion card body may **scroll internally** so the CTAs remain reachable.
 
 ### Chord prompts: arpeggios first, block chords for checks
