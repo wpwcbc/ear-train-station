@@ -90,6 +90,7 @@ export function NavShell({
                 className="configBtn"
                 onClick={() => setHotkeysOpen(true)}
                 aria-label="Keyboard shortcuts"
+                aria-keyshortcuts="?"
                 title="Keyboard shortcuts (?)"
               >
                 ?
@@ -127,9 +128,20 @@ export function NavShell({
       </aside>
 
       <div className="mainCol">
-        <button className="configBtnFloating" onClick={() => setConfigOpen(true)} aria-label="Open settings">
-          ⚙
-        </button>
+        <div className="floatingActions" aria-label="quick actions">
+          <button
+            className="configBtnFloating"
+            onClick={() => setHotkeysOpen(true)}
+            aria-label="Keyboard shortcuts"
+            aria-keyshortcuts="?"
+            title="Keyboard shortcuts (?)"
+          >
+            ?
+          </button>
+          <button className="configBtnFloating" onClick={() => setConfigOpen(true)} aria-label="Open settings" title="Settings">
+            ⚙
+          </button>
+        </div>
 
         <div className="content">
           <Outlet />

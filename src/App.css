@@ -65,10 +65,16 @@
   cursor: pointer;
 }
 
-.configBtnFloating {
+.floatingActions {
   position: fixed;
   right: calc(14px + env(safe-area-inset-right, 0px));
   top: calc(14px + env(safe-area-inset-top, 0px));
+  display: grid;
+  gap: 10px;
+  z-index: 50;
+}
+
+.configBtnFloating {
   width: 44px;
   height: 44px;
   padding: 0;
@@ -77,11 +83,10 @@
   background: var(--card);
   font-weight: 900;
   cursor: pointer;
-  z-index: 50;
 }
 
 @media (min-width: 901px) {
-  .configBtnFloating {
+  .floatingActions {
     display: none;
   }
 }
@@ -339,9 +344,9 @@
 }
 
 @media (max-width: 900px) {
-  /* Leave room for the floating ⚙️ button and bottom tabs */
+  /* Leave room for the floating ?/⚙️ buttons and bottom tabs */
   .content {
-    padding-top: 72px;
+    padding-top: 124px;
     padding-bottom: calc(90px + env(safe-area-inset-bottom));
   }
 }

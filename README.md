@@ -60,7 +60,7 @@ npm run build
   - **Space / Enter** = Play / Hear
   - **Backspace** = Skip (Review) / Next or Restart (stations)
   - **1–9** = choose an answer
-  - **?** = show keyboard shortcuts help (also available via the top-left **?** button)
+  - **?** = show keyboard shortcuts help (also available via the top-left **?** button on desktop, and the floating **?** button on mobile)
   - **Esc** = close the shortcuts/help overlay
 - On short mobile viewports, the completion card body may **scroll internally** so the CTAs remain reachable.
 
