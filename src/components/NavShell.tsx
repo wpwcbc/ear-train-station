@@ -162,7 +162,7 @@ export function NavShell({
       </div>
 
       <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} progress={progress} setProgress={setProgress} />
-      <HotkeysOverlay open={hotkeysOpen} onClose={() => setHotkeysOpen(false)} context="practice" />
+      <HotkeysOverlay open={hotkeysOpen} onClose={() => setHotkeysOpen(false)} context="global" />
     </div>
   );
 }

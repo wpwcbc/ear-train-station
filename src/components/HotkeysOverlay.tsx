@@ -25,7 +25,7 @@ export function HotkeysOverlay({
 }: {
   open: boolean;
   onClose: () => void;
-  context?: 'station' | 'review' | 'practice';
+  context?: 'station' | 'review' | 'practice' | 'global';
 }) {
   return (
     <HintOverlay open={open} onClose={onClose} title="Keyboard shortcuts">
@@ -42,25 +42,50 @@ export function HotkeysOverlay({
           </div>
         </div>
 
-        <div>
-          <div style={{ fontWeight: 800, marginBottom: 4 }}>Core</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-            <K>Space</K>
-            <span style={{ opacity: 0.85 }}>or</span>
-            <K>Enter</K>
-            <span style={{ opacity: 0.85 }}>Play / Hear</span>
+        {context === 'global' ? (
+          <div>
+            <div style={{ fontWeight: 800, marginBottom: 4 }}>On training screens</div>
+            <div style={{ opacity: 0.88, lineHeight: 1.45 }}>
+              These shortcuts work during lessons / practice / stations / review:
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 8 }}>
+              <K>Space</K>
+              <span style={{ opacity: 0.85 }}>or</span>
+              <K>Enter</K>
+              <span style={{ opacity: 0.85 }}>Play / Hear</span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 6 }}>
+              <K>Backspace</K>
+              <span style={{ opacity: 0.85 }}>Next / Restart / Skip (depends on mode)</span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 6 }}>
+              <K>1</K>
+              <span style={{ opacity: 0.85 }}>…</span>
+              <K>9</K>
+              <span style={{ opacity: 0.85 }}>Pick answer</span>
+            </div>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 6 }}>
-            <K>Backspace</K>
-            <span style={{ opacity: 0.85 }}>{context === 'review' ? 'Skip / Next' : 'Next / Restart'}</span>
+        ) : (
+          <div>
+            <div style={{ fontWeight: 800, marginBottom: 4 }}>Core</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+              <K>Space</K>
+              <span style={{ opacity: 0.85 }}>or</span>
+              <K>Enter</K>
+              <span style={{ opacity: 0.85 }}>Play / Hear</span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 6 }}>
+              <K>Backspace</K>
+              <span style={{ opacity: 0.85 }}>{context === 'review' ? 'Skip / Next' : 'Next / Restart'}</span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 6 }}>
+              <K>1</K>
+              <span style={{ opacity: 0.85 }}>…</span>
+              <K>9</K>
+              <span style={{ opacity: 0.85 }}>Pick answer</span>
+            </div>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 6 }}>
-            <K>1</K>
-            <span style={{ opacity: 0.85 }}>…</span>
-            <K>9</K>
-            <span style={{ opacity: 0.85 }}>Pick answer</span>
-          </div>
-        </div>
+        )}
 
         {context === 'station' ? (
           <div>
