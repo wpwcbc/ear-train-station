@@ -56,11 +56,11 @@ npm run build
 
 - Review/Warm‑up/Drill sessions end with a small **completion recap** (accuracy, XP, top misses, and a clear next CTA).
 - Keyboard: when the completion card appears, focus moves to the **primary CTA**; chips/CTAs have visible `:focus-visible` styles.
-- Keyboard shortcuts (Review / stations):
+- Keyboard shortcuts (most play/review screens, plus the main hub pages):
   - **Space / Enter** = Play / Hear
   - **Backspace** = Skip (Review) / Next or Restart (stations)
   - **1–9** = choose an answer
-  - **?** = show keyboard shortcuts help
+  - **?** = show keyboard shortcuts help (also available via the top-left ? button)
   - **Esc** = close the shortcuts/help overlay
 - On short mobile viewports, the completion card body may **scroll internally** so the CTAs remain reachable.
 

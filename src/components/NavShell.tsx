@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useHotkeys } from '../lib/hooks/useHotkeys';
 import type { Progress } from '../lib/progress';
 import { computeQuestProgress, loadQuestState, QUESTS_CHANGED_EVENT, type QuestComputed } from '../lib/quests';
 import { ConfigDrawer } from './ConfigDrawer';
+import { HotkeysOverlay } from './HotkeysOverlay';
 
 type Tab = { to: string; label: string; icon: string; accent: string };
 
@@ -22,11 +24,22 @@ export function NavShell({
   setProgress: (p: Progress) => void;
 }) {
   const [configOpen, setConfigOpen] = useState(false);
+  const [hotkeysOpen, setHotkeysOpen] = useState(false);
   const [quests, setQuests] = useState<QuestComputed | null>(null);
   const loc = useLocation();
   const navigate = useNavigate();
 
   const onQuests = loc.pathname === '/quests' || loc.pathname.startsWith('/quests/');
+
+  // Avoid double-binding on pages that already manage their own hotkeys overlay.
+  const enableShellHotkeys = !loc.pathname.startsWith('/review') && !loc.pathname.startsWith('/practice');
+
+  useHotkeys({
+    enabled: enableShellHotkeys,
+    keyMap: {
+      '?': () => setHotkeysOpen(true),
+    },
+  });
 
   useEffect(() => {
     function bump() {
@@ -72,6 +85,14 @@ export function NavShell({
                 title="Quick practice (warm‑up, 5 items)"
               >
                 ❤
+              </button>
+              <button
+                className="configBtn"
+                onClick={() => setHotkeysOpen(true)}
+                aria-label="Keyboard shortcuts"
+                title="Keyboard shortcuts (?)"
+              >
+                ?
               </button>
               <button className="configBtn" onClick={() => setConfigOpen(true)} aria-label="Open settings">
                 ⚙
@@ -141,6 +162,7 @@ export function NavShell({
       </div>
 
       <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} progress={progress} setProgress={setProgress} />
+      <HotkeysOverlay open={hotkeysOpen} onClose={() => setHotkeysOpen(false)} context="practice" />
     </div>
   );
 }
