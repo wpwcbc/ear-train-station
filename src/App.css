@@ -74,6 +74,14 @@
   z-index: 50;
 }
 
+@media (max-width: 900px) {
+  /* Mobile ergonomics: keep quick actions reachable, above the bottom tabs + safe area. */
+  .floatingActions {
+    top: auto;
+    bottom: calc(14px + 70px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .configBtnFloating {
   width: 44px;
   height: 44px;
@@ -344,10 +352,10 @@
 }
 
 @media (max-width: 900px) {
-  /* Leave room for the floating ?/⚙️ buttons and bottom tabs */
+  /* Leave room for bottom tabs + the floating ?/⚙️ buttons stack (bottom-right). */
   .content {
-    padding-top: 124px;
-    padding-bottom: calc(90px + env(safe-area-inset-bottom));
+    padding-top: 24px;
+    padding-bottom: calc(90px + 120px + env(safe-area-inset-bottom));
   }
 }
 
