@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { Progress } from '../lib/progress';
+import { computeXpWeekSummary } from '../lib/xpWeekSummary';
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -25,22 +26,9 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
   }, [today, goal]);
 
   const week = useMemo(() => {
-    // Last 7 local days (including today).
-    const days: { ymd: string; label: string; xp: number }[] = [];
-    const base = new Date();
-    base.setHours(12, 0, 0, 0); // reduce DST edge weirdness
-
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(base);
-      d.setDate(d.getDate() - i);
-      const ymd = ymdFromLocalDate(d);
-      const xp = Math.max(0, Math.floor(progress.dailyXpByYmd?.[ymd] ?? 0));
-      days.push({ ymd, label: shortDow(d), xp });
-    }
-
-    const max = Math.max(10, ...days.map((d) => d.xp));
-    const total = days.reduce((sum, d) => sum + d.xp, 0);
-    return { days, max, total };
+    const s = computeXpWeekSummary(progress.dailyXpByYmd);
+    const days = s.days.map((d) => ({ ...d, label: shortDow(new Date(`${d.ymd}T12:00:00`)) }));
+    return { ...s, days };
   }, [progress.dailyXpByYmd]);
 
   return (
@@ -89,7 +77,7 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
           <div>
             <div style={{ fontSize: 14, fontWeight: 850 }}>XP this week</div>
             <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>
-              {week.total} XP • last 7 days
+              {week.totalXp} XP • {week.activeDays}/7 active days
             </div>
           </div>
         </div>
@@ -106,7 +94,7 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
           aria-label="XP bars for the last 7 days"
         >
           {week.days.map((d) => {
-            const h = Math.round((d.xp / week.max) * 68);
+            const h = Math.round((d.xp / week.maxXp) * 68);
             const isToday = d.ymd === ymdFromLocalDate(new Date());
             return (
               <div key={d.ymd} style={{ display: 'grid', gap: 6, justifyItems: 'center' }}>
@@ -139,7 +127,15 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
         </div>
 
         <div style={{ marginTop: 10, fontSize: 12, opacity: 0.75 }}>
-          Tip: Duolingo-style — the point is consistency, not spikes.
+          {week.prevTotalXp > 0 ? (
+            <>
+              vs previous 7 days: {week.deltaXp >= 0 ? '+' : ''}
+              {week.deltaXp} XP ({week.deltaPct}%){' '}
+            </>
+          ) : (
+            <>vs previous 7 days: —</>
+          )}
+          <span style={{ marginLeft: 8 }}>Tip: consistency &gt; spikes.</span>
         </div>
       </div>
     </div>
