@@ -49,6 +49,38 @@ function App() {
   }, []);
 
   useEffect(() => {
+    // iOS Safari (older builds) can mis-measure 100vh when the URL bar is visible.
+    // We prefer `100dvh` via CSS when supported, but add a JS fallback for browsers
+    // that don't support dynamic viewport units.
+    if (typeof window === 'undefined') return;
+
+    const supportsDvh =
+      typeof CSS !== 'undefined' &&
+      typeof CSS.supports === 'function' &&
+      CSS.supports('height: 100dvh');
+
+    if (supportsDvh) return;
+
+    function setAppVh() {
+      // Use visualViewport when available to better match the visible area.
+      const h = window.visualViewport?.height ?? window.innerHeight;
+      document.documentElement.style.setProperty('--app-vh', `${Math.round(h)}px`);
+    }
+
+    setAppVh();
+
+    window.addEventListener('resize', setAppVh);
+    window.addEventListener('orientationchange', setAppVh);
+    window.visualViewport?.addEventListener('resize', setAppVh);
+
+    return () => {
+      window.removeEventListener('resize', setAppVh);
+      window.removeEventListener('orientationchange', setAppVh);
+      window.visualViewport?.removeEventListener('resize', setAppVh);
+    };
+  }, []);
+
+  useEffect(() => {
     // Best-effort audio warmup on the first user gesture.
     // This helps avoid first-note latency on mobile, and also primes SW runtime caching.
     let didWarm = false;
