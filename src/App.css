@@ -355,7 +355,7 @@
   /* Leave room for bottom tabs + the floating ?/⚙️ buttons stack (bottom-right). */
   .content {
     padding-top: 24px;
-    padding-bottom: calc(90px + 120px + env(safe-area-inset-bottom));
+    padding-bottom: calc(90px + 120px + env(safe-area-inset-bottom, 0px));
   }
 }
 
