@@ -30,7 +30,7 @@ type ProgressV1 = {
   stationDone: Record<StationId, boolean>;
 };
 
-export type Progress = {
+type ProgressV2 = {
   version: 2;
   xp: number;
   streakDays: number;
@@ -42,6 +42,21 @@ export type Progress = {
   stationDone: Record<StationId, boolean>;
 };
 
+export type Progress = {
+  version: 3;
+  xp: number;
+  streakDays: number;
+  lastStudyYmd: string | null;
+  /** Daily goal tracking (Duolingo-ish stickiness). */
+  dailyGoalXp: number;
+  dailyXpToday: number;
+  dailyYmd: string | null;
+  /** Small history for Profile graphs. Local day buckets (YYYY-MM-DD → XP gained). */
+  dailyXpByYmd: Record<string, number>;
+  stationDone: Record<StationId, boolean>;
+};
+
+const KEY_V3 = 'ets_progress_v3';
 const KEY_V2 = 'ets_progress_v2';
 const KEY_V1 = 'ets_progress_v1';
 
@@ -57,33 +72,62 @@ function normalizeProgressForToday(p: Progress): Progress {
 
 export function loadProgress(): Progress {
   try {
-    const rawV2 = localStorage.getItem(KEY_V2);
-    if (rawV2) {
-      const parsed = JSON.parse(rawV2) as Progress;
-      if (parsed?.version === 2) {
+    const rawV3 = localStorage.getItem(KEY_V3);
+    if (rawV3) {
+      const parsed = JSON.parse(rawV3) as Progress;
+      if (parsed?.version === 3) {
         const merged: Progress = {
           ...defaultProgress(),
           ...parsed,
           stationDone: { ...defaultProgress().stationDone, ...(parsed.stationDone ?? {}) },
+          dailyXpByYmd: { ...(parsed.dailyXpByYmd ?? {}) },
         };
-        return normalizeProgressForToday(merged);
+        return normalizeProgressForToday(pruneProgressHistory(merged));
       }
     }
 
-    // migrate v1 → v2 (keep streak/xp/stations)
+    const rawV2 = localStorage.getItem(KEY_V2);
+    if (rawV2) {
+      const parsed2 = JSON.parse(rawV2) as ProgressV2;
+      if (parsed2?.version === 2) {
+        const migrated: Progress = pruneProgressHistory(
+          normalizeProgressForToday({
+            ...defaultProgress(),
+            xp: parsed2.xp ?? 0,
+            streakDays: parsed2.streakDays ?? 0,
+            lastStudyYmd: parsed2.lastStudyYmd ?? null,
+            dailyGoalXp: parsed2.dailyGoalXp ?? 20,
+            dailyXpToday: parsed2.dailyXpToday ?? 0,
+            dailyYmd: parsed2.dailyYmd ?? null,
+            stationDone: { ...defaultProgress().stationDone, ...(parsed2.stationDone ?? {}) },
+            // Best-effort seed: set today's bucket to current dailyXpToday.
+            dailyXpByYmd:
+              parsed2.dailyYmd && typeof parsed2.dailyXpToday === 'number'
+                ? { [parsed2.dailyYmd]: parsed2.dailyXpToday }
+                : {},
+          }),
+        );
+        localStorage.setItem(KEY_V3, JSON.stringify(migrated));
+        return migrated;
+      }
+    }
+
+    // migrate v1 → v3 (keep streak/xp/stations)
     const rawV1 = localStorage.getItem(KEY_V1);
     if (rawV1) {
       const parsed1 = JSON.parse(rawV1) as ProgressV1;
       if (parsed1?.version === 1) {
-        const migrated: Progress = normalizeProgressForToday({
-          ...defaultProgress(),
-          xp: parsed1.xp ?? 0,
-          streakDays: parsed1.streakDays ?? 0,
-          lastStudyYmd: parsed1.lastStudyYmd ?? null,
-          stationDone: { ...defaultProgress().stationDone, ...(parsed1.stationDone ?? {}) },
-        });
-        // Save immediately so next load is v2.
-        localStorage.setItem(KEY_V2, JSON.stringify(migrated));
+        const migrated: Progress = pruneProgressHistory(
+          normalizeProgressForToday({
+            ...defaultProgress(),
+            xp: parsed1.xp ?? 0,
+            streakDays: parsed1.streakDays ?? 0,
+            lastStudyYmd: parsed1.lastStudyYmd ?? null,
+            stationDone: { ...defaultProgress().stationDone, ...(parsed1.stationDone ?? {}) },
+          }),
+        );
+        // Save immediately so next load is v3.
+        localStorage.setItem(KEY_V3, JSON.stringify(migrated));
         return migrated;
       }
     }
@@ -94,9 +138,15 @@ export function loadProgress(): Progress {
   }
 }
 
-
 export function saveProgress(p: Progress) {
-  localStorage.setItem(KEY_V2, JSON.stringify(p));
+  localStorage.setItem(KEY_V3, JSON.stringify(pruneProgressHistory(p)));
+  // Hygiene: clear older keys if they exist (best-effort).
+  try {
+    localStorage.removeItem(KEY_V2);
+    localStorage.removeItem(KEY_V1);
+  } catch {
+    // ignore
+  }
 }
 
 export function todayYmd() {
@@ -118,6 +168,23 @@ function dayIndexUtc(ymd: string): number | null {
   if (!p) return null;
   // Use UTC to avoid DST/timezone drift when computing streak gaps.
   return Math.floor(Date.UTC(p.y, p.m - 1, p.d) / 86_400_000);
+}
+
+function pruneProgressHistory(p: Progress, keepDays = 14): Progress {
+  const today = todayYmd();
+  const todayIdx = dayIndexUtc(today);
+  if (todayIdx == null) return p;
+
+  const next: Record<string, number> = {};
+  for (const [ymd, xp] of Object.entries(p.dailyXpByYmd ?? {})) {
+    const idx = dayIndexUtc(ymd);
+    if (idx == null) continue;
+    const ageDays = todayIdx - idx;
+    if (ageDays < 0) continue; // ignore future keys
+    if (ageDays <= keepDays - 1) next[ymd] = Math.max(0, Math.floor(xp || 0));
+  }
+
+  return { ...p, dailyXpByYmd: next };
 }
 
 export function applyStudyReward(p: Progress, xpGain: number): Progress {
@@ -143,14 +210,19 @@ export function applyStudyReward(p: Progress, xpGain: number): Progress {
   const dailyReset = p.dailyYmd !== ymd;
   const dailyXpToday = (dailyReset ? 0 : p.dailyXpToday) + xpGain;
 
-  return {
+  // Profile history (small rolling window).
+  const dailyXpByYmd = { ...(p.dailyXpByYmd ?? {}) };
+  dailyXpByYmd[ymd] = (dailyXpByYmd[ymd] ?? (dailyReset ? 0 : p.dailyXpToday ?? 0)) + xpGain;
+
+  return pruneProgressHistory({
     ...p,
     xp: p.xp + xpGain,
     streakDays,
     lastStudyYmd: ymd,
     dailyYmd: ymd,
     dailyXpToday,
-  };
+    dailyXpByYmd,
+  });
 }
 
 export function markStationDone(p: Progress, stationId: StationId): Progress {
@@ -162,13 +234,14 @@ export function markStationDone(p: Progress, stationId: StationId): Progress {
 
 export function defaultProgress(): Progress {
   return {
-    version: 2,
+    version: 3,
     xp: 0,
     streakDays: 0,
     lastStudyYmd: null,
     dailyGoalXp: 20,
     dailyXpToday: 0,
     dailyYmd: null,
+    dailyXpByYmd: {},
     stationDone: {
       S1_NOTES: false,
       S1B_STAFF: false,
