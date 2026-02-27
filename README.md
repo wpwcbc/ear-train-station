@@ -170,6 +170,8 @@ Rule of thumb: avoid hardcoding `60–71` or other magic MIDI ranges inside stat
 
 - We use `env(safe-area-inset-*)` for Focus Mode + bottom UI spacing.
 - iOS needs `viewport-fit=cover` in the viewport meta tag for those safe-area insets to work reliably.
+- For app-height shells, we prefer **dynamic viewport units** (`100dvh` when supported) via `--app-vh`, with a safe `100vh` fallback (helps avoid iOS Safari URL-bar overlap).
+- Mobile quick actions (⚙️ + `?`) live **bottom-right above the bottom tabs** (safe-area aware) — inspired by Duolingo’s use of bottom-right floating affordances on long-scroll screens.
 - WebAudio can get **suspended** when the tab is backgrounded; on return we do a best-effort resume, and if it stays paused we show a subtle toast (“Sound is paused — tap anywhere to enable”).
 
 ## PWA icons
