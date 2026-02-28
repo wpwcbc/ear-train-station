@@ -1,4 +1,4 @@
-import { mulberry32, shuffle } from './rng';
+import { mulberry32, shuffle } from './rng.ts';
 
 export type LeagueState = {
   version: 1;
@@ -36,6 +36,24 @@ export function currentWeekId(d = new Date()): string {
 
   const week = 1 + Math.round((dt.getTime() - firstThu.getTime()) / 604_800_000);
   return `${weekYear}-W${pad2(week)}`;
+}
+
+/**
+ * Local-time league week window: Monday 00:00 → next Monday 00:00.
+ * (Matches the “Monday as week start” rule used in currentWeekId.)
+ */
+export function leagueWeekWindow(now = new Date()): { start: Date; end: Date } {
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const day = (start.getDay() + 6) % 7; // Monday=0
+  start.setDate(start.getDate() - day);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+  return { start, end };
+}
+
+export function msUntilLeagueWeekEnds(now = new Date()): number {
+  const { end } = leagueWeekWindow(now);
+  return Math.max(0, end.getTime() - now.getTime());
 }
 
 export function loadLeagueState(totalXp: number, now = new Date()): LeagueState {
