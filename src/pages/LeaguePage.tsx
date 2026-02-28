@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { Progress } from '../lib/progress';
-import { leagueWeekWindow, loadLeagueState, makeLeagueTable, msUntilLeagueWeekEnds } from '../lib/league';
+import { computeXpPace, leagueWeekWindow, loadLeagueState, makeLeagueTable, msUntilLeagueWeekEnds } from '../lib/league';
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -46,6 +46,7 @@ export function LeaguePage({ progress }: { progress: Progress }) {
   }, [table]);
 
   const gapToPromote = Math.max(0, thresholdXp - (youRow?.weeklyXp ?? 0));
+  const cushionInPromote = Math.max(0, (youRow?.weeklyXp ?? 0) - thresholdXp);
 
   const demoteCutoffXp = useMemo(() => {
     const safeRank = table.length - DEMOTE_BOTTOM;
@@ -55,6 +56,7 @@ export function LeaguePage({ progress }: { progress: Progress }) {
 
   // +1 so the copy feels actionable (“get past the line”).
   const gapToSafety = Math.max(0, (demoteCutoffXp + 1) - (youRow?.weeklyXp ?? 0));
+  const cushionSafe = Math.max(0, (youRow?.weeklyXp ?? 0) - demoteCutoffXp);
 
   // Show a slice around the player (Duolingo-ish), but include top ranks.
   const windowed = useMemo(() => {
@@ -78,6 +80,12 @@ export function LeaguePage({ progress }: { progress: Progress }) {
       .map((x) => x.r);
   }, [table, youIndex]);
 
+  const paceToPromote = useMemo(() => computeXpPace(gapToPromote, msLeft), [gapToPromote, msLeft]);
+  const paceToSafety = useMemo(() => computeXpPace(gapToSafety, msLeft), [gapToSafety, msLeft]);
+
+  const meterMax = Math.max(1, thresholdXp, demoteCutoffXp + 1, youRow?.weeklyXp ?? 0);
+  const pctToCutoff = (youRow?.weeklyXp ?? 0) / meterMax;
+
   return (
     <div className="page">
       <h1 className="h1">League</h1>
@@ -100,7 +108,7 @@ export function LeaguePage({ progress }: { progress: Progress }) {
         <div style={{ marginTop: 10, fontSize: 12, opacity: 0.85 }}>
           {youInPromote ? (
             <span>
-              Promotion zone ✅ (top {PROMOTE_TOP}). Keep it up.
+              Promotion zone ✅ (top {PROMOTE_TOP}). Cushion: <b>+{cushionInPromote}</b> XP above the cutoff.
             </span>
           ) : youInDemote ? (
             <span>
@@ -111,6 +119,36 @@ export function LeaguePage({ progress }: { progress: Progress }) {
               Promotion zone: top {PROMOTE_TOP}. You need <b>{gapToPromote}</b> more XP to reach the cutoff.
             </span>
           )}
+        </div>
+
+        <div style={{ marginTop: 10, display: 'grid', gap: 8 }}>
+          <div style={{ height: 12, borderRadius: 999, border: '3px solid var(--ink)', overflow: 'hidden', background: '#fff' }}>
+            <div style={{ width: `${clamp(Math.round(pctToCutoff * 100), 0, 100)}%`, height: '100%', background: 'linear-gradient(90deg, #8dd4ff, #b6f2d8)' }} />
+          </div>
+          <div style={{ fontSize: 12, opacity: 0.75, display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+            <span>
+              Cutoff (#{PROMOTE_TOP}): <b>{thresholdXp}</b> XP
+            </span>
+            <span>
+              Safety line: <b>{demoteCutoffXp}</b> XP {cushionSafe > 0 ? <span style={{ opacity: 0.85 }}>(you’re +{cushionSafe})</span> : null}
+            </span>
+          </div>
+
+          {!youInPromote ? (
+            <div style={{ fontSize: 12, opacity: 0.85 }}>
+              Pace: ~<b>{Math.max(0, Math.round(paceToPromote.perDay))}</b> XP/day (or <b>{Math.max(0, Math.round(paceToPromote.perHour))}</b> XP/hour) to reach the cutoff.
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, opacity: 0.85 }}>
+              Pace: keep any steady rhythm — you’re already above the line.
+            </div>
+          )}
+
+          {youInDemote ? (
+            <div style={{ fontSize: 12, opacity: 0.85 }}>
+              Safety pace: ~<b>{Math.max(0, Math.round(paceToSafety.perDay))}</b> XP/day to climb above the demotion zone.
+            </div>
+          ) : null}
         </div>
 
         <div style={{ marginTop: 12, borderTop: '2px dashed rgba(0,0,0,0.25)', paddingTop: 12 }}>

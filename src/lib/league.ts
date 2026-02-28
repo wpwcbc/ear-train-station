@@ -56,6 +56,20 @@ export function msUntilLeagueWeekEnds(now = new Date()): number {
   return Math.max(0, end.getTime() - now.getTime());
 }
 
+export function computeXpPace(xpNeeded: number, msLeft: number): { perDay: number; perHour: number } {
+  const xp = Math.max(0, xpNeeded);
+  const ms = Math.max(0, msLeft);
+  if (xp === 0) return { perDay: 0, perHour: 0 };
+  if (ms === 0) return { perDay: xp, perHour: xp };
+
+  const hoursLeft = ms / 3_600_000;
+  const daysLeft = ms / 86_400_000;
+
+  const perHour = xp / Math.max(1 / 60, hoursLeft); // clamp to avoid silly infinities (< 1m)
+  const perDay = xp / Math.max(1 / 60, daysLeft);
+  return { perDay, perHour };
+}
+
 export function loadLeagueState(totalXp: number, now = new Date()): LeagueState {
   const weekId = currentWeekId(now);
   try {
