@@ -96,6 +96,12 @@ export function ymdFromDate(d: Date) {
   return `${y}-${m}-${day}`;
 }
 
+/** Milliseconds until the next local midnight (start of next day). */
+export function msUntilLocalMidnight(now = new Date()): number {
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  return Math.max(0, next.getTime() - now.getTime());
+}
+
 function todayYmd() {
   return ymdFromDate(new Date());
 }

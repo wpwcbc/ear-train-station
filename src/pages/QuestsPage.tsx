@@ -1,8 +1,16 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { Link } from 'react-router-dom';
+import { useNow } from '../hooks/useNow';
 import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
-import { computeQuestProgress, loadQuestState, markChestClaimed, QUESTS_CHANGED_EVENT, type QuestState } from '../lib/quests';
+import {
+  computeQuestProgress,
+  loadQuestState,
+  markChestClaimed,
+  msUntilLocalMidnight,
+  QUESTS_CHANGED_EVENT,
+  type QuestState,
+} from '../lib/quests';
 import { useMistakeStats } from '../lib/hooks/useMistakeStats';
 
 function clamp(n: number, min: number, max: number) {
@@ -16,6 +24,14 @@ function ProgressBar({ pct }: { pct: number }) {
       <div style={{ width: `${p}%`, height: '100%', background: 'linear-gradient(90deg, #8dd4ff, #b6f2d8)' }} />
     </div>
   );
+}
+
+function formatResetsIn(ms: number) {
+  const totalSec = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(totalSec / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  if (hours > 0) return `${hours}h ${mins}m`;
+  return `${mins}m`;
 }
 
 export function QuestsPage({
@@ -52,6 +68,10 @@ export function QuestsPage({
   // Quests are intentionally simple: they push the loop (learn → review → streak).
   const qp = useMemo(() => computeQuestProgress(progress, q), [progress, q]);
 
+  // Tick the reset countdown (Duolingo-ish, but minimal). Coarse cadence keeps it cheap.
+  const now = useNow(30_000);
+  const resetsIn = formatResetsIn(msUntilLocalMidnight(now));
+
   const questDailyXp = useMemo(() => {
     const pct = qp.dailyXpGoal > 0 ? (qp.dailyXpToday / qp.dailyXpGoal) * 100 : 0;
     return { goal: qp.dailyXpGoal, today: qp.dailyXpToday, pct, done: qp.dailyXpDone };
@@ -82,7 +102,9 @@ export function QuestsPage({
       <div className="rowBetween">
         <div>
           <h1 className="h1">Quests</h1>
-          <p className="sub">Daily mini-goals to keep the streak alive. Small on purpose — consistency wins.</p>
+          <p className="sub">
+            Daily mini-goals to keep the streak alive. Small on purpose — consistency wins. · Resets in <b>{resetsIn}</b>
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <Link className={stats.due > 0 ? 'btnPrimary' : 'btn'} to="/review">
@@ -111,6 +133,7 @@ export function QuestsPage({
         <div style={{ fontSize: 14, fontWeight: 850 }}>Quest chest</div>
         <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
           Clear all 3 quests to unlock a one-time XP bonus.
+          {canClaimChest ? <span style={{ marginLeft: 8, opacity: 0.9 }}>(ready — tap to open)</span> : null}
         </div>
         <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ fontSize: 12, opacity: 0.85 }}>
@@ -120,6 +143,13 @@ export function QuestsPage({
           <button
             className={canClaimChest ? 'btnPrimary' : 'btn'}
             disabled={!canClaimChest}
+            aria-label={
+              q.chestClaimedToday
+                ? 'Quest chest claimed'
+                : allDone
+                  ? `Open quest chest for ${CHEST_XP} XP`
+                  : 'Quest chest locked'
+            }
             title={
               q.chestClaimedToday
                 ? 'Already claimed today'

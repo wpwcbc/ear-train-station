@@ -5,6 +5,7 @@ import {
   computeQuestProgress,
   defaultQuestState,
   loadQuestState,
+  msUntilLocalMidnight,
   normalizeQuestStateForYmd,
   saveQuestState,
   ymdFromDate,
@@ -112,4 +113,20 @@ test('saveQuestState writes to ets_quests_v2', () => {
 
   assert.ok(storage.getItem('ets_quests_v2'));
   assert.equal(storage.getItem('ets_quests_v1'), null);
+});
+
+test('msUntilLocalMidnight counts to next local 00:00', () => {
+  const t = new Date('2026-03-01T23:30:00.000+08:00');
+  assert.equal(msUntilLocalMidnight(t), 30 * 60 * 1000);
+
+  const t2 = new Date('2026-03-01T00:00:00.000+08:00');
+  assert.equal(msUntilLocalMidnight(t2), 24 * 60 * 60 * 1000);
+});
+
+test('computeQuestProgress clamps dailyXpGoal to at least 5', () => {
+  // Note: dailyGoalXp=0 means “unset” and defaults to 20.
+  const progress = { ...defaultProgress(), dailyGoalXp: 1, dailyXpToday: 0 };
+  const q = { ...defaultQuestState(), ymd: '2026-03-01' };
+  const c = computeQuestProgress(progress, q);
+  assert.equal(c.dailyXpGoal, 5);
 });
