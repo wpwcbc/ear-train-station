@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Progress } from '../lib/progress';
 import { computeXpWeekSummary } from '../lib/xpWeekSummary';
 
@@ -30,6 +30,12 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
     const days = s.days.map((d) => ({ ...d, label: shortDow(new Date(`${d.ymd}T12:00:00`)) }));
     return { ...s, days };
   }, [progress.dailyXpByYmd]);
+
+  const [selectedYmd, setSelectedYmd] = useState<string | null>(null);
+  const selectedDay = useMemo(() => {
+    if (!selectedYmd) return null;
+    return week.days.find((d) => d.ymd === selectedYmd) || null;
+  }, [selectedYmd, week.days]);
 
   return (
     <div className="page">
@@ -96,35 +102,64 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
           {week.days.map((d) => {
             const h = Math.round((d.xp / week.maxXp) * 68);
             const isToday = d.ymd === ymdFromLocalDate(new Date());
+            const isSelected = d.ymd === selectedYmd;
             return (
               <div key={d.ymd} style={{ display: 'grid', gap: 6, justifyItems: 'center' }}>
-                <div
+                <button
+                  type="button"
+                  onClick={() => setSelectedYmd((cur) => (cur === d.ymd ? null : d.ymd))}
+                  aria-pressed={isSelected}
+                  aria-label={`${d.label} ${d.xp} XP. ${isSelected ? 'Selected.' : 'Tap to select.'}`}
                   title={`${d.ymd}: ${d.xp} XP`}
-                  aria-label={`${d.label} ${d.xp} XP`}
                   style={{
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    background: 'transparent',
+                    border: 'none',
+                    padding: 0,
+                    margin: 0,
+                    cursor: 'pointer',
                     width: '100%',
-                    maxWidth: 18,
-                    height: 68,
-                    borderRadius: 999,
-                    border: '2px solid var(--ink)',
-                    background: '#fff',
-                    overflow: 'hidden',
-                    boxShadow: isToday ? '0 0 0 3px rgba(141, 212, 255, 0.35)' : undefined,
+                    display: 'grid',
+                    justifyItems: 'center',
                   }}
                 >
                   <div
                     style={{
-                      height: h,
-                      marginTop: 68 - h,
-                      background: isToday ? 'linear-gradient(180deg, #7fc9ff, #b6f2d8)' : 'linear-gradient(180deg, #cfeeff, #dff8ee)',
+                      width: '100%',
+                      maxWidth: 18,
+                      height: 68,
+                      borderRadius: 999,
+                      border: '2px solid var(--ink)',
+                      background: '#fff',
+                      overflow: 'hidden',
+                      boxShadow: isSelected
+                        ? '0 0 0 3px rgba(255, 209, 102, 0.45)'
+                        : isToday
+                          ? '0 0 0 3px rgba(141, 212, 255, 0.35)'
+                          : undefined,
                     }}
-                  />
-                </div>
+                  >
+                    <div
+                      style={{
+                        height: h,
+                        marginTop: 68 - h,
+                        background: isToday ? 'linear-gradient(180deg, #7fc9ff, #b6f2d8)' : 'linear-gradient(180deg, #cfeeff, #dff8ee)',
+                      }}
+                    />
+                  </div>
+                </button>
                 <div style={{ fontSize: 11, opacity: 0.7 }}>{d.label}</div>
               </div>
             );
           })}
         </div>
+
+        {selectedDay ? (
+          <div style={{ marginTop: 10, fontSize: 12 }}>
+            <b>{selectedDay.label}</b> ({selectedDay.ymd}) — <b>{selectedDay.xp} XP</b>
+          </div>
+        ) : null}
 
         <div style={{ marginTop: 10, fontSize: 12, opacity: 0.75 }}>
           {week.prevTotalXp > 0 ? (
