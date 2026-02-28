@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useNow } from '../hooks/useNow';
 import type { Progress } from '../lib/progress';
 import { computeXpPace, leagueWeekWindow, loadLeagueState, makeLeagueTable, msUntilLeagueWeekEnds } from '../lib/league';
 
@@ -23,7 +24,8 @@ export function LeaguePage({ progress }: { progress: Progress }) {
   const weeklyXp = Math.max(0, progress.xp - league.weekStartXp);
   const weekId = league.weekId;
 
-  const now = new Date();
+  // Tick the countdown (Duolingo-ish). Coarse cadence keeps it cheap.
+  const now = useNow(30_000);
   const { end } = leagueWeekWindow(now);
   const msLeft = msUntilLeagueWeekEnds(now);
   const endsIn = formatEndsIn(msLeft);
