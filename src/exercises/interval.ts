@@ -1,81 +1,87 @@
-import { mulberry32 } from '../lib/rng';
-import { STABLE_REGISTER_MAX_MIDI, STABLE_REGISTER_MIN_MIDI } from '../lib/registerPolicy';
+import { mulberry32 } from "../lib/rng.ts";
+import {
+  DEFAULT_WIDE_REGISTER_MAX_MIDI,
+  STABLE_REGISTER_MAX_MIDI,
+  STABLE_REGISTER_MIN_MIDI,
+  WIDE_REGISTER_MIN_MIDI,
+} from "../lib/registerPolicy.ts";
 
 export type IntervalQuestion = {
   id: string;
-  kind: 'interval';
+  kind: "interval";
   rootMidi: number;
   targetMidi: number;
   semitones: number;
 };
 
 export type IntervalLabel =
-  | 'P1'
-  | 'm2'
-  | 'M2'
-  | 'm3'
-  | 'M3'
-  | 'P4'
-  | 'TT'
-  | 'P5'
-  | 'm6'
-  | 'M6'
-  | 'm7'
-  | 'M7'
-  | 'P8';
+  | "P1"
+  | "m2"
+  | "M2"
+  | "m3"
+  | "M3"
+  | "P4"
+  | "TT"
+  | "P5"
+  | "m6"
+  | "M6"
+  | "m7"
+  | "M7"
+  | "P8";
 
 export const SEMITONE_TO_LABEL: Record<number, IntervalLabel> = {
-  0: 'P1',
-  1: 'm2',
-  2: 'M2',
-  3: 'm3',
-  4: 'M3',
-  5: 'P4',
-  6: 'TT',
-  7: 'P5',
-  8: 'm6',
-  9: 'M6',
-  10: 'm7',
-  11: 'M7',
-  12: 'P8',
+  0: "P1",
+  1: "m2",
+  2: "M2",
+  3: "m3",
+  4: "M3",
+  5: "P4",
+  6: "TT",
+  7: "P5",
+  8: "m6",
+  9: "M6",
+  10: "m7",
+  11: "M7",
+  12: "P8",
 };
 
-export const LABEL_TO_SEMITONE: Record<IntervalLabel, number> = Object.fromEntries(
-  Object.entries(SEMITONE_TO_LABEL).map(([k, v]) => [v, Number(k)]),
-) as Record<IntervalLabel, number>;
+export const LABEL_TO_SEMITONE: Record<IntervalLabel, number> =
+  Object.fromEntries(
+    Object.entries(SEMITONE_TO_LABEL).map(([k, v]) => [v, Number(k)]),
+  ) as Record<IntervalLabel, number>;
 
 export function intervalLabel(semitones: number): IntervalLabel {
-  return SEMITONE_TO_LABEL[Math.max(0, Math.min(12, semitones))] ?? 'P1';
+  return SEMITONE_TO_LABEL[Math.max(0, Math.min(12, semitones))] ?? "P1";
 }
 
 export function intervalLongName(l: IntervalLabel): string {
   switch (l) {
-    case 'P1':
-      return 'Perfect unison';
-    case 'm2':
-      return 'Minor 2nd';
-    case 'M2':
-      return 'Major 2nd';
-    case 'm3':
-      return 'Minor 3rd';
-    case 'M3':
-      return 'Major 3rd';
-    case 'P4':
-      return 'Perfect 4th';
-    case 'TT':
-      return 'Tritone';
-    case 'P5':
-      return 'Perfect 5th';
-    case 'm6':
-      return 'Minor 6th';
-    case 'M6':
-      return 'Major 6th';
-    case 'm7':
-      return 'Minor 7th';
-    case 'M7':
-      return 'Major 7th';
-    case 'P8':
-      return 'Perfect octave';
+    case "P1":
+      return "Perfect unison";
+    case "m2":
+      return "Minor 2nd";
+    case "M2":
+      return "Major 2nd";
+    case "m3":
+      return "Minor 3rd";
+    case "M3":
+      return "Major 3rd";
+    case "P4":
+      return "Perfect 4th";
+    case "TT":
+      return "Tritone";
+    case "P5":
+      return "Perfect 5th";
+    case "m6":
+      return "Minor 6th";
+    case "M6":
+      return "Major 6th";
+    case "m7":
+      return "Minor 7th";
+    case "M7":
+      return "Major 7th";
+    case "P8":
+      return "Perfect octave";
   }
 }
 
@@ -94,7 +100,7 @@ export function makeIntervalQuestion(opts: {
 
   return {
     id: `iq_seed_${opts.seed}`,
-    kind: 'interval',
+    kind: "interval",
     rootMidi,
     targetMidi: rootMidi + semitones,
     semitones,
@@ -103,7 +109,7 @@ export function makeIntervalQuestion(opts: {
 
 export type IntervalLabelQuestion = {
   id: string;
-  kind: 'intervalLabel';
+  kind: "intervalLabel";
   rootMidi: number;
   targetMidi: number;
   semitones: number;
@@ -112,11 +118,32 @@ export type IntervalLabelQuestion = {
   prompt: string;
 };
 
-const ALL_INTERVAL_LABELS: IntervalLabel[] = ['P1', 'm2', 'M2', 'm3', 'M3', 'P4', 'TT', 'P5', 'm6', 'M6', 'm7', 'M7', 'P8'];
+const ALL_INTERVAL_LABELS: IntervalLabel[] = [
+  "P1",
+  "m2",
+  "M2",
+  "m3",
+  "M3",
+  "P4",
+  "TT",
+  "P5",
+  "m6",
+  "M6",
+  "m7",
+  "M7",
+  "P8",
+];
 
-function buildIntervalLabelChoices(opts: { seed: number; correct: IntervalLabel; choiceCount: number }) {
+function buildIntervalLabelChoices(opts: {
+  seed: number;
+  correct: IntervalLabel;
+  choiceCount: number;
+}) {
   const rng = mulberry32(opts.seed);
-  const want = Math.max(2, Math.min(opts.choiceCount, ALL_INTERVAL_LABELS.length));
+  const want = Math.max(
+    2,
+    Math.min(opts.choiceCount, ALL_INTERVAL_LABELS.length),
+  );
 
   // pick distractors by shuffling label list deterministically
   const pool = ALL_INTERVAL_LABELS.filter((x) => x !== opts.correct);
@@ -137,6 +164,8 @@ function buildIntervalLabelChoices(opts: { seed: number; correct: IntervalLabel;
 
 export function makeIntervalLabelQuestion(opts: {
   seed: number;
+  /** Defaults to 'stable' to preserve older call-sites. Use 'wide' for tests/exams/drills. */
+  registerPolicy?: "stable" | "wide";
   rootMinMidi?: number;
   rootMaxMidi?: number;
   minSemitones?: number;
@@ -147,8 +176,23 @@ export function makeIntervalLabelQuestion(opts: {
 }): IntervalLabelQuestion {
   const rng = mulberry32(opts.seed);
 
-  const rootMin = opts.rootMinMidi ?? STABLE_REGISTER_MIN_MIDI;
-  const rootMax = opts.rootMaxMidi ?? Math.max(rootMin, STABLE_REGISTER_MAX_MIDI);
+  const policy = opts.registerPolicy ?? "stable";
+
+  const defaultRootMin =
+    policy === "wide" ? WIDE_REGISTER_MIN_MIDI : STABLE_REGISTER_MIN_MIDI;
+  const defaultRootMax =
+    policy === "wide"
+      ? Math.max(defaultRootMin, DEFAULT_WIDE_REGISTER_MAX_MIDI)
+      : Math.max(defaultRootMin, STABLE_REGISTER_MAX_MIDI);
+
+  const rootMin = opts.rootMinMidi ?? defaultRootMin;
+  const rootMax = opts.rootMaxMidi ?? defaultRootMax;
+
+  if (policy === "wide" && rootMin < WIDE_REGISTER_MIN_MIDI) {
+    throw new Error(
+      `makeIntervalLabelQuestion: wide register policy requires rootMinMidi >= ${WIDE_REGISTER_MIN_MIDI} (G2), got ${rootMin}`,
+    );
+  }
   const rootSpan = Math.max(1, rootMax - rootMin + 1);
   const rootMidi = rootMin + Math.floor(rng() * rootSpan);
 
@@ -170,17 +214,21 @@ export function makeIntervalLabelQuestion(opts: {
   const targetMidi = rootMidi + semitones;
   const correct = intervalLabel(semitones);
 
-  const choices = buildIntervalLabelChoices({ seed: opts.seed, correct, choiceCount: opts.choiceCount ?? 6 });
+  const choices = buildIntervalLabelChoices({
+    seed: opts.seed,
+    correct,
+    choiceCount: opts.choiceCount ?? 6,
+  });
 
   return {
     id: `ilq_seed_${opts.seed}`,
-    kind: 'intervalLabel',
+    kind: "intervalLabel",
     rootMidi,
     targetMidi,
     semitones,
     correct,
     choices,
-    prompt: 'What interval is this? (listen to root → target)',
+    prompt: "What interval is this? (listen to root → target)",
   };
 }
 
@@ -191,23 +239,27 @@ export function makeIntervalLabelReviewQuestion(opts: {
   choiceCount?: number;
 }): IntervalLabelQuestion {
   const correct = intervalLabel(opts.semitones);
-  const choices = buildIntervalLabelChoices({ seed: opts.seed, correct, choiceCount: opts.choiceCount ?? 6 });
+  const choices = buildIntervalLabelChoices({
+    seed: opts.seed,
+    correct,
+    choiceCount: opts.choiceCount ?? 6,
+  });
 
   return {
     id: `ilq_review_${opts.rootMidi}_${opts.semitones}_${opts.seed}`,
-    kind: 'intervalLabel',
+    kind: "intervalLabel",
     rootMidi: opts.rootMidi,
     targetMidi: opts.rootMidi + opts.semitones,
     semitones: opts.semitones,
     correct,
     choices,
-    prompt: 'Review: what interval is this? (listen to root → target)',
+    prompt: "Review: what interval is this? (listen to root → target)",
   };
 }
 
 export type IntervalDeriveQuestion = {
   id: string;
-  kind: 'intervalDerive';
+  kind: "intervalDerive";
   base: IntervalLabel;
   delta: -1 | 1;
   correct: IntervalLabel;
@@ -215,10 +267,17 @@ export type IntervalDeriveQuestion = {
   prompt: string;
 };
 
-function buildDeriveChoices(opts: { seed: number; correct: IntervalLabel; choiceCount: number }) {
+function buildDeriveChoices(opts: {
+  seed: number;
+  correct: IntervalLabel;
+  choiceCount: number;
+}) {
   // Bias distractors toward “nearby” interval labels to teach semitone adjacency.
   const rng = mulberry32(opts.seed);
-  const want = Math.max(2, Math.min(opts.choiceCount, ALL_INTERVAL_LABELS.length));
+  const want = Math.max(
+    2,
+    Math.min(opts.choiceCount, ALL_INTERVAL_LABELS.length),
+  );
 
   const correctSemi = LABEL_TO_SEMITONE[opts.correct];
   const near: IntervalLabel[] = [];
@@ -227,7 +286,9 @@ function buildDeriveChoices(opts: { seed: number; correct: IntervalLabel; choice
     if (s >= 0 && s <= 12) near.push(intervalLabel(s));
   }
 
-  const pool = Array.from(new Set([...near, ...ALL_INTERVAL_LABELS])).filter((x) => x !== opts.correct);
+  const pool = Array.from(new Set([...near, ...ALL_INTERVAL_LABELS])).filter(
+    (x) => x !== opts.correct,
+  );
 
   // shuffle pool
   for (let i = pool.length - 1; i > 0; i--) {
@@ -245,7 +306,10 @@ function buildDeriveChoices(opts: { seed: number; correct: IntervalLabel; choice
   return choices;
 }
 
-export function makeIntervalDeriveQuestion(opts: { seed: number; choiceCount?: number }): IntervalDeriveQuestion {
+export function makeIntervalDeriveQuestion(opts: {
+  seed: number;
+  choiceCount?: number;
+}): IntervalDeriveQuestion {
   const rng = mulberry32(opts.seed);
 
   // Pick a base semitone where ±1 stays within 0..12.
@@ -256,14 +320,18 @@ export function makeIntervalDeriveQuestion(opts: { seed: number; choiceCount?: n
   const base = intervalLabel(baseSemi);
   const correct = intervalLabel(targetSemi);
 
-  const dirWord = delta === 1 ? 'larger' : 'smaller';
+  const dirWord = delta === 1 ? "larger" : "smaller";
   const prompt = `If ${base} becomes 1 semitone ${dirWord}, what interval is it?`;
 
-  const choices = buildDeriveChoices({ seed: opts.seed * 33 + 7, correct, choiceCount: opts.choiceCount ?? 4 });
+  const choices = buildDeriveChoices({
+    seed: opts.seed * 33 + 7,
+    correct,
+    choiceCount: opts.choiceCount ?? 4,
+  });
 
   return {
     id: `idq_seed_${opts.seed}`,
-    kind: 'intervalDerive',
+    kind: "intervalDerive",
     base,
     delta,
     correct,
