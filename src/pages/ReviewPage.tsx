@@ -40,6 +40,8 @@ import { mulberry32 } from '../lib/rng';
 import { buildDrillQueue, insertDrillRetry } from '../lib/drillQueue';
 import { reviewSessionSignature } from '../lib/reviewSession';
 import { recordReviewSession } from '../lib/reviewSessionHistory';
+import { loadReviewSessionHistory } from '../lib/reviewSessionHistory';
+import { computeReviewHistoryStats } from '../lib/reviewHistoryStats';
 
 function msToHuman(ms: number): string {
   if (ms <= 0) return 'now';
@@ -256,6 +258,12 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   const sessionAttempts = sessionRight + sessionWrong;
   const sessionAccuracyPct = sessionAttempts > 0 ? Math.round((100 * sessionRight) / sessionAttempts) : 0;
   const topMisses = useMemo(() => topSessionMisses(sessionMisses, 3), [sessionMisses]);
+
+  const reviewHistoryStats = useMemo(() => {
+    // Best-effort: small “trend” context for the end-of-session summary.
+    const entries = loadReviewSessionHistory();
+    return computeReviewHistoryStats(entries);
+  }, [sessionSig, doneCount]);
 
   const topMissDrillTo = useMemo(() => {
     if (topMisses.length === 0) return null as string | null;
@@ -1893,6 +1901,12 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               <div style={{ marginTop: 6, fontSize: 12, opacity: 0.82 }}>
                 Daily goal: <b>{Math.min(dailyToday, dailyGoal)}</b>/{dailyGoal} XP{dailyDone ? ' · reached' : ''}
               </div>
+              {reviewHistoryStats.count >= 3 ? (
+                <div style={{ marginTop: 6, fontSize: 12, opacity: 0.82 }} title="Trend based on your recent non-drill sessions">
+                  Recent avg accuracy: <b>{Math.round(reviewHistoryStats.avg10 * 100)}%</b> (last 10) ·{' '}
+                  <span style={{ opacity: 0.9 }}>{Math.round(reviewHistoryStats.avg50 * 100)}%</span> (last 50)
+                </div>
+              ) : null}
               <div
                 aria-label="Daily goal progress"
                 style={{ marginTop: 6, height: 8, borderRadius: 999, overflow: 'hidden', background: 'rgba(255,255,255,0.08)' }}
