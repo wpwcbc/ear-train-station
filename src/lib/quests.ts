@@ -1,4 +1,5 @@
 import type { Progress } from './progress';
+import { recordQuestChestOpened } from './streak.ts';
 
 export type QuestState = {
   version: 2;
@@ -171,4 +172,7 @@ export function bumpStationCompleted(n = 1) {
 
 export function markChestClaimed() {
   updateQuestState((q) => ({ ...q, chestClaimedToday: true }));
+  // Opening the chest is our canonical “streak action” (anti-farm).
+  // Stored separately so quests can reset freely each day.
+  recordQuestChestOpened(new Date());
 }

@@ -12,6 +12,7 @@ import {
   type QuestState,
 } from '../lib/quests';
 import { useMistakeStats } from '../lib/hooks/useMistakeStats';
+import { loadStreakState, STREAK_CHANGED_EVENT, type StreakStateV1 } from '../lib/streak';
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -43,19 +44,31 @@ export function QuestsPage({
 }) {
   const stats = useMistakeStats();
   const [q, setQ] = useState<QuestState>(() => loadQuestState());
+  const [streak, setStreak] = useState<StreakStateV1>(() => loadStreakState());
   const [toast, setToast] = useState<null | { text: string }>(null);
 
   useEffect(() => {
-    function bump() {
+    function bumpQuests() {
       setQ(loadQuestState());
     }
-    window.addEventListener('focus', bump);
-    window.addEventListener('storage', bump);
-    window.addEventListener(QUESTS_CHANGED_EVENT, bump);
+    function bumpStreak() {
+      setStreak(loadStreakState());
+    }
+
+    function bumpAll() {
+      bumpQuests();
+      bumpStreak();
+    }
+
+    window.addEventListener('focus', bumpAll);
+    window.addEventListener('storage', bumpAll);
+    window.addEventListener(QUESTS_CHANGED_EVENT, bumpQuests);
+    window.addEventListener(STREAK_CHANGED_EVENT, bumpStreak);
     return () => {
-      window.removeEventListener('focus', bump);
-      window.removeEventListener('storage', bump);
-      window.removeEventListener(QUESTS_CHANGED_EVENT, bump);
+      window.removeEventListener('focus', bumpAll);
+      window.removeEventListener('storage', bumpAll);
+      window.removeEventListener(QUESTS_CHANGED_EVENT, bumpQuests);
+      window.removeEventListener(STREAK_CHANGED_EVENT, bumpStreak);
     };
   }, []);
 
@@ -105,6 +118,14 @@ export function QuestsPage({
           <p className="sub">
             Daily mini-goals to keep the streak alive. Small on purpose — consistency wins. · Resets in <b>{resetsIn}</b>
           </p>
+          <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span className="pill" title="Days in a row you opened the Quest chest">
+              Streak: <b>{streak.streak}</b> day{streak.streak === 1 ? '' : 's'}
+            </span>
+            <span className="pill" title="Your best Quest streak so far">
+              Best: <b>{streak.best}</b>
+            </span>
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <Link className={stats.due > 0 ? 'btnPrimary' : 'btn'} to="/review">
