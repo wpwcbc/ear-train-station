@@ -28,7 +28,7 @@ export function stableRegisterWhiteMidis() {
 // Wide register: tests/exams/drills should not go below this.
 // MIDI 43 == G2
 export const WIDE_REGISTER_MIN_MIDI = 43;
-export const WIDE_REGISTER_RANGE_TEXT = 'G2+';
+export const WIDE_REGISTER_RANGE_TEXT = '≥ G2';
 
 // Keep some headroom for wider prompts while staying realistic on small speakers.
 // (Not a strict rule; stations can tighten max as needed.)

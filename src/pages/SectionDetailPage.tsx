@@ -69,7 +69,7 @@ export function SectionDetailPage({ progress, setProgress: _setProgress }: { pro
       <SectionRoute sectionId={id} nodes={nodes} progress={progress} />
 
       <div className="sub" style={{ marginTop: 10 }}>
-        Tip: tap a station on the line to see details. Lessons stay in a stable register; tests/exams go wider (≥ {WIDE_REGISTER_RANGE_TEXT}).
+        Tip: tap a station on the line to see details. Lessons stay in a stable register; tests/exams go wider ({WIDE_REGISTER_RANGE_TEXT}).
       </div>
     </div>
   );

@@ -143,7 +143,7 @@ Implementation notes:
 ### Register rules
 
 - **Lessons:** stable register (one octave around middle C).
-- **Tests / exams / drills:** wider register (and **never below G2**).
+- **Tests / exams / drills:** wider register (and **never below G2** — i.e. **≥ G2**).
 
 Source of truth lives in `src/lib/registerPolicy.ts`:
 - `STABLE_REGISTER_MIN_MIDI` / `STABLE_REGISTER_MAX_MIDI`
