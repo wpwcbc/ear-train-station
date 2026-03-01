@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Progress } from '../lib/progress';
+import { loadStreakState, STREAK_CHANGED_EVENT, type StreakStateV1 } from '../lib/streak';
 import { computeXpWeekSummary } from '../lib/xpWeekSummary';
 
 function clamp(n: number, min: number, max: number) {
@@ -18,6 +19,22 @@ function shortDow(d: Date) {
 }
 
 export function ProfilePage({ progress }: { progress: Progress; setProgress: (p: Progress) => void }) {
+  const [questStreak, setQuestStreak] = useState<StreakStateV1>(() => loadStreakState());
+
+  useEffect(() => {
+    function bump() {
+      setQuestStreak(loadStreakState());
+    }
+    window.addEventListener('focus', bump);
+    window.addEventListener('storage', bump);
+    window.addEventListener(STREAK_CHANGED_EVENT, bump);
+    return () => {
+      window.removeEventListener('focus', bump);
+      window.removeEventListener('storage', bump);
+      window.removeEventListener(STREAK_CHANGED_EVENT, bump);
+    };
+  }, []);
+
   const goal = clamp(progress.dailyGoalXp || 20, 5, 200);
   const today = Math.max(0, progress.dailyXpToday || 0);
   const pct = useMemo(() => {
@@ -44,16 +61,32 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
 
       <div className="callout">
         <div style={{ display: 'grid', gap: 10 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
             <div style={{ border: '3px solid var(--ink)', borderRadius: 16, padding: 12, background: 'var(--card)' }}>
               <div style={{ fontSize: 12, color: 'var(--muted)' }}>Total XP</div>
               <div style={{ fontSize: 22, fontWeight: 850 }}>{progress.xp}</div>
             </div>
             <div style={{ border: '3px solid var(--ink)', borderRadius: 16, padding: 12, background: 'var(--card)' }}>
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>XP streak</div>
+              <div style={{ fontSize: 12, color: 'var(--muted)' }}>XP streak (study)</div>
               <div style={{ fontSize: 22, fontWeight: 850 }}>
                 {progress.streakDays} day{progress.streakDays === 1 ? '' : 's'}
               </div>
+            </div>
+            <div
+              style={{ border: '3px solid var(--ink)', borderRadius: 16, padding: 12, background: 'var(--card)' }}
+              title="Days in a row you opened the Quest chest"
+            >
+              <div style={{ fontSize: 12, color: 'var(--muted)' }}>Quest streak</div>
+              <div style={{ fontSize: 22, fontWeight: 850 }}>
+                {questStreak.streak} day{questStreak.streak === 1 ? '' : 's'}
+              </div>
+            </div>
+            <div
+              style={{ border: '3px solid var(--ink)', borderRadius: 16, padding: 12, background: 'var(--card)' }}
+              title="Your best Quest streak so far"
+            >
+              <div style={{ fontSize: 12, color: 'var(--muted)' }}>Quest best</div>
+              <div style={{ fontSize: 22, fontWeight: 850 }}>{questStreak.best}</div>
             </div>
             <div style={{ border: '3px solid var(--ink)', borderRadius: 16, padding: 12, background: 'var(--card)' }}>
               <div style={{ fontSize: 12, color: 'var(--muted)' }}>Today</div>
@@ -61,6 +94,10 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
                 {today}/{goal} XP
               </div>
             </div>
+          </div>
+
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+            Quest streak only counts when you open the <b>Quest chest</b> (anti-farm).
           </div>
 
           <div>
