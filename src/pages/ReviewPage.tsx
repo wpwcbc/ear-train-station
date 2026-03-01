@@ -37,6 +37,7 @@ import { MAJOR_KEYS } from '../lib/theory/major';
 import { DEFAULT_WIDE_REGISTER_MAX_MIDI, WIDE_REGISTER_MIN_MIDI, WIDE_REGISTER_RANGE_TEXT } from '../lib/registerPolicy';
 import { STATIONS } from '../lib/stations';
 import { mulberry32 } from '../lib/rng';
+import { buildDrillQueue, insertDrillRetry } from '../lib/drillQueue';
 import { reviewSessionSignature } from '../lib/reviewSession';
 import { recordReviewSession } from '../lib/reviewSessionHistory';
 
@@ -287,7 +288,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     recordedSessionSigRef.current = null;
 
     // Drill-only state
-    setDrillIndex(0);
+    setDrillQueue([]);
+    setDrillPos(0);
     setDrillCorrect(0);
     setDrillWrong(0);
 
@@ -425,57 +427,87 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   }, [drillMode, drillKind, drillQualRaw, triadStats]);
 
   const DRILL_TOTAL = sessionN;
-  const [drillIndex, setDrillIndex] = useState(0);
+  const [drillQueue, setDrillQueue] = useState<string[]>([]);
+  const [drillPos, setDrillPos] = useState(0);
   const [drillCorrect, setDrillCorrect] = useState(0);
   const [drillWrong, setDrillWrong] = useState(0);
 
   useEffect(() => {
     if (!drillMode) return;
+
     setResult('idle');
-    setDrillIndex(0);
     setDrillCorrect(0);
     setDrillWrong(0);
+    setDrillPos(0);
+
+    if (drillKind === 'interval') {
+      setDrillQueue(
+        buildDrillQueue({
+          kind: 'interval',
+          focus: drillFocusSemitones,
+          total: DRILL_TOTAL,
+          seed: seed * 10_000 + 7001,
+        }),
+      );
+      return;
+    }
+
+    setDrillQueue(
+      buildDrillQueue({
+        kind: 'triad',
+        focus: drillFocusQualities,
+        total: DRILL_TOTAL,
+        seed: seed * 10_000 + 7002,
+      }),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drillMode, drillKind, drillSemisRaw, drillQualRaw, stationFilter, sessionN]);
+
+  const drillActiveId = drillMode ? drillQueue[drillPos] ?? null : null;
 
   const drillIlQ = useMemo(() => {
     if (!drillMode) return null;
     if (drillKind !== 'interval') return null;
-    if (drillFocusSemitones.length === 0) return null;
-    if (drillIndex >= DRILL_TOTAL) return null;
+    if (!drillActiveId) return null;
+    if (!drillActiveId.startsWith('interval:')) return null;
+
+    const semitones = Number(drillActiveId.slice('interval:'.length));
+    if (!Number.isFinite(semitones)) return null;
+
     // Tests/exams: wide register (>= G2). Keep drills aligned with that.
     return makeIntervalLabelQuestion({
-      seed: seed * 10_000 + 7000 + drillIndex,
+      seed: seed * 10_000 + 7000 + drillPos,
       rootMinMidi: WIDE_REGISTER_MIN_MIDI, // G2
       rootMaxMidi: DEFAULT_WIDE_REGISTER_MAX_MIDI,
-      allowedSemitones: drillFocusSemitones,
+      allowedSemitones: [semitones],
       choiceCount: 6,
     });
-  }, [drillMode, drillKind, drillFocusSemitones, drillIndex, seed]);
+  }, [drillMode, drillKind, drillActiveId, drillPos, seed]);
 
   const drillTriadQ = useMemo(() => {
     if (!drillMode) return null;
     if (drillKind !== 'triad') return null;
-    if (drillFocusQualities.length === 0) return null;
-    if (drillIndex >= DRILL_TOTAL) return null;
+    if (!drillActiveId) return null;
+    if (!drillActiveId.startsWith('triad:')) return null;
+
+    const quality = drillActiveId.slice('triad:'.length) as TriadQuality;
+    if (!(quality === 'major' || quality === 'minor' || quality === 'diminished')) return null;
 
     // Tests/exams: wide register (>= G2). Keep drills aligned with that.
     const maxTriadInterval = 7;
     const span = Math.max(1, (DEFAULT_WIDE_REGISTER_MAX_MIDI - maxTriadInterval) - WIDE_REGISTER_MIN_MIDI + 1);
 
-    // Use deterministic RNG (instead of modulo cycling) so roots feel less “patterny” across sessions.
-    const rng = mulberry32(seed * 10_000 + 7100 + drillIndex);
+    // Use deterministic RNG so roots feel less “patterny” across sessions.
+    const rng = mulberry32(seed * 10_000 + 7100 + drillPos);
     const rootMidi = WIDE_REGISTER_MIN_MIDI + Math.floor(rng() * span);
 
-    const q = drillFocusQualities[(seed + drillIndex) % drillFocusQualities.length] ?? drillFocusQualities[0]!;
-
     return makeTriadQualityReviewQuestion({
-      seed: seed * 10_000 + 7200 + drillIndex,
+      seed: seed * 10_000 + 7200 + drillPos,
       rootMidi,
-      quality: q,
+      quality,
       choiceCount: 3,
     });
-  }, [drillMode, drillKind, drillFocusQualities, drillIndex, seed, DRILL_TOTAL]);
+  }, [drillMode, drillKind, drillActiveId, drillPos, seed]);
 
   const active = (drillMode
     ? undefined
@@ -486,7 +518,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   // Persist a lightweight session history (best-effort) once the session completes.
   useEffect(() => {
     const attemptsNonDrill = sessionRight + sessionWrong + sessionSkip;
-    const completed = drillMode ? drillIndex >= DRILL_TOTAL && (drillCorrect + drillWrong > 0) : !active && attemptsNonDrill > 0;
+    const completed = drillMode ? drillPos >= drillQueue.length && (drillCorrect + drillWrong > 0) : !active && attemptsNonDrill > 0;
     if (!completed) return;
     if (recordedSessionSigRef.current === sessionSig) return;
 
@@ -515,8 +547,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
     stationFilter,
     sessionN,
     sessionSig,
-    DRILL_TOTAL,
-    drillIndex,
+    drillQueue.length,
+    drillPos,
     drillCorrect,
     drillWrong,
     sessionRight,
@@ -732,11 +764,24 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
       }
     }
 
+    // Duolingo-ish: if you miss something, you'll see it again soon.
+    if (outcome === 'wrong' && drillActiveId) {
+      setDrillQueue((q) =>
+        insertDrillRetry({
+          queue: q,
+          pos: drillPos,
+          id: drillActiveId,
+          afterSteps: 3,
+          maxRepeatsInQueue: 3,
+        }),
+      );
+    }
+
     // Advance immediately; drills are fast + continuous.
     setTimeout(() => {
       setResult('idle');
       setSeed((x) => x + 1);
-      setDrillIndex((i) => i + 1);
+      setDrillPos((p) => p + 1);
     }, 80);
   }
 
@@ -800,16 +845,14 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
   // mark it as done once the user reaches a natural completion state.
   // (So the Practice Hub checkmark doesn't depend on a specific exit link.)
   const workoutComplete =
-    (drillMode &&
-      ((drillKind === 'interval' && drillFocusSemitones.length > 0 && drillIndex >= DRILL_TOTAL && !drillIlQ) ||
-        (drillKind === 'triad' && drillFocusQualities.length > 0 && drillIndex >= DRILL_TOTAL && !drillTriadQ))) ||
+    (drillMode && drillQueue.length > 0 && drillPos >= drillQueue.length && drillCorrect + drillWrong > 0) ||
     (!drillMode && warmupMode && !active && warmupQueue.length > 0 && doneCount > 0) ||
     (!drillMode && !warmupMode && !active && dueCount === 0 && doneCount > 0);
 
   // “End screen” completion state (Duolingo-ish): only show once the user actually attempted something.
   const attemptsNonDrill = sessionRight + sessionWrong + sessionSkip;
   const sessionComplete = drillMode
-    ? drillIndex >= DRILL_TOTAL && drillCorrect + drillWrong > 0
+    ? drillQueue.length > 0 && drillPos >= drillQueue.length && drillCorrect + drillWrong > 0
     : !active && attemptsNonDrill > 0;
 
   const sessionXpTotal = sessionXp + workoutBonusAwarded;
@@ -887,7 +930,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
         if (drillKind === 'triad' && !drillTriadQ) return;
         setResult('idle');
         setSeed((x) => x + 1);
-        setDrillIndex((i) => i + 1);
+        setDrillPos((p) => p + 1);
         return;
       }
 
@@ -975,8 +1018,8 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
           </div>
           {drillMode ? (
             <>
-              <div>
-                Progress: {Math.min(drillIndex, DRILL_TOTAL)} / {DRILL_TOTAL}
+              <div title={drillQueue.length > DRILL_TOTAL ? `Includes ${drillQueue.length - DRILL_TOTAL} retry(s) from misses.` : undefined}>
+                Progress: {Math.min(drillPos, drillQueue.length)} / {drillQueue.length || DRILL_TOTAL}
               </div>
               <div>
                 Score: {drillCorrect} ✓ · {drillWrong} ✗
@@ -1028,7 +1071,7 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
               if (drillMode) {
                 setResult('idle');
                 setSeed((x) => x + 1);
-                setDrillIndex(0);
+                setDrillPos(0);
                 setDrillCorrect(0);
                 setDrillWrong(0);
                 return;
@@ -1043,10 +1086,11 @@ export function ReviewPage({ progress, setProgress }: { progress: Progress; setP
             aria-keyshortcuts="Backspace"
             onClick={() => {
               if (drillMode) {
-                if (!drillIlQ) return;
+                if (drillKind === 'interval' && !drillIlQ) return;
+                if (drillKind === 'triad' && !drillTriadQ) return;
                 setResult('idle');
                 setSeed((x) => x + 1);
-                setDrillIndex((i) => i + 1);
+                setDrillPos((p) => p + 1);
                 return;
               }
               if (!active) return;
