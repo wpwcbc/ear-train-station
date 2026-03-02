@@ -1,7 +1,7 @@
-import { mulberry32, shuffle } from '../lib/rng';
-import { stableTonicMidi } from '../lib/registerPolicy';
-import { MAJOR_KEYS, PC } from '../lib/theory/major';
-import { buildDiatonicTriadMidis } from './diatonicTriad';
+import { mulberry32, shuffle } from '../lib/rng.ts';
+import { assertWideRegisterFloor, stableTonicMidi } from '../lib/registerPolicy.ts';
+import { MAJOR_KEYS, PC } from '../lib/theory/major.ts';
+import { buildDiatonicTriadMidis } from './diatonicTriad.ts';
 
 export type FunctionFamily = 'tonic' | 'subdominant' | 'dominant';
 
@@ -71,6 +71,7 @@ export function makeFunctionFamilyQuestion(opts: {
     (opts.tonicMinMidi != null && opts.tonicMaxMidi != null
       ? // Pick a tonic in range but keep correct pitch-class.
         (() => {
+          assertWideRegisterFloor({ label: 'makeFunctionFamilyQuestion', minMidi: opts.tonicMinMidi! });
           const min = opts.tonicMinMidi;
           const max = opts.tonicMaxMidi;
           const span = Math.max(0, max - min);

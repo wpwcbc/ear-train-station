@@ -30,6 +30,18 @@ export function stableRegisterWhiteMidis() {
 export const WIDE_REGISTER_MIN_MIDI = 43;
 export const WIDE_REGISTER_RANGE_TEXT = '≥ G2';
 
+/**
+ * Runtime guardrail: any *wide* (test/exam/review/drill) prompt should not dip below the floor.
+ * Prefer throwing early so we don't silently ship “too-low” prompts.
+ */
+export function assertWideRegisterFloor(opts: { label: string; minMidi: number }) {
+  if (Math.round(opts.minMidi) < WIDE_REGISTER_MIN_MIDI) {
+    throw new Error(
+      `${opts.label}: wide register policy requires minMidi >= ${WIDE_REGISTER_MIN_MIDI} (G2), got ${opts.minMidi}`,
+    );
+  }
+}
+
 // Keep some headroom for wider prompts while staying realistic on small speakers.
 // (Not a strict rule; stations can tighten max as needed.)
 export const DEFAULT_WIDE_REGISTER_MAX_MIDI = 72; // C5

@@ -1,7 +1,12 @@
-import { mulberry32, shuffle } from '../lib/rng';
-import { DEFAULT_WIDE_REGISTER_MAX_MIDI, WIDE_REGISTER_MIN_MIDI, stableTonicMidi } from '../lib/registerPolicy';
-import { MAJOR_KEYS, MAJOR_OFFSETS, PC } from '../lib/theory/major';
-import type { TriadQuality } from './triad';
+import { mulberry32, shuffle } from '../lib/rng.ts';
+import {
+  assertWideRegisterFloor,
+  DEFAULT_WIDE_REGISTER_MAX_MIDI,
+  WIDE_REGISTER_MIN_MIDI,
+  stableTonicMidi,
+} from '../lib/registerPolicy.ts';
+import { MAJOR_KEYS, MAJOR_OFFSETS, PC } from '../lib/theory/major.ts';
+import type { TriadQuality } from './triad.ts';
 
 export type DiatonicTriadQuestion = {
   id: string;
@@ -76,6 +81,9 @@ export function makeDiatonicTriadQualityQuestion(opts: {
 
   let tonicMidi: number;
   if (mode === 'test') {
+    if (opts.tonicMinMidi != null) {
+      assertWideRegisterFloor({ label: 'makeDiatonicTriadQualityQuestion', minMidi: opts.tonicMinMidi });
+    }
     const minTonic = opts.tonicMinMidi ?? WIDE_REGISTER_MIN_MIDI; // G2
     const maxTonic = opts.tonicMaxMidi ?? Math.min(65, DEFAULT_WIDE_REGISTER_MAX_MIDI); // F4-ish
     // Choose a tonic in [minTonic, maxTonic] while respecting the key pitch-class.

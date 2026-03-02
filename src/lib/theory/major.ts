@@ -1,4 +1,4 @@
-import { DEFAULT_WIDE_REGISTER_MAX_MIDI, WIDE_REGISTER_MIN_MIDI, stableTonicMidi } from '../registerPolicy';
+import { DEFAULT_WIDE_REGISTER_MAX_MIDI, WIDE_REGISTER_MIN_MIDI, stableTonicMidi } from '../registerPolicy.ts';
 
 export const MAJOR_KEYS = [
   { key: 'C', scale: ['C', 'D', 'E', 'F', 'G', 'A', 'B'] },
