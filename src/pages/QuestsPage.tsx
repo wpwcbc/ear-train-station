@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { Link } from 'react-router-dom';
 import { useNow } from '../hooks/useNow';
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import type { Progress } from '../lib/progress';
 import { applyStudyReward } from '../lib/progress';
 import {
@@ -36,8 +37,8 @@ function formatResetsIn(ms: number) {
   return `${mins}m`;
 }
 
-function ConfettiBurst({ show }: { show: boolean }) {
-  if (!show) return null;
+function ConfettiBurst({ show, reducedMotion }: { show: boolean; reducedMotion: boolean }) {
+  if (!show || reducedMotion) return null;
 
   const pieces = Array.from({ length: 14 }, (_, i) => i);
   const colors = ['#ff7aa2', '#ffd36e', '#7ee3ff', '#86f2b7', '#b6a8ff'];
@@ -58,6 +59,10 @@ function ConfettiBurst({ show }: { show: boolean }) {
           10% { opacity: 1; }
           100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)); opacity: 0; }
         }
+        @media (prefers-reduced-motion: reduce) {
+          /* Hide this entire non-essential effect if the user asks for reduced motion. */
+          .etsConfettiPiece { display: none !important; animation: none !important; }
+        }
       `}</style>
       {pieces.map((i) => {
         const angle = (i / pieces.length) * Math.PI * 2;
@@ -69,6 +74,7 @@ function ConfettiBurst({ show }: { show: boolean }) {
         return (
           <span
             key={i}
+            className="etsConfettiPiece"
             style={{
               position: 'absolute',
               left: '50%',
@@ -100,6 +106,7 @@ export function QuestsPage({
   setProgress: Dispatch<SetStateAction<Progress>>;
 }) {
   const stats = useMistakeStats();
+  const reducedMotion = usePrefersReducedMotion();
   const [q, setQ] = useState<QuestState>(() => loadQuestState());
   const [streak, setStreak] = useState<StreakStateV1>(() => loadStreakState());
   const [toast, setToast] = useState<null | { text: string }>(null);
@@ -171,7 +178,7 @@ export function QuestsPage({
 
   return (
     <div className="page">
-      <ConfettiBurst show={celebrate} />
+      <ConfettiBurst show={celebrate} reducedMotion={reducedMotion} />
       {toast ? (
         <div className="pwaToast" role="status" aria-live="polite">
           <span className="pwaToast__text">{toast.text}</span>
@@ -249,11 +256,13 @@ export function QuestsPage({
               markChestClaimed();
               setQ(loadQuestState());
               setProgress((p) => applyStudyReward(p, CHEST_XP));
-              setCelebrate(true);
-              try {
-                navigator.vibrate?.(20);
-              } catch {
-                // ignore
+              if (!reducedMotion) {
+                setCelebrate(true);
+                try {
+                  navigator.vibrate?.(20);
+                } catch {
+                  // ignore
+                }
               }
               setToast({ text: `Quest chest opened — +${CHEST_XP} XP` });
             }}
