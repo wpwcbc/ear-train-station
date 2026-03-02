@@ -116,15 +116,16 @@ export function QuestsPage({
         <div>
           <h1 className="h1">Quests</h1>
           <p className="sub">
-            Daily mini-goals to keep the streak alive. Small on purpose — consistency wins. · Resets in <b>{resetsIn}</b>
+            Daily mini-goals. Open the <b>Quest chest</b> to extend your <b>Quest streak</b>. Small on purpose — consistency wins. · Resets in <b>{resetsIn}</b>
           </p>
           <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span className="pill" title="Days in a row you opened the Quest chest">
-              Streak: <b>{streak.streak}</b> day{streak.streak === 1 ? '' : 's'}
+            <span className="pill" title="Quest streak = days in a row you opened the Quest chest">
+              Quest streak: <b>{streak.streak}</b> day{streak.streak === 1 ? '' : 's'}
             </span>
             <span className="pill" title="Your best Quest streak so far">
               Best: <b>{streak.best}</b>
             </span>
+            <span style={{ fontSize: 12, opacity: 0.75 }}>(counts when you open the chest)</span>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -153,7 +154,7 @@ export function QuestsPage({
       >
         <div style={{ fontSize: 14, fontWeight: 850 }}>Quest chest</div>
         <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
-          Clear all 3 quests to unlock a one-time XP bonus.
+          Clear all 3 quests to unlock a one-time XP bonus. Opening the chest extends your <b>Quest streak</b>.
           {canClaimChest ? <span style={{ marginLeft: 8, opacity: 0.9 }}>(ready — tap to open)</span> : null}
         </div>
         <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
