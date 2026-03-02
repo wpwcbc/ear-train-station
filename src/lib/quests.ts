@@ -32,8 +32,10 @@ export function computeQuestProgress(progress: Progress, q: QuestState): QuestCo
   const dailyXpToday = Math.max(0, progress.dailyXpToday || 0);
   const dailyXpDone = dailyXpToday >= dailyXpGoal;
 
-  const reviewGoal = 6;
-  const reviewToday = q.reviewAttemptsToday;
+  // We count *clears* (items removed from the Review queue) rather than attempts.
+  // This matches the user’s mental model: “I actually reduced my backlog today.”
+  const reviewGoal = 3;
+  const reviewToday = q.reviewClearsToday;
   const reviewDone = reviewToday >= reviewGoal;
 
   const stationsGoal = 1;

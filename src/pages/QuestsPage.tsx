@@ -36,6 +36,62 @@ function formatResetsIn(ms: number) {
   return `${mins}m`;
 }
 
+function ConfettiBurst({ show }: { show: boolean }) {
+  if (!show) return null;
+
+  const pieces = Array.from({ length: 14 }, (_, i) => i);
+  const colors = ['#ff7aa2', '#ffd36e', '#7ee3ff', '#86f2b7', '#b6a8ff'];
+
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        pointerEvents: 'none',
+        zIndex: 50,
+      }}
+    >
+      <style>{`
+        @keyframes etsConfettiPop {
+          0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+          10% { opacity: 1; }
+          100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)); opacity: 0; }
+        }
+      `}</style>
+      {pieces.map((i) => {
+        const angle = (i / pieces.length) * Math.PI * 2;
+        const radius = 110 + (i % 4) * 18;
+        const dx = Math.cos(angle) * radius;
+        const dy = Math.sin(angle) * radius - 20;
+        const rot = (i * 37) % 360;
+        const delay = (i % 7) * 10;
+        return (
+          <span
+            key={i}
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '22%',
+              width: 10,
+              height: 6,
+              borderRadius: 999,
+              background: colors[i % colors.length],
+              boxShadow: '0 2px 0 rgba(0,0,0,0.18)',
+              transform: 'translate(-50%, -50%)',
+              opacity: 0,
+              animation: `etsConfettiPop 720ms cubic-bezier(.2,.8,.2,1) ${delay}ms both`,
+              ['--dx' as any]: `${dx}px`,
+              ['--dy' as any]: `${dy}px`,
+              ['--rot' as any]: `${rot}deg`,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 export function QuestsPage({
   progress,
   setProgress,
@@ -47,6 +103,7 @@ export function QuestsPage({
   const [q, setQ] = useState<QuestState>(() => loadQuestState());
   const [streak, setStreak] = useState<StreakStateV1>(() => loadStreakState());
   const [toast, setToast] = useState<null | { text: string }>(null);
+  const [celebrate, setCelebrate] = useState(false);
 
   useEffect(() => {
     function bumpQuests() {
@@ -79,6 +136,12 @@ export function QuestsPage({
     return () => window.clearTimeout(t);
   }, [toast]);
 
+  useEffect(() => {
+    if (!celebrate) return;
+    const t = window.setTimeout(() => setCelebrate(false), 900);
+    return () => window.clearTimeout(t);
+  }, [celebrate]);
+
   // Quests are intentionally simple: they push the loop (learn → review → streak).
   const qp = useMemo(() => computeQuestProgress(progress, q), [progress, q]);
 
@@ -108,6 +171,7 @@ export function QuestsPage({
 
   return (
     <div className="page">
+      <ConfettiBurst show={celebrate} />
       {toast ? (
         <div className="pwaToast" role="status" aria-live="polite">
           <span className="pwaToast__text">{toast.text}</span>
@@ -185,6 +249,12 @@ export function QuestsPage({
               markChestClaimed();
               setQ(loadQuestState());
               setProgress((p) => applyStudyReward(p, CHEST_XP));
+              setCelebrate(true);
+              try {
+                navigator.vibrate?.(20);
+              } catch {
+                // ignore
+              }
               setToast({ text: `Quest chest opened — +${CHEST_XP} XP` });
             }}
           >
@@ -208,14 +278,14 @@ export function QuestsPage({
         </div>
 
         <div className="card">
-          <div style={{ fontSize: 14, fontWeight: 850 }}>Review reps</div>
+          <div style={{ fontSize: 14, fontWeight: 850 }}>Review clears</div>
           <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
-            Attempt <b>{questReview.goal}</b> Review items.
+            Clear <b>{questReview.goal}</b> items from Review.
           </div>
           <div style={{ marginTop: 10 }}>
             <ProgressBar pct={questReview.pct} />
             <div style={{ marginTop: 8, fontSize: 12, opacity: 0.85 }}>
-              {questReview.today}/{questReview.goal} attempts {questReview.done ? '✓' : ''}
+              {questReview.today}/{questReview.goal} clears {questReview.done ? '✓' : ''}
             </div>
             <div style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>({stats.due} due right now)</div>
           </div>

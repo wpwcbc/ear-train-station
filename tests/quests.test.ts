@@ -43,6 +43,7 @@ test('normalizeQuestStateForYmd resets counters when date changes', () => {
     ...defaultQuestState(),
     ymd: '2026-02-16',
     reviewAttemptsToday: 5,
+    reviewClearsToday: 2,
     stationsCompletedToday: 1,
     chestClaimedToday: true,
   };
@@ -50,6 +51,7 @@ test('normalizeQuestStateForYmd resets counters when date changes', () => {
   const next = normalizeQuestStateForYmd(q, '2026-02-17');
   assert.equal(next.ymd, '2026-02-17');
   assert.equal(next.reviewAttemptsToday, 0);
+  assert.equal(next.reviewClearsToday, 0);
   assert.equal(next.stationsCompletedToday, 0);
   assert.equal(next.chestClaimedToday, false);
 });
@@ -60,7 +62,7 @@ test('computeQuestProgress: chestReady only when allDone and not claimed', () =>
   const allDoneNotClaimed = {
     ...defaultQuestState(),
     ymd: '2026-02-17',
-    reviewAttemptsToday: 6,
+    reviewClearsToday: 3,
     stationsCompletedToday: 1,
     chestClaimedToday: false,
   };
@@ -75,7 +77,7 @@ test('computeQuestProgress: chestReady only when allDone and not claimed', () =>
   assert.equal(c2.chestReady, false);
   assert.equal(c2.hasWork, false);
 
-  const notAllDone = { ...allDoneNotClaimed, reviewAttemptsToday: 0 };
+  const notAllDone = { ...allDoneNotClaimed, reviewClearsToday: 0 };
   const c3 = computeQuestProgress(progress, notAllDone);
   assert.equal(c3.allDone, false);
   assert.equal(c3.chestReady, false);
