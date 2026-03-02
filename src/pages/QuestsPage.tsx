@@ -13,6 +13,7 @@ import {
 } from '../lib/quests';
 import { useMistakeStats } from '../lib/hooks/useMistakeStats';
 import { loadStreakState, STREAK_CHANGED_EVENT, type StreakStateV1 } from '../lib/streak';
+import { QUEST_BEST_TITLE, QUEST_STREAK_TITLE, QUESTS_SUBTITLE } from '../lib/streakCopy';
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -116,13 +117,13 @@ export function QuestsPage({
         <div>
           <h1 className="h1">Quests</h1>
           <p className="sub">
-            Daily mini-goals. Open the <b>Quest chest</b> to extend your <b>Quest streak</b>. Small on purpose — consistency wins. · Resets in <b>{resetsIn}</b>
+            {QUESTS_SUBTITLE} · Resets in <b>{resetsIn}</b>
           </p>
           <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span className="pill" title="Quest streak = days in a row you opened the Quest chest">
+            <span className="pill" title={QUEST_STREAK_TITLE}>
               Quest streak: <b>{streak.streak}</b> day{streak.streak === 1 ? '' : 's'}
             </span>
-            <span className="pill" title="Your best Quest streak so far">
+            <span className="pill" title={QUEST_BEST_TITLE}>
               Best: <b>{streak.best}</b>
             </span>
             <span style={{ fontSize: 12, opacity: 0.75 }}>(counts when you open the chest)</span>

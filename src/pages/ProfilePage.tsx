@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Progress } from '../lib/progress';
 import { loadStreakState, STREAK_CHANGED_EVENT, type StreakStateV1 } from '../lib/streak';
+import { QUEST_BEST_TITLE, QUEST_STREAK_FOOTNOTE, QUEST_STREAK_TITLE } from '../lib/streakCopy';
 import { computeXpWeekSummary } from '../lib/xpWeekSummary';
 
 function clamp(n: number, min: number, max: number) {
@@ -74,7 +75,7 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
             </div>
             <div
               style={{ border: '3px solid var(--ink)', borderRadius: 16, padding: 12, background: 'var(--card)' }}
-              title="Days in a row you opened the Quest chest"
+              title={QUEST_STREAK_TITLE}
             >
               <div style={{ fontSize: 12, color: 'var(--muted)' }}>Quest streak</div>
               <div style={{ fontSize: 22, fontWeight: 850 }}>
@@ -83,7 +84,7 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
             </div>
             <div
               style={{ border: '3px solid var(--ink)', borderRadius: 16, padding: 12, background: 'var(--card)' }}
-              title="Your best Quest streak so far"
+              title={QUEST_BEST_TITLE}
             >
               <div style={{ fontSize: 12, color: 'var(--muted)' }}>Quest best</div>
               <div style={{ fontSize: 22, fontWeight: 850 }}>{questStreak.best}</div>
@@ -96,9 +97,7 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
             </div>
           </div>
 
-          <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-            Quest streak only counts when you open the <b>Quest chest</b> (anti-farm).
-          </div>
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{QUEST_STREAK_FOOTNOTE}</div>
 
           <div>
             <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>Daily goal</div>
