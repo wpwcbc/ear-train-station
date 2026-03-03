@@ -251,10 +251,26 @@ function RewardSheet({
         <div id="etsRewardTitle" style={{ fontSize: 12, opacity: 0.75, fontWeight: 850, letterSpacing: 0.4 }}>
           QUEST CHEST
         </div>
-        <div style={{ marginTop: 8, fontSize: 22, fontWeight: 950 }} aria-label={`You earned ${xp} XP`}>
+        <div style={{ marginTop: 8, fontSize: 22, fontWeight: 950 }} aria-hidden="true">
           +{shownXp} XP
         </div>
-        <div id="etsRewardDesc" style={{ marginTop: 6, fontSize: 13, opacity: 0.85 }} aria-live="polite">
+        <div
+          style={{
+            position: 'absolute',
+            width: 1,
+            height: 1,
+            padding: 0,
+            margin: -1,
+            overflow: 'hidden',
+            clip: 'rect(0, 0, 0, 0)',
+            whiteSpace: 'nowrap',
+            border: 0,
+          }}
+          aria-live="polite"
+        >
+          Quest chest opened. You earned {xp} XP. Quest streak {streak}. Best {best}.
+        </div>
+        <div id="etsRewardDesc" style={{ marginTop: 6, fontSize: 13, opacity: 0.85 }}>
           Quest streak: <b>{streak}</b> · Best: <b>{best}</b>
         </div>
         <button ref={btnRef} className="btn" style={{ marginTop: 12 }} onClick={onDismiss}>
@@ -490,9 +506,19 @@ export function QuestsPage({
           <div style={{ marginTop: 10 }}>
             <ProgressBar pct={questReview.pct} />
             <div style={{ marginTop: 8, fontSize: 12, opacity: 0.85 }}>
-              {questReview.today}/{questReview.goal} clears {questReview.done ? '✓' : ''}
+              {questReview.goal === 0 ? (
+                <>
+                  Auto-cleared {questReview.done ? '✓' : ''}
+                </>
+              ) : (
+                <>
+                  {questReview.today}/{questReview.goal} clears {questReview.done ? '✓' : ''}
+                </>
+              )}
             </div>
-            <div style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>({stats.due} due right now)</div>
+            {questReview.goal === 0 ? null : (
+              <div style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>({stats.due} due right now)</div>
+            )}
           </div>
         </div>
 
