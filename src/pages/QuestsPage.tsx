@@ -116,6 +116,7 @@ function RewardSheet({
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const [shownXp, setShownXp] = useState(() => (open ? xp : 0));
 
   useEffect(() => {
     if (!open) return;
@@ -134,6 +135,33 @@ function RewardSheet({
       previouslyFocusedRef.current?.focus?.();
     };
   }, [open]);
+
+  useEffect(() => {
+    // Tiny Duolingo-ish “count up” moment.
+    if (!open) {
+      setShownXp(0);
+      return;
+    }
+    if (reducedMotion) {
+      setShownXp(xp);
+      return;
+    }
+
+    let raf = 0;
+    const start = performance.now();
+    const dur = 420;
+
+    function tick(now: number) {
+      const t = Math.max(0, Math.min(1, (now - start) / dur));
+      // Ease-out.
+      const eased = 1 - Math.pow(1 - t, 3);
+      setShownXp(Math.round(xp * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    }
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [open, reducedMotion, xp]);
 
   useEffect(() => {
     if (!open) return;
@@ -223,7 +251,9 @@ function RewardSheet({
         <div id="etsRewardTitle" style={{ fontSize: 12, opacity: 0.75, fontWeight: 850, letterSpacing: 0.4 }}>
           QUEST CHEST
         </div>
-        <div style={{ marginTop: 8, fontSize: 22, fontWeight: 950 }}>+{xp} XP</div>
+        <div style={{ marginTop: 8, fontSize: 22, fontWeight: 950 }} aria-label={`You earned ${xp} XP`}>
+          +{shownXp} XP
+        </div>
         <div id="etsRewardDesc" style={{ marginTop: 6, fontSize: 13, opacity: 0.85 }} aria-live="polite">
           Quest streak: <b>{streak}</b> · Best: <b>{best}</b>
         </div>
@@ -291,7 +321,10 @@ export function QuestsPage({
   // Reward sheet stays open until dismissed (tap outside / button / Esc).
 
   // Quests are intentionally simple: they push the loop (learn → review → streak).
-  const qp = useMemo(() => computeQuestProgress(progress, q), [progress, q]);
+  // Fairness: if you have 0 Review items due/available, the Review quest auto-completes.
+  // We approximate “available today” as (due right now + clears already done today), so the goal doesn’t shrink as you clear.
+  const reviewAvailableToday = Math.max(0, stats.due + q.reviewClearsToday);
+  const qp = useMemo(() => computeQuestProgress(progress, q, reviewAvailableToday), [progress, q, reviewAvailableToday]);
 
   // Tick the reset countdown (Duolingo-ish, but minimal). Coarse cadence keeps it cheap.
   const now = useNow(30_000);
@@ -303,7 +336,7 @@ export function QuestsPage({
   }, [qp.dailyXpGoal, qp.dailyXpToday, qp.dailyXpDone]);
 
   const questReview = useMemo(() => {
-    const pct = qp.reviewGoal > 0 ? (qp.reviewToday / qp.reviewGoal) * 100 : 0;
+    const pct = qp.reviewGoal > 0 ? (qp.reviewToday / qp.reviewGoal) * 100 : qp.reviewDone ? 100 : 0;
     return { goal: qp.reviewGoal, today: qp.reviewToday, pct, done: qp.reviewDone };
   }, [qp.reviewGoal, qp.reviewToday, qp.reviewDone]);
 
@@ -311,6 +344,12 @@ export function QuestsPage({
     const pct = qp.stationsGoal > 0 ? (qp.stationsToday / qp.stationsGoal) * 100 : 0;
     return { goal: qp.stationsGoal, today: qp.stationsToday, pct, done: qp.stationsDone };
   }, [qp.stationsGoal, qp.stationsToday, qp.stationsDone]);
+
+  const reviewTitle = questReview.goal === 0 ? 'Review (nothing due)' : 'Clear Review backlog';
+  const reviewDesc =
+    questReview.goal === 0
+      ? 'No Review items are due right now — nice. (This quest auto-clears.)'
+      : `Clear ${questReview.goal} items from Review (backlog).`;
 
   const allDone = qp.allDone;
 
@@ -446,10 +485,8 @@ export function QuestsPage({
         </div>
 
         <div className="card">
-          <div style={{ fontSize: 14, fontWeight: 850 }}>Clear Review backlog</div>
-          <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
-            Clear <b>{questReview.goal}</b> items from Review (backlog).
-          </div>
+          <div style={{ fontSize: 14, fontWeight: 850 }}>{reviewTitle}</div>
+          <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>{reviewDesc}</div>
           <div style={{ marginTop: 10 }}>
             <ProgressBar pct={questReview.pct} />
             <div style={{ marginTop: 8, fontSize: 12, opacity: 0.85 }}>

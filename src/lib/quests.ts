@@ -27,16 +27,19 @@ export type QuestComputed = {
   hasWork: boolean;
 };
 
-export function computeQuestProgress(progress: Progress, q: QuestState): QuestComputed {
+export function computeQuestProgress(progress: Progress, q: QuestState, reviewAvailableToday?: number): QuestComputed {
   const dailyXpGoal = Math.max(5, progress.dailyGoalXp || 20);
   const dailyXpToday = Math.max(0, progress.dailyXpToday || 0);
   const dailyXpDone = dailyXpToday >= dailyXpGoal;
 
   // We count *clears* (items removed from the Review queue) rather than attempts.
   // This matches the user’s mental model: “I actually reduced my backlog today.”
-  const reviewGoal = 3;
+  //
+  // Fairness detail: some days you may have 0 Review items due/available.
+  // In that case, the quest should auto-complete (reviewGoal=0).
+  const reviewGoal = Math.max(0, Math.min(3, reviewAvailableToday ?? 3));
   const reviewToday = q.reviewClearsToday;
-  const reviewDone = reviewToday >= reviewGoal;
+  const reviewDone = reviewGoal === 0 ? true : reviewToday >= reviewGoal;
 
   const stationsGoal = 1;
   const stationsToday = q.stationsCompletedToday;

@@ -56,6 +56,23 @@ test('normalizeQuestStateForYmd resets counters when date changes', () => {
   assert.equal(next.chestClaimedToday, false);
 });
 
+test('computeQuestProgress: review quest auto-completes when no Review is available', () => {
+  const progress = { ...defaultProgress(), dailyGoalXp: 20, dailyXpToday: 20 };
+  const q = {
+    ...defaultQuestState(),
+    ymd: '2026-02-17',
+    reviewClearsToday: 0,
+    stationsCompletedToday: 1,
+    chestClaimedToday: false,
+  };
+
+  const c = computeQuestProgress(progress, q, 0);
+  assert.equal(c.reviewGoal, 0);
+  assert.equal(c.reviewDone, true);
+  assert.equal(c.allDone, true);
+  assert.equal(c.chestReady, true);
+});
+
 test('computeQuestProgress: chestReady only when allDone and not claimed', () => {
   const progress = { ...defaultProgress(), dailyGoalXp: 20, dailyXpToday: 20 };
 
