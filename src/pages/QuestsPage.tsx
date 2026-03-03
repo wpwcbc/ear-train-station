@@ -212,11 +212,11 @@ export function QuestsPage({
 
       {allDone ? (
         <div className="callout" style={{ marginTop: 12 }}>
-          <b>All quests cleared for today.</b> If you feel spicy: clear your oldest Review items first.
+          <b>All quests cleared for today.</b> If you want extra credit: clear your oldest Review items (backlog) first.
         </div>
       ) : (
         <div className="callout" style={{ marginTop: 12 }}>
-          Tip: if you’re short on time, do Review first — it’s the fastest XP and makes tomorrow easier.
+          Tip: short on time? Clear Review first — it’s quick XP and shrinks your backlog for tomorrow.
         </div>
       )}
 
@@ -287,9 +287,9 @@ export function QuestsPage({
         </div>
 
         <div className="card">
-          <div style={{ fontSize: 14, fontWeight: 850 }}>Review clears</div>
+          <div style={{ fontSize: 14, fontWeight: 850 }}>Clear Review backlog</div>
           <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
-            Clear <b>{questReview.goal}</b> items from Review.
+            Clear <b>{questReview.goal}</b> items from Review (backlog).
           </div>
           <div style={{ marginTop: 10 }}>
             <ProgressBar pct={questReview.pct} />
@@ -315,12 +315,12 @@ export function QuestsPage({
       </div>
 
       <div className="card" style={{ marginTop: 12 }}>
-        <div style={{ fontSize: 14, fontWeight: 850 }}>Bonus</div>
+        <div style={{ fontSize: 14, fontWeight: 850 }}>Backlog bonus</div>
         <div style={{ marginTop: 6, fontSize: 12, opacity: 0.85 }}>
-          Clear streak-boosters: <b>{q.reviewClearsToday}</b> review items fully cleared today.
+          Cleared today: <b>{q.reviewClearsToday}</b> Review items fully cleared.
         </div>
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-          (Clears are tracked when you clear an item from Review — 2 correct reviews in a row.)
+          (A “clear” means you removed an item from Review — 2 correct reviews in a row.)
         </div>
       </div>
     </div>
