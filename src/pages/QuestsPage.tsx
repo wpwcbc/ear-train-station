@@ -98,6 +98,71 @@ function ConfettiBurst({ show, reducedMotion }: { show: boolean; reducedMotion: 
   );
 }
 
+function RewardSheet({
+  open,
+  reducedMotion,
+  xp,
+  streak,
+  best,
+  onDismiss,
+}: {
+  open: boolean;
+  reducedMotion: boolean;
+  xp: number;
+  streak: number;
+  best: number;
+  onDismiss: () => void;
+}) {
+  if (!open) return null;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Quest reward"
+      onClick={onDismiss}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 60,
+        display: 'grid',
+        placeItems: 'center',
+        padding: 18,
+        background: 'rgba(0,0,0,0.35)',
+      }}
+    >
+      <style>{`
+        @keyframes etsRewardPop {
+          0% { transform: scale(0.92); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: 'min(520px, 100%)',
+          borderRadius: 16,
+          border: '3px solid var(--ink)',
+          background: '#fff',
+          boxShadow: '0 12px 0 rgba(0,0,0,0.12)',
+          padding: 16,
+          textAlign: 'center',
+          animation: reducedMotion ? undefined : 'etsRewardPop 180ms cubic-bezier(.2,.9,.2,1) both',
+        }}
+      >
+        <div style={{ fontSize: 12, opacity: 0.75, fontWeight: 850, letterSpacing: 0.4 }}>QUEST CHEST</div>
+        <div style={{ marginTop: 8, fontSize: 22, fontWeight: 950 }}>+{xp} XP</div>
+        <div style={{ marginTop: 6, fontSize: 13, opacity: 0.85 }} aria-live="polite">
+          Quest streak: <b>{streak}</b> · Best: <b>{best}</b>
+        </div>
+        <button className="btn" style={{ marginTop: 12 }} onClick={onDismiss}>
+          Nice
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function QuestsPage({
   progress,
   setProgress,
@@ -111,6 +176,7 @@ export function QuestsPage({
   const [streak, setStreak] = useState<StreakStateV1>(() => loadStreakState());
   const [toast, setToast] = useState<null | { text: string }>(null);
   const [celebrate, setCelebrate] = useState(false);
+  const [rewardSheet, setRewardSheet] = useState<null | { xp: number; streak: number; best: number }>(null);
 
   useEffect(() => {
     function bumpQuests() {
@@ -149,6 +215,12 @@ export function QuestsPage({
     return () => window.clearTimeout(t);
   }, [celebrate]);
 
+  useEffect(() => {
+    if (!rewardSheet) return;
+    const t = window.setTimeout(() => setRewardSheet(null), 1600);
+    return () => window.clearTimeout(t);
+  }, [rewardSheet]);
+
   // Quests are intentionally simple: they push the loop (learn → review → streak).
   const qp = useMemo(() => computeQuestProgress(progress, q), [progress, q]);
 
@@ -179,6 +251,14 @@ export function QuestsPage({
   return (
     <div className="page">
       <ConfettiBurst show={celebrate} reducedMotion={reducedMotion} />
+      <RewardSheet
+        open={!!rewardSheet}
+        reducedMotion={reducedMotion}
+        xp={rewardSheet?.xp ?? 0}
+        streak={rewardSheet?.streak ?? streak.streak}
+        best={rewardSheet?.best ?? streak.best}
+        onDismiss={() => setRewardSheet(null)}
+      />
       {toast ? (
         <div className="pwaToast" role="status" aria-live="polite">
           <span className="pwaToast__text">{toast.text}</span>
@@ -253,9 +333,16 @@ export function QuestsPage({
             }
             onClick={() => {
               if (!canClaimChest) return;
+
               markChestClaimed();
+
+              // Refresh storage-backed state (quests + streak) after the write.
               setQ(loadQuestState());
+              const nextStreak = loadStreakState();
+              setStreak(nextStreak);
+
               setProgress((p) => applyStudyReward(p, CHEST_XP));
+
               if (!reducedMotion) {
                 setCelebrate(true);
                 try {
@@ -264,7 +351,10 @@ export function QuestsPage({
                   // ignore
                 }
               }
-              setToast({ text: `Quest chest opened — +${CHEST_XP} XP` });
+
+              // Duolingo-ish: a tiny “reward sheet” beats a toast for this moment.
+              setRewardSheet({ xp: CHEST_XP, streak: nextStreak.streak, best: nextStreak.best });
+              if (reducedMotion) setToast({ text: `Quest chest opened — +${CHEST_XP} XP` });
             }}
           >
             {q.chestClaimedToday ? 'Claimed' : allDone ? `Open (+${CHEST_XP} XP)` : 'Locked'}
