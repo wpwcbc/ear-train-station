@@ -114,17 +114,69 @@ function RewardSheet({
   onDismiss: () => void;
 }) {
   const btnRef = useRef<HTMLButtonElement | null>(null);
+  const sheetRef = useRef<HTMLDivElement | null>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
+
+    previouslyFocusedRef.current = (document.activeElement as HTMLElement | null) ?? null;
+    // Prevent background scroll while the modal is open.
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    // Move initial focus into the dialog.
     btnRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      // Restore focus to the element that opened the sheet.
+      previouslyFocusedRef.current?.focus?.();
+    };
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onDismiss();
+
+    function getFocusable(): HTMLElement[] {
+      const root = sheetRef.current;
+      if (!root) return [];
+      const els = root.querySelectorAll<HTMLElement>(
+        'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'
+      );
+      return Array.from(els).filter((el) => !el.hasAttribute('disabled') && !el.getAttribute('aria-disabled'));
     }
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onDismiss();
+        return;
+      }
+
+      if (e.key !== 'Tab') return;
+
+      const focusable = getFocusable();
+      if (focusable.length === 0) {
+        e.preventDefault();
+        return;
+      }
+
+      const active = document.activeElement as HTMLElement | null;
+      const i = active ? focusable.indexOf(active) : -1;
+
+      // Cycle focus within the dialog.
+      if (e.shiftKey) {
+        const next = i <= 0 ? focusable[focusable.length - 1] : focusable[i - 1];
+        e.preventDefault();
+        next.focus();
+      } else {
+        const next = i === -1 || i === focusable.length - 1 ? focusable[0] : focusable[i + 1];
+        e.preventDefault();
+        next.focus();
+      }
+    }
+
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [open, onDismiss]);
@@ -155,6 +207,7 @@ function RewardSheet({
         }
       `}</style>
       <div
+        ref={sheetRef}
         onClick={(e) => e.stopPropagation()}
         style={{
           width: 'min(520px, 100%)',
