@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { Link } from 'react-router-dom';
 import { useNow } from '../hooks/useNow';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
@@ -113,13 +113,30 @@ function RewardSheet({
   best: number;
   onDismiss: () => void;
 }) {
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    btnRef.current?.focus();
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onDismiss();
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open, onDismiss]);
+
   if (!open) return null;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Quest reward"
+      aria-labelledby="etsRewardTitle"
+      aria-describedby="etsRewardDesc"
       onClick={onDismiss}
       style={{
         position: 'fixed',
@@ -150,14 +167,17 @@ function RewardSheet({
           animation: reducedMotion ? undefined : 'etsRewardPop 180ms cubic-bezier(.2,.9,.2,1) both',
         }}
       >
-        <div style={{ fontSize: 12, opacity: 0.75, fontWeight: 850, letterSpacing: 0.4 }}>QUEST CHEST</div>
+        <div id="etsRewardTitle" style={{ fontSize: 12, opacity: 0.75, fontWeight: 850, letterSpacing: 0.4 }}>
+          QUEST CHEST
+        </div>
         <div style={{ marginTop: 8, fontSize: 22, fontWeight: 950 }}>+{xp} XP</div>
-        <div style={{ marginTop: 6, fontSize: 13, opacity: 0.85 }} aria-live="polite">
+        <div id="etsRewardDesc" style={{ marginTop: 6, fontSize: 13, opacity: 0.85 }} aria-live="polite">
           Quest streak: <b>{streak}</b> · Best: <b>{best}</b>
         </div>
-        <button className="btn" style={{ marginTop: 12 }} onClick={onDismiss}>
+        <button ref={btnRef} className="btn" style={{ marginTop: 12 }} onClick={onDismiss}>
           Nice
         </button>
+        <div style={{ marginTop: 8, fontSize: 12, opacity: 0.7 }}>Tip: press Esc or tap outside to dismiss.</div>
       </div>
     </div>
   );
@@ -215,11 +235,7 @@ export function QuestsPage({
     return () => window.clearTimeout(t);
   }, [celebrate]);
 
-  useEffect(() => {
-    if (!rewardSheet) return;
-    const t = window.setTimeout(() => setRewardSheet(null), 1600);
-    return () => window.clearTimeout(t);
-  }, [rewardSheet]);
+  // Reward sheet stays open until dismissed (tap outside / button / Esc).
 
   // Quests are intentionally simple: they push the loop (learn → review → streak).
   const qp = useMemo(() => computeQuestProgress(progress, q), [progress, q]);
