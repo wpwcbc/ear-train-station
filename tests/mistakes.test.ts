@@ -6,6 +6,7 @@ import {
   applyReviewResult,
   loadMistakes,
   MISTAKES_CHANGED_EVENT,
+  mistakeScheduleSummaryFrom,
   nextLocalTimeAt,
   requiredClearStreak,
   saveMistakes,
@@ -196,4 +197,37 @@ test('applyReviewResult correct → schedules next rep; clears after required st
   assert.equal(requiredClearStreak(hard), 3);
   const clearedHard = applyReviewResult(hard, 'correct', now);
   assert.equal(clearedHard, null);
+});
+
+
+test('mistakeScheduleSummaryFrom buckets counts (now/≤1h/today/later) + hard + nextDueAt', () => {
+  const now = 1_000_000;
+  const mk = (overrides: Partial<Mistake>) => ({
+    id: 'x',
+    kind: 'noteName',
+    sourceStationId: 'S1_NOTES',
+    midi: 60,
+    addedAt: now - 123,
+    dueAt: now,
+    correctStreak: 0,
+    wrongCount: 0,
+    ...overrides,
+  });
+
+  const mistakes = [
+    mk({ id: 'dueNow', dueAt: now - 1 }),
+    mk({ id: 'within1h', dueAt: now + 30 * 60_000 }),
+    mk({ id: 'today', dueAt: now + 2 * 60 * 60_000 }),
+    mk({ id: 'later', dueAt: now + 3 * 24 * 60 * 60_000 }),
+    mk({ id: 'hardNow', dueAt: now, wrongCount: 3 }),
+  ];
+
+  const summary = mistakeScheduleSummaryFrom(mistakes, now);
+  assert.equal(summary.total, 5);
+  assert.equal(summary.dueNow, 2);
+  assert.equal(summary.within1h, 1);
+  assert.equal(summary.today, 1);
+  assert.equal(summary.later, 1);
+  assert.equal(summary.hard, 1);
+  assert.equal(summary.nextDueAt, now - 1);
 });

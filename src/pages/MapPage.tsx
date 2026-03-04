@@ -63,7 +63,10 @@ export function MapPage({
       >
         <div style={{ fontSize: 12, opacity: 0.85, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <span>
-            Review due: {stats.due} (total {stats.total})
+            Review: Now {stats.due} · ≤1h {stats.within1h} · Today {stats.today} · Later {stats.later}
+            {stats.hard ? (
+              <span style={{ opacity: 0.8 }} title="Hard = items you’ve missed 3+ times (need 3 clears)"> · Hard {stats.hard}</span>
+            ) : null}
             {stats.due === 0 && nextDueIn ? <span style={{ opacity: 0.75 }}> · next in {nextDueIn}</span> : null}
           </span>
           <span style={{ opacity: 0.65 }}>•</span>

@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { loadMistakes, MISTAKES_CHANGED_EVENT } from '../mistakes';
+import { loadMistakes, MISTAKES_CHANGED_EVENT, mistakeScheduleSummaryFrom } from '../mistakes';
 
 export type MistakeStats = {
+  // Compatibility: `due` is the count due *right now*.
   due: number;
   total: number;
+  within1h: number;
+  today: number;
+  later: number;
+  hard: number;
   nextDueAt: number | null;
   /** Internal: the "now" used for computing due counts (useful for countdown UI). */
   now: number;
@@ -42,16 +47,17 @@ export function useMistakeStats(nowMs?: number): MistakeStats {
 
   const stats = useMemo(() => {
     const mistakes = loadMistakes();
-    let due = 0;
-    let nextDueAt: number | null = null;
-
-    for (const m of mistakes) {
-      const at = m.dueAt ?? m.addedAt;
-      if (at <= now) due += 1;
-      if (nextDueAt == null || at < nextDueAt) nextDueAt = at;
-    }
-
-    return { due, total: mistakes.length, nextDueAt, now };
+    const summary = mistakeScheduleSummaryFrom(mistakes, now);
+    return {
+      due: summary.dueNow,
+      total: summary.total,
+      within1h: summary.within1h,
+      today: summary.today,
+      later: summary.later,
+      hard: summary.hard,
+      nextDueAt: summary.nextDueAt,
+      now,
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick, now]);
 
