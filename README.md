@@ -139,6 +139,9 @@ Implementation notes:
 - When you’ve completed all 3 quests, the **Quest chest** becomes claimable **once per day** (anti-farm).
 - The Quests tab shows a small badge when there’s quest progress to do, and a stronger badge when the chest is ready (badge is hidden while you’re already on Quests).
 - Quest state is stored in `localStorage` under `ets_quests_v2` (with a best-effort migration from the old `ets_quests_v1` key).
+- The **Review quest** measures actual progress by counting **clears** (items removed from your due/available pool), not just attempts.
+- If you have **0 Review items due/available today**, the Review quest **auto-clears** (no “impossible quest” days).
+- When you open the chest, we show a tiny **reward sheet** (instead of a toast): XP count-up (disabled for **Reduce Motion**) + screen reader announces the **final** XP once (no aria-live spam).
 
 ### Register rules
 
