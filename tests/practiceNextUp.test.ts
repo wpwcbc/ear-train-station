@@ -25,6 +25,21 @@ test('computePracticeNextUp: warmup when queued but no due + no needsLove', () =
   assert.equal(r.to, '/review?warmup=1&n=5');
 });
 
+test('computePracticeNextUp: warmup hints next due when within 1h', () => {
+  const r = computePracticeNextUp({
+    dueNow: 0,
+    totalQueued: 12,
+    within1h: 2,
+    nextDueInMs: 24 * 60 * 1000,
+    topDueStationId: null,
+    needsLoveTop: null,
+    continueLessonId: 'L1',
+  });
+  assert.equal(r.to, '/review?warmup=1&n=5');
+  assert.match(r.label, /next due/i);
+  assert.match(r.reason, /Next item due/i);
+});
+
 test('computePracticeNextUp: continue lesson when no queue', () => {
   const r = computePracticeNextUp({ dueNow: 0, totalQueued: 0, topDueStationId: null, needsLoveTop: null, continueLessonId: 'L42' });
   assert.equal(r.to, '/lesson/L42');

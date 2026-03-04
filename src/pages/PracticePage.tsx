@@ -147,6 +147,9 @@ export function PracticePage({ progress }: { progress: Progress }) {
   const nextUp = computePracticeNextUpFromStats({
     dueNow: sched.dueNow,
     totalQueued: sched.total,
+    within1h: sched.within1h,
+    dueToday: sched.today,
+    nextDueInMs: sched.nextDueAt != null ? sched.nextDueAt - now : null,
     topDueStationId: stationCounts[0]?.id ?? null,
     topDueStationName: stationCounts[0]?.title ?? null,
     reviewHistoryStats,
