@@ -254,20 +254,7 @@ function RewardSheet({
         <div style={{ marginTop: 8, fontSize: 22, fontWeight: 950 }} aria-hidden="true">
           +{shownXp} XP
         </div>
-        <div
-          style={{
-            position: 'absolute',
-            width: 1,
-            height: 1,
-            padding: 0,
-            margin: -1,
-            overflow: 'hidden',
-            clip: 'rect(0, 0, 0, 0)',
-            whiteSpace: 'nowrap',
-            border: 0,
-          }}
-          aria-live="polite"
-        >
+        <div className="srOnly" aria-live="polite">
           Quest chest opened. You earned {xp} XP. Quest streak {streak}. Best {best}.
         </div>
         <div id="etsRewardDesc" style={{ marginTop: 6, fontSize: 13, opacity: 0.85 }}>
