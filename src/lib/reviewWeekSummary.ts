@@ -17,6 +17,9 @@ export type ReviewWeekSummary = {
   totalSessions: number;
   totalXp: number;
   avgAcc: number | null; // weighted by attempts
+  activeDays: number;
+  bestDayYmd: string | null;
+  bestDaySessions: number;
   prevTotalSessions: number;
   prevTotalXp: number;
   deltaSessions: number;
@@ -85,6 +88,19 @@ export function computeReviewWeekSummary(entries: ReviewSessionHistoryEntryV1[] 
   const totalRight = days.reduce((sum, d) => sum + d.right, 0);
   const avgAcc = totalAttempts > 0 ? totalRight / totalAttempts : null;
 
+  const activeDays = days.reduce((sum, d) => sum + (d.sessions > 0 ? 1 : 0), 0);
+  const best = days.reduce(
+    (cur, d) => {
+      if (!cur) return d;
+      if (d.sessions !== cur.sessions) return d.sessions > cur.sessions ? d : cur;
+      if (d.xp !== cur.xp) return d.xp > cur.xp ? d : cur;
+      return d.ymd > cur.ymd ? d : cur;
+    },
+    null as ReviewWeekDay | null,
+  );
+  const bestDayYmd = best && best.sessions > 0 ? best.ymd : null;
+  const bestDaySessions = bestDayYmd ? best!.sessions : 0;
+
   // Previous 7-day window.
   let prevTotalSessions = 0;
   let prevTotalXp = 0;
@@ -109,6 +125,9 @@ export function computeReviewWeekSummary(entries: ReviewSessionHistoryEntryV1[] 
     totalSessions,
     totalXp,
     avgAcc,
+    activeDays,
+    bestDayYmd,
+    bestDaySessions,
     prevTotalSessions,
     prevTotalXp,
     deltaSessions,

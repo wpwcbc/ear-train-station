@@ -30,6 +30,9 @@ test('computeReviewWeekSummary: aggregates current 7-day window', () => {
   assert.equal(s.totalSessions, 2);
   assert.equal(s.totalXp, 19);
   assert.equal(Math.round((s.avgAcc || 0) * 100), 65); // 13/20
+  assert.equal(s.activeDays, 2);
+  assert.equal(s.bestDayYmd, ymdFromLocalDate(atToday));
+  assert.equal(s.bestDaySessions, 1);
 
   const yToday = ymdFromLocalDate(atToday);
   const dayToday = s.days.find((d) => d.ymd === yToday);
@@ -53,6 +56,9 @@ test('computeReviewWeekSummary: prev window deltas', () => {
 
   const s = computeReviewWeekSummary(entries, base);
   assert.equal(s.totalSessions, 1);
+  assert.equal(s.activeDays, 1);
+  assert.equal(s.bestDayYmd, ymdFromLocalDate(atCur));
+  assert.equal(s.bestDaySessions, 1);
   assert.equal(s.prevTotalSessions, 1);
   assert.equal(s.deltaSessions, 0);
   assert.equal(s.totalXp, 8);

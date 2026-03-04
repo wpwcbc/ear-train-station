@@ -84,6 +84,11 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
     return reviewWeek.days.find((d) => d.ymd === selectedReviewYmd) || null;
   }, [selectedReviewYmd, reviewWeek.days]);
 
+  const bestReviewDay = useMemo(() => {
+    if (!reviewWeek.bestDayYmd) return null;
+    return reviewWeek.days.find((d) => d.ymd === reviewWeek.bestDayYmd) || null;
+  }, [reviewWeek.bestDayYmd, reviewWeek.days]);
+
   return (
     <div className="page">
       <h1 className="h1">Profile</h1>
@@ -244,7 +249,7 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
           <div>
             <div style={{ fontSize: 14, fontWeight: 850 }}>Review this week</div>
             <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>
-              {reviewWeek.totalSessions} session{reviewWeek.totalSessions === 1 ? '' : 's'} • {reviewWeek.totalXp} XP
+              {reviewWeek.totalSessions} session{reviewWeek.totalSessions === 1 ? '' : 's'} • {reviewWeek.totalXp} XP • {reviewWeek.activeDays}/7 active days
               {reviewWeek.avgAcc != null ? <> • {Math.round(reviewWeek.avgAcc * 100)}% accuracy</> : null}
             </div>
           </div>
@@ -346,6 +351,13 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
           ) : (
             <>vs previous 7 days: —</>
           )}
+          {bestReviewDay ? (
+            <>
+              <span style={{ marginLeft: 8 }}>
+                Best day: {bestReviewDay.label} ({bestReviewDay.sessions} session{bestReviewDay.sessions === 1 ? '' : 's'})
+              </span>
+            </>
+          ) : null}
           <span style={{ marginLeft: 8 }}>Tip: short daily review &gt; rare marathons.</span>
         </div>
       </div>
