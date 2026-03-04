@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Progress } from '../lib/progress';
 import { loadStreakState, STREAK_CHANGED_EVENT, type StreakStateV1 } from '../lib/streak';
 import { QUEST_BEST_TITLE, QUEST_STREAK_FOOTNOTE, QUEST_STREAK_TITLE } from '../lib/streakCopy';
+import { loadReviewSessionHistory, REVIEW_SESSION_HISTORY_CHANGED_EVENT, type ReviewSessionHistoryEntryV1 } from '../lib/reviewSessionHistory';
+import { computeReviewWeekSummary } from '../lib/reviewWeekSummary';
 import { computeXpWeekSummary } from '../lib/xpWeekSummary';
 
 function clamp(n: number, min: number, max: number) {
@@ -21,6 +23,7 @@ function shortDow(d: Date) {
 
 export function ProfilePage({ progress }: { progress: Progress; setProgress: (p: Progress) => void }) {
   const [questStreak, setQuestStreak] = useState<StreakStateV1>(() => loadStreakState());
+  const [reviewHistory, setReviewHistory] = useState<ReviewSessionHistoryEntryV1[]>(() => loadReviewSessionHistory());
 
   useEffect(() => {
     function bump() {
@@ -33,6 +36,20 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
       window.removeEventListener('focus', bump);
       window.removeEventListener('storage', bump);
       window.removeEventListener(STREAK_CHANGED_EVENT, bump);
+    };
+  }, []);
+
+  useEffect(() => {
+    function bump() {
+      setReviewHistory(loadReviewSessionHistory());
+    }
+    window.addEventListener('focus', bump);
+    window.addEventListener('storage', bump);
+    window.addEventListener(REVIEW_SESSION_HISTORY_CHANGED_EVENT, bump);
+    return () => {
+      window.removeEventListener('focus', bump);
+      window.removeEventListener('storage', bump);
+      window.removeEventListener(REVIEW_SESSION_HISTORY_CHANGED_EVENT, bump);
     };
   }, []);
 
@@ -54,6 +71,18 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
     if (!selectedYmd) return null;
     return week.days.find((d) => d.ymd === selectedYmd) || null;
   }, [selectedYmd, week.days]);
+
+  const reviewWeek = useMemo(() => {
+    const s = computeReviewWeekSummary(reviewHistory);
+    const days = s.days.map((d) => ({ ...d, label: shortDow(new Date(`${d.ymd}T12:00:00`)) }));
+    return { ...s, days };
+  }, [reviewHistory]);
+
+  const [selectedReviewYmd, setSelectedReviewYmd] = useState<string | null>(null);
+  const selectedReviewDay = useMemo(() => {
+    if (!selectedReviewYmd) return null;
+    return reviewWeek.days.find((d) => d.ymd === selectedReviewYmd) || null;
+  }, [selectedReviewYmd, reviewWeek.days]);
 
   return (
     <div className="page">
@@ -207,6 +236,117 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
             <>vs previous 7 days: —</>
           )}
           <span style={{ marginLeft: 8 }}>Tip: consistency &gt; spikes.</span>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginTop: 12 }}>
+        <div className="rowBetween" style={{ gap: 10 }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 850 }}>Review this week</div>
+            <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>
+              {reviewWeek.totalSessions} session{reviewWeek.totalSessions === 1 ? '' : 's'} • {reviewWeek.totalXp} XP
+              {reviewWeek.avgAcc != null ? <> • {Math.round(reviewWeek.avgAcc * 100)}% accuracy</> : null}
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: 10,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+            gap: 8,
+            alignItems: 'end',
+            height: 86,
+          }}
+          aria-label="Review sessions bars for the last 7 days"
+        >
+          {reviewWeek.days.map((d) => {
+            const h = Math.round((d.sessions / reviewWeek.maxSessions) * 68);
+            const isToday = d.ymd === ymdFromLocalDate(new Date());
+            const isSelected = d.ymd === selectedReviewYmd;
+            const accLabel = d.acc != null ? `${Math.round(d.acc * 100)}% accuracy` : 'no attempts';
+            return (
+              <div key={d.ymd} style={{ display: 'grid', gap: 6, justifyItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedReviewYmd((cur) => (cur === d.ymd ? null : d.ymd))}
+                  aria-pressed={isSelected}
+                  aria-label={`${d.label}: ${d.sessions} session${d.sessions === 1 ? '' : 's'}, ${d.xp} XP, ${accLabel}. ${isSelected ? 'Selected.' : 'Tap to select.'}`}
+                  title={`${d.ymd}: ${d.sessions} sessions, ${d.xp} XP`}
+                  style={{
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    background: 'transparent',
+                    border: 'none',
+                    padding: 0,
+                    margin: 0,
+                    cursor: 'pointer',
+                    width: '100%',
+                    display: 'grid',
+                    justifyItems: 'center',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '100%',
+                      maxWidth: 18,
+                      height: 68,
+                      borderRadius: 999,
+                      border: '2px solid var(--ink)',
+                      background: '#fff',
+                      overflow: 'hidden',
+                      boxShadow: isSelected
+                        ? '0 0 0 3px rgba(255, 209, 102, 0.45)'
+                        : isToday
+                          ? '0 0 0 3px rgba(141, 212, 255, 0.35)'
+                          : undefined,
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: h,
+                        marginTop: 68 - h,
+                        background: isToday ? 'linear-gradient(180deg, #7fc9ff, #b6f2d8)' : 'linear-gradient(180deg, #f7d38b, #ffe9bf)',
+                      }}
+                    />
+                  </div>
+                </button>
+                <div style={{ fontSize: 11, opacity: 0.7 }}>{d.label}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {selectedReviewDay ? (
+          <div style={{ marginTop: 10, fontSize: 12 }}>
+            <b>{selectedReviewDay.label}</b> ({selectedReviewDay.ymd}) — <b>{selectedReviewDay.sessions}</b> session{selectedReviewDay.sessions === 1 ? '' : 's'}
+            {selectedReviewDay.attempts > 0 ? (
+              <>
+                {' '}
+                • {selectedReviewDay.right}/{selectedReviewDay.attempts} right ({Math.round((selectedReviewDay.acc || 0) * 100)}%)
+              </>
+            ) : (
+              <> • no attempts</>
+            )}
+            {' '}
+            • <b>{selectedReviewDay.xp} XP</b>
+          </div>
+        ) : null}
+
+        <div style={{ marginTop: 10, fontSize: 12, opacity: 0.75 }}>
+          {reviewWeek.prevTotalSessions > 0 ? (
+            <>
+              vs previous 7 days: {reviewWeek.deltaSessions >= 0 ? '+' : ''}
+              {reviewWeek.deltaSessions} sessions
+              {reviewWeek.deltaSessionsPct != null ? <> ({reviewWeek.deltaSessionsPct}%)</> : null},{' '}
+              {reviewWeek.deltaXp >= 0 ? '+' : ''}
+              {reviewWeek.deltaXp} XP{reviewWeek.deltaXpPct != null ? <> ({reviewWeek.deltaXpPct}%)</> : null}
+            </>
+          ) : (
+            <>vs previous 7 days: —</>
+          )}
+          <span style={{ marginLeft: 8 }}>Tip: short daily review &gt; rare marathons.</span>
         </div>
       </div>
     </div>

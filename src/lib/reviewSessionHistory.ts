@@ -15,6 +15,7 @@ export type ReviewSessionHistoryEntryV1 = {
 };
 
 export const REVIEW_SESSION_HISTORY_KEY = 'ets_review_session_history_v1';
+export const REVIEW_SESSION_HISTORY_CHANGED_EVENT = 'ets_review_session_history_changed';
 
 export function clampInt(n: unknown, fallback: number): number {
   const x = typeof n === 'number' ? n : Number(n);
@@ -93,6 +94,12 @@ export function loadReviewSessionHistory(storage: Pick<Storage, 'getItem'> = loc
 
 export function saveReviewSessionHistory(entries: ReviewSessionHistoryEntryV1[], storage: Pick<Storage, 'setItem'> = localStorage) {
   storage.setItem(REVIEW_SESSION_HISTORY_KEY, JSON.stringify(entries));
+  // storage events don't fire in-tab, so also emit a lightweight custom event.
+  try {
+    window.dispatchEvent(new Event(REVIEW_SESSION_HISTORY_CHANGED_EVENT));
+  } catch {
+    // ignore (non-browser env)
+  }
 }
 
 export function recordReviewSession(entry: ReviewSessionHistoryEntryV1, cap = 50) {
