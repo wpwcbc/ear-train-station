@@ -20,9 +20,12 @@ export function getWorkoutDone(dayKey: string, session: WorkoutSession): boolean
   }
 }
 
+export const WORKOUT_CHANGED_EVENT = 'ets_workout_changed';
+
 export function setWorkoutDone(dayKey: string, session: WorkoutSession) {
   try {
     window.localStorage.setItem(workoutLsKey(dayKey, session), '1');
+    window.dispatchEvent(new CustomEvent(WORKOUT_CHANGED_EVENT, { detail: { dayKey, session } }));
   } catch {
     // ignore
   }

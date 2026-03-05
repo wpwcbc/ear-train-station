@@ -6,6 +6,8 @@ import { loadReviewSessionHistory, REVIEW_SESSION_HISTORY_CHANGED_EVENT, type Re
 import { computeReviewWeekSummary } from '../lib/reviewWeekSummary';
 import { computeXpWeekSummary } from '../lib/xpWeekSummary';
 import { DeltaChip } from '../components/DeltaChip';
+import { WORKOUT_CHANGED_EVENT, getWorkoutStreak, localDayKey } from '../lib/workout';
+import { computeWorkoutWeekSummary } from '../lib/workoutWeekSummary';
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -25,6 +27,7 @@ function shortDow(d: Date) {
 export function ProfilePage({ progress }: { progress: Progress; setProgress: (p: Progress) => void }) {
   const [questStreak, setQuestStreak] = useState<StreakStateV1>(() => loadStreakState());
   const [reviewHistory, setReviewHistory] = useState<ReviewSessionHistoryEntryV1[]>(() => loadReviewSessionHistory());
+  const [workoutTick, setWorkoutTick] = useState(0);
 
   useEffect(() => {
     function bump() {
@@ -51,6 +54,20 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
       window.removeEventListener('focus', bump);
       window.removeEventListener('storage', bump);
       window.removeEventListener(REVIEW_SESSION_HISTORY_CHANGED_EVENT, bump);
+    };
+  }, []);
+
+  useEffect(() => {
+    function bump() {
+      setWorkoutTick((n) => n + 1);
+    }
+    window.addEventListener('focus', bump);
+    window.addEventListener('storage', bump);
+    window.addEventListener(WORKOUT_CHANGED_EVENT, bump);
+    return () => {
+      window.removeEventListener('focus', bump);
+      window.removeEventListener('storage', bump);
+      window.removeEventListener(WORKOUT_CHANGED_EVENT, bump);
     };
   }, []);
 
@@ -89,6 +106,13 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
     if (!reviewWeek.bestDayYmd) return null;
     return reviewWeek.days.find((d) => d.ymd === reviewWeek.bestDayYmd) || null;
   }, [reviewWeek.bestDayYmd, reviewWeek.days]);
+
+  const workoutWeek = useMemo(() => {
+    return computeWorkoutWeekSummary({ todayKey: localDayKey() });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workoutTick]);
+
+  const workoutStreak = useMemo(() => getWorkoutStreak(localDayKey()), [workoutTick]);
 
   return (
     <div className="page">
@@ -242,6 +266,75 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
             <>vs previous 7 days: —</>
           )}
           <span>Tip: consistency &gt; spikes.</span>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginTop: 12 }}>
+        <div className="rowBetween" style={{ gap: 10 }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 850 }}>Workout this week</div>
+            <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>
+              {workoutWeek.activeDays}/7 active days • {workoutWeek.totalSessions} session{workoutWeek.totalSessions === 1 ? '' : 's'} • streak: {workoutStreak} day{workoutStreak === 1 ? '' : 's'}
+            </div>
+            <div style={{ marginTop: 4, fontSize: 12, opacity: 0.65 }}>Counts Today’s workout sessions (1 or 2) on this device.</div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: 10,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+            gap: 8,
+            alignItems: 'end',
+            height: 70,
+          }}
+          aria-label="Workout completion for the last 7 days"
+        >
+          {workoutWeek.days.map((d) => {
+            const isToday = d.ymd === ymdFromLocalDate(new Date());
+            const label = d.sessionsDone === 0 ? '0/2 sessions' : d.sessionsDone === 1 ? '1/2 sessions' : '2/2 sessions';
+            const fill = d.sessionsDone === 0 ? 0 : d.sessionsDone === 1 ? 0.55 : 1;
+            return (
+              <div key={d.ymd} style={{ display: 'grid', gap: 6, justifyItems: 'center' }}>
+                <div
+                  role="img"
+                  aria-label={`${shortDow(new Date(`${d.ymd}T12:00:00`))} ${d.ymd}: ${label}${isToday ? '. Today.' : '.'}`}
+                  title={`${d.ymd}: ${label}`}
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 999,
+                    border: '2px solid var(--ink)',
+                    background: '#fff',
+                    overflow: 'hidden',
+                    boxShadow: isToday ? '0 0 0 3px rgba(141, 212, 255, 0.35)' : undefined,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${Math.round(fill * 100)}%`,
+                      height: '100%',
+                      background: isToday ? 'linear-gradient(90deg, #7fc9ff, #b6f2d8)' : 'linear-gradient(90deg, #cfeeff, #dff8ee)',
+                    }}
+                  />
+                </div>
+                <div style={{ fontSize: 11, opacity: 0.7 }}>{shortDow(new Date(`${d.ymd}T12:00:00`))}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ marginTop: 10, fontSize: 12, opacity: 0.75, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {workoutWeek.prevActiveDays > 0 ? (
+            <>
+              <span>vs previous 7 days:</span>
+              <DeltaChip contextLabel="vs previous 7 days" delta={workoutWeek.deltaDays} unit="days" pct={workoutWeek.deltaPct} />
+            </>
+          ) : (
+            <>vs previous 7 days: —</>
+          )}
+          <span>Tip: 1 session still counts.</span>
         </div>
       </div>
 
