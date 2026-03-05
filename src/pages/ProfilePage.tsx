@@ -5,6 +5,7 @@ import { QUEST_BEST_TITLE, QUEST_STREAK_FOOTNOTE, QUEST_STREAK_TITLE } from '../
 import { loadReviewSessionHistory, REVIEW_SESSION_HISTORY_CHANGED_EVENT, type ReviewSessionHistoryEntryV1 } from '../lib/reviewSessionHistory';
 import { computeReviewWeekSummary } from '../lib/reviewWeekSummary';
 import { computeXpWeekSummary } from '../lib/xpWeekSummary';
+import { DeltaChip } from '../components/DeltaChip';
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -231,16 +232,16 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
           </div>
         ) : null}
 
-        <div style={{ marginTop: 10, fontSize: 12, opacity: 0.75 }}>
+        <div style={{ marginTop: 10, fontSize: 12, opacity: 0.75, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           {week.prevTotalXp > 0 ? (
             <>
-              vs previous 7 days: {week.deltaXp >= 0 ? '+' : ''}
-              {week.deltaXp} XP ({week.deltaPct}%){' '}
+              <span>vs previous 7 days:</span>
+              <DeltaChip contextLabel="vs previous 7 days" delta={week.deltaXp} unit="XP" pct={week.deltaPct} />
             </>
           ) : (
             <>vs previous 7 days: —</>
           )}
-          <span style={{ marginLeft: 8 }}>Tip: consistency &gt; spikes.</span>
+          <span>Tip: consistency &gt; spikes.</span>
         </div>
       </div>
 
@@ -251,6 +252,9 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
             <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>
               {reviewWeek.totalSessions} session{reviewWeek.totalSessions === 1 ? '' : 's'} • {reviewWeek.totalXp} XP • {reviewWeek.activeDays}/7 active days
               {reviewWeek.avgAcc != null ? <> • {Math.round(reviewWeek.avgAcc * 100)}% accuracy</> : null}
+            </div>
+            <div style={{ marginTop: 4, fontSize: 12, opacity: 0.65 }}>
+              Counts Review / Warm-up / Drill sessions on this device.
             </div>
           </div>
         </div>
@@ -339,26 +343,27 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
           </div>
         ) : null}
 
-        <div style={{ marginTop: 10, fontSize: 12, opacity: 0.75 }}>
+        <div style={{ marginTop: 10, fontSize: 12, opacity: 0.75, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           {reviewWeek.prevTotalSessions > 0 ? (
             <>
-              vs previous 7 days: {reviewWeek.deltaSessions >= 0 ? '+' : ''}
-              {reviewWeek.deltaSessions} sessions
-              {reviewWeek.deltaSessionsPct != null ? <> ({reviewWeek.deltaSessionsPct}%)</> : null},{' '}
-              {reviewWeek.deltaXp >= 0 ? '+' : ''}
-              {reviewWeek.deltaXp} XP{reviewWeek.deltaXpPct != null ? <> ({reviewWeek.deltaXpPct}%)</> : null}
+              <span>vs previous 7 days:</span>
+              <DeltaChip
+                contextLabel="vs previous 7 days"
+                delta={reviewWeek.deltaSessions}
+                unit={reviewWeek.deltaSessions === 1 || reviewWeek.deltaSessions === -1 ? 'session' : 'sessions'}
+                pct={reviewWeek.deltaSessionsPct}
+              />
+              <DeltaChip contextLabel="vs previous 7 days" delta={reviewWeek.deltaXp} unit="XP" pct={reviewWeek.deltaXpPct} />
             </>
           ) : (
             <>vs previous 7 days: —</>
           )}
           {bestReviewDay ? (
-            <>
-              <span style={{ marginLeft: 8 }}>
-                Best day: {bestReviewDay.label} ({bestReviewDay.sessions} session{bestReviewDay.sessions === 1 ? '' : 's'})
-              </span>
-            </>
+            <span>
+              Best day: {bestReviewDay.label} ({bestReviewDay.sessions} session{bestReviewDay.sessions === 1 ? '' : 's'})
+            </span>
           ) : null}
-          <span style={{ marginLeft: 8 }}>Tip: short daily review &gt; rare marathons.</span>
+          <span>Tip: short daily review &gt; rare marathons.</span>
         </div>
       </div>
     </div>
