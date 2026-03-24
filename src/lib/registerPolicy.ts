@@ -42,6 +42,20 @@ export function assertWideRegisterFloor(opts: { label: string; minMidi: number }
   }
 }
 
+/**
+ * Best-effort lifter for *legacy stored prompts* (mistake history) that might predate the wide-register rule.
+ *
+ * We preserve pitch-class by shifting up in octaves until we hit the wide floor (≥ G2).
+ *
+ * Intended for: review / drill / test prompt reconstruction.
+ * Not intended for lessons (lessons already live in the stable register).
+ */
+export function liftMidiToWideFloor(midi: number) {
+  let m = Math.round(midi);
+  while (m < WIDE_REGISTER_MIN_MIDI) m += 12;
+  return m;
+}
+
 // Keep some headroom for wider prompts while staying realistic on small speakers.
 // (Not a strict rule; stations can tighten max as needed.)
 export const DEFAULT_WIDE_REGISTER_MAX_MIDI = 72; // C5

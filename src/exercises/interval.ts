@@ -4,6 +4,7 @@ import {
   STABLE_REGISTER_MAX_MIDI,
   STABLE_REGISTER_MIN_MIDI,
   WIDE_REGISTER_MIN_MIDI,
+  liftMidiToWideFloor,
 } from "../lib/registerPolicy.ts";
 
 export type IntervalQuestion = {
@@ -245,11 +246,15 @@ export function makeIntervalLabelReviewQuestion(opts: {
     choiceCount: opts.choiceCount ?? 6,
   });
 
+  // Legacy guardrail: older stored mistake prompts might have dipped below the wide-register floor.
+  // Keep review/drill prompts aligned with tests/exams (≥ G2) by lifting in octaves.
+  const rootMidi = liftMidiToWideFloor(opts.rootMidi);
+
   return {
-    id: `ilq_review_${opts.rootMidi}_${opts.semitones}_${opts.seed}`,
+    id: `ilq_review_${rootMidi}_${opts.semitones}_${opts.seed}`,
     kind: "intervalLabel",
-    rootMidi: opts.rootMidi,
-    targetMidi: opts.rootMidi + opts.semitones,
+    rootMidi,
+    targetMidi: rootMidi + opts.semitones,
     semitones: opts.semitones,
     correct,
     choices,

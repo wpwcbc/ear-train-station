@@ -1,5 +1,9 @@
-import { STABLE_REGISTER_MAX_MIDI, STABLE_REGISTER_MIN_MIDI } from '../lib/registerPolicy';
-import { mulberry32, shuffle } from '../lib/rng';
+import {
+  STABLE_REGISTER_MAX_MIDI,
+  STABLE_REGISTER_MIN_MIDI,
+  liftMidiToWideFloor,
+} from '../lib/registerPolicy.ts';
+import { mulberry32, shuffle } from '../lib/rng.ts';
 
 export type TriadQuality = 'major' | 'minor' | 'diminished';
 
@@ -90,11 +94,15 @@ export function makeTriadQualityReviewQuestion(opts: {
   const qualities: TriadQuality[] = ['major', 'minor', 'diminished'];
   const quality = opts.quality;
 
+  // Legacy guardrail: older stored mistake prompts might have dipped below the wide-register floor.
+  // Keep review/drill prompts aligned with tests/exams (≥ G2) by lifting in octaves.
+  const rootMidi = liftMidiToWideFloor(opts.rootMidi);
+
   const intervals = QUALITY_INTERVALS[quality];
   const chordMidis: [number, number, number] = [
-    opts.rootMidi + intervals[0],
-    opts.rootMidi + intervals[1],
-    opts.rootMidi + intervals[2],
+    rootMidi + intervals[0],
+    rootMidi + intervals[1],
+    rootMidi + intervals[2],
   ];
 
   const choiceCount = Math.max(2, Math.min(opts.choiceCount ?? 3, qualities.length));
@@ -106,9 +114,9 @@ export function makeTriadQualityReviewQuestion(opts: {
   const choices = shuffle([quality, ...distractors], rng);
 
   return {
-    id: `tq_review_${opts.rootMidi}_${quality}`,
+    id: `tq_review_${rootMidi}_${quality}`,
     kind: 'triad-quality',
-    rootMidi: opts.rootMidi,
+    rootMidi,
     quality,
     chordMidis,
     prompt: 'Review: which triad quality is this?',

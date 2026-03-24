@@ -1,5 +1,5 @@
-import { mulberry32, shuffle, uniq } from '../lib/rng';
-import { STABLE_REGISTER_MIN_MIDI } from '../lib/registerPolicy';
+import { mulberry32, shuffle, uniq } from '../lib/rng.ts';
+import { STABLE_REGISTER_MIN_MIDI, liftMidiToWideFloor } from '../lib/registerPolicy.ts';
 
 export type NoteSpelling = {
   sharp: string;
@@ -80,7 +80,11 @@ export function makeNoteNameQuestion(opts: {
 
 export function makeNoteNameReviewQuestion(opts: { seed: number; midi: number; choiceCount?: number }): NoteNameQuestion {
   const choiceCount = opts.choiceCount ?? 4;
-  const midi = opts.midi;
+
+  // Legacy guardrail: older stored mistake prompts might have dipped below the wide-register floor.
+  // Keep review/drill prompts aligned with tests/exams (≥ G2) by lifting in octaves.
+  const midi = liftMidiToWideFloor(opts.midi);
+
   const pc = ((midi % 12) + 12) % 12;
 
   const built = buildChoicesForPitchClass({ seed: opts.seed, pc, choiceCount });

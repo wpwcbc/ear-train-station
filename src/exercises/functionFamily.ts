@@ -1,5 +1,5 @@
 import { mulberry32, shuffle } from '../lib/rng.ts';
-import { assertWideRegisterFloor, stableTonicMidi } from '../lib/registerPolicy.ts';
+import { assertWideRegisterFloor, liftMidiToWideFloor, stableTonicMidi } from '../lib/registerPolicy.ts';
 import { MAJOR_KEYS, PC } from '../lib/theory/major.ts';
 import { buildDiatonicTriadMidis } from './diatonicTriad.ts';
 
@@ -67,19 +67,22 @@ export function makeFunctionFamilyQuestion(opts: {
   const tonicPc = PC[key];
 
   const tonicMidi =
-    opts.tonicMidi ??
-    (opts.tonicMinMidi != null && opts.tonicMaxMidi != null
-      ? // Pick a tonic in range but keep correct pitch-class.
-        (() => {
-          assertWideRegisterFloor({ label: 'makeFunctionFamilyQuestion', minMidi: opts.tonicMinMidi! });
-          const min = opts.tonicMinMidi;
-          const max = opts.tonicMaxMidi;
-          const span = Math.max(0, max - min);
-          const base = min + Math.floor(rng() * (span + 1));
-          const aligned = base + ((tonicPc - (base % 12) + 12) % 12);
-          return aligned > max ? aligned - 12 : aligned;
-        })()
-      : opts.stableTonicMidi ?? stableTonicMidi(tonicPc)); // stable: C4..B4
+    opts.tonicMidi != null
+      ? // Legacy guardrail: older stored mistake prompts might have dipped below the wide-register floor.
+        // Preserve pitch-class by lifting in octaves.
+        liftMidiToWideFloor(opts.tonicMidi)
+      : (opts.tonicMinMidi != null && opts.tonicMaxMidi != null
+          ? // Pick a tonic in range but keep correct pitch-class.
+            (() => {
+              assertWideRegisterFloor({ label: 'makeFunctionFamilyQuestion', minMidi: opts.tonicMinMidi! });
+              const min = opts.tonicMinMidi;
+              const max = opts.tonicMaxMidi;
+              const span = Math.max(0, max - min);
+              const base = min + Math.floor(rng() * (span + 1));
+              const aligned = base + ((tonicPc - (base % 12) + 12) % 12);
+              return aligned > max ? aligned - 12 : aligned;
+            })()
+          : opts.stableTonicMidi ?? stableTonicMidi(tonicPc)); // stable: C4..B4
 
   const quality = DEGREE_QUALITY[degree];
   const roman = degreeToRoman(degree, quality);
