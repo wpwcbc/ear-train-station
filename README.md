@@ -146,7 +146,8 @@ Implementation notes:
 ### Register rules
 
 - **Lessons:** stable register (one octave around middle C).
-- **Tests / exams / drills:** wider register (and **never below G2** — i.e. **≥ G2**).
+- **Tests / exams / drills (incl. Review/Drill playback):** wider register (and **never below G2** — i.e. **≥ G2**).
+- **Legacy mistake data:** if an old stored prompt dips below the wide floor, we **lift it by octaves** at playback time (preserve pitch-class, keep the loop reliable).
 
 Source of truth lives in `src/lib/registerPolicy.ts`:
 - `STABLE_REGISTER_MIN_MIDI` / `STABLE_REGISTER_MAX_MIDI`

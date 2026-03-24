@@ -34,7 +34,12 @@ import { degreeMeaning, makeScaleDegreeNameReviewQuestion, type ScaleDegreeName 
 import { makeMajorScaleDegreeReviewQuestion } from '../exercises/majorScale';
 import { makeFunctionFamilyQuestion, type FunctionFamily } from '../exercises/functionFamily';
 import { MAJOR_KEYS } from '../lib/theory/major';
-import { DEFAULT_WIDE_REGISTER_MAX_MIDI, WIDE_REGISTER_MIN_MIDI, WIDE_REGISTER_RANGE_TEXT } from '../lib/registerPolicy';
+import {
+  DEFAULT_WIDE_REGISTER_MAX_MIDI,
+  WIDE_REGISTER_MIN_MIDI,
+  WIDE_REGISTER_RANGE_TEXT,
+  liftMidiToWideFloor,
+} from '../lib/registerPolicy';
 import { STATIONS } from '../lib/stations';
 import { mulberry32 } from '../lib/rng';
 import { buildDrillQueue, insertDrillRetry } from '../lib/drillQueue';
@@ -62,12 +67,36 @@ type UndoState = {
 };
 
 function mistakeShortLabel(m: Mistake): string {
-  if (m.kind === 'noteName') return `Note: MIDI ${m.midi}`;
-  if (m.kind === 'intervalLabel') return `Interval: ${(SEMITONE_TO_LABEL[m.semitones] ?? `${m.semitones}st`)} (root MIDI ${m.rootMidi})`;
-  if (m.kind === 'triadQuality') return `Triad: ${triadQualityLabel(m.quality)} (root MIDI ${m.rootMidi})`;
+  // Note: mistakes can be legacy (stored before we enforced the wide-register floor ≥ G2).
+  // For Review/Drill playback we lift old low-MIDI prompts by octaves; keep debug labels aligned
+  // with what the user will actually hear.
+  if (m.kind === 'noteName') {
+    const played = liftMidiToWideFloor(m.midi);
+    return played === m.midi ? `Note: MIDI ${m.midi}` : `Note: MIDI ${played} (lifted from ${m.midi})`;
+  }
+  if (m.kind === 'intervalLabel') {
+    const rootPlayed = liftMidiToWideFloor(m.rootMidi);
+    const label = SEMITONE_TO_LABEL[m.semitones] ?? `${m.semitones}st`;
+    return rootPlayed === m.rootMidi
+      ? `Interval: ${label} (root MIDI ${m.rootMidi})`
+      : `Interval: ${label} (root MIDI ${rootPlayed}, lifted from ${m.rootMidi})`;
+  }
+  if (m.kind === 'triadQuality') {
+    const rootPlayed = liftMidiToWideFloor(m.rootMidi);
+    return rootPlayed === m.rootMidi
+      ? `Triad: ${triadQualityLabel(m.quality)} (root MIDI ${m.rootMidi})`
+      : `Triad: ${triadQualityLabel(m.quality)} (root MIDI ${rootPlayed}, lifted from ${m.rootMidi})`;
+  }
   if (m.kind === 'scaleDegreeName') return `Scale degree: ${m.key} — ${m.degree}`;
   if (m.kind === 'majorScaleDegree') return `Major scale: ${m.key} — ${m.degree}`;
-  return `Function: ${m.key} — ${m.degree}`;
+  // functionFamily stores tonicMidi (legacy could also be low); degree is key-only, so keep this short.
+  if (m.kind === 'functionFamily') {
+    const tonicPlayed = liftMidiToWideFloor(m.tonicMidi);
+    return tonicPlayed === m.tonicMidi
+      ? `Function: ${m.key} — ${m.degree}`
+      : `Function: ${m.key} — ${m.degree} (tonic lifted from ${m.tonicMidi})`;
+  }
+  return 'Mistake';
 }
 
 type SessionMissKey = string;
