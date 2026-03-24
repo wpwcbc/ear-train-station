@@ -90,6 +90,32 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
     return week.days.find((d) => d.ymd === selectedYmd) || null;
   }, [selectedYmd, week.days]);
 
+  function handleWeekKeyNav(
+    e: React.KeyboardEvent,
+    days: { ymd: string }[],
+    curYmd: string,
+    setYmd: (ymd: string) => void,
+    idPrefix: string,
+  ) {
+    const idx = days.findIndex((d) => d.ymd === curYmd);
+    if (idx < 0) return;
+
+    let nextIdx: number | null = null;
+    if (e.key === 'ArrowLeft') nextIdx = Math.max(0, idx - 1);
+    if (e.key === 'ArrowRight') nextIdx = Math.min(days.length - 1, idx + 1);
+    if (e.key === 'Home') nextIdx = 0;
+    if (e.key === 'End') nextIdx = days.length - 1;
+    if (nextIdx == null || nextIdx === idx) return;
+
+    e.preventDefault();
+    const nextYmd = days[nextIdx].ymd;
+    setYmd(nextYmd);
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`${idPrefix}-${nextYmd}`) as HTMLElement | null;
+      el?.focus();
+    });
+  }
+
   const reviewWeek = useMemo(() => {
     const s = computeReviewWeekSummary(reviewHistory);
     const days = s.days.map((d) => ({ ...d, label: shortDow(new Date(`${d.ymd}T12:00:00`)) }));
@@ -102,6 +128,7 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
     return reviewWeek.days.find((d) => d.ymd === selectedReviewYmd) || null;
   }, [selectedReviewYmd, reviewWeek.days]);
 
+
   const bestReviewDay = useMemo(() => {
     if (!reviewWeek.bestDayYmd) return null;
     return reviewWeek.days.find((d) => d.ymd === reviewWeek.bestDayYmd) || null;
@@ -113,6 +140,12 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
   }, [workoutTick]);
 
   const workoutStreak = useMemo(() => getWorkoutStreak(localDayKey()), [workoutTick]);
+
+  const [selectedWorkoutYmd, setSelectedWorkoutYmd] = useState<string | null>(null);
+  const selectedWorkoutDay = useMemo(() => {
+    if (!selectedWorkoutYmd) return null;
+    return workoutWeek.days.find((d) => d.ymd === selectedWorkoutYmd) || null;
+  }, [selectedWorkoutYmd, workoutWeek.days]);
 
   return (
     <div className="page">
@@ -201,16 +234,19 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
             return (
               <div key={d.ymd} style={{ display: 'grid', gap: 6, justifyItems: 'center' }}>
                 <button
+                  id={`xp-${d.ymd}`}
                   type="button"
                   onClick={() => setSelectedYmd((cur) => (cur === d.ymd ? null : d.ymd))}
+                  onKeyDown={(e) => {
+                    if (!selectedYmd) return;
+                    handleWeekKeyNav(e, week.days, d.ymd, setSelectedYmd, 'xp');
+                  }}
                   aria-pressed={isSelected}
                   aria-label={`${d.label} ${d.xp} XP. ${isSelected ? 'Selected.' : 'Tap to select.'}`}
                   title={`${d.ymd}: ${d.xp} XP`}
                   style={{
                     appearance: 'none',
                     WebkitAppearance: 'none',
-                    background: 'transparent',
-                    border: 'none',
                     padding: 0,
                     margin: 0,
                     cursor: 'pointer',
@@ -293,22 +329,39 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
         >
           {workoutWeek.days.map((d) => {
             const isToday = d.ymd === ymdFromLocalDate(new Date());
+            const isSelected = d.ymd === selectedWorkoutYmd;
             const label = d.sessionsDone === 0 ? '0/2 sessions' : d.sessionsDone === 1 ? '1/2 sessions' : '2/2 sessions';
             const fill = d.sessionsDone === 0 ? 0 : d.sessionsDone === 1 ? 0.55 : 1;
             return (
               <div key={d.ymd} style={{ display: 'grid', gap: 6, justifyItems: 'center' }}>
-                <div
-                  role="img"
-                  aria-label={`${shortDow(new Date(`${d.ymd}T12:00:00`))} ${d.ymd}: ${label}${isToday ? '. Today.' : '.'}`}
+                <button
+                  id={`workout-${d.ymd}`}
+                  type="button"
+                  onClick={() => setSelectedWorkoutYmd((cur) => (cur === d.ymd ? null : d.ymd))}
+                  onKeyDown={(e) => {
+                    if (!selectedWorkoutYmd) return;
+                    handleWeekKeyNav(e, workoutWeek.days, d.ymd, setSelectedWorkoutYmd, 'workout');
+                  }}
+                  aria-pressed={isSelected}
+                  aria-label={`${shortDow(new Date(`${d.ymd}T12:00:00`))} ${d.ymd}: ${label}${isToday ? '. Today.' : '.'}${isSelected ? ' Selected.' : ''}`}
                   title={`${d.ymd}: ${label}`}
                   style={{
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    padding: 0,
+                    margin: 0,
+                    cursor: 'pointer',
                     width: 18,
                     height: 18,
                     borderRadius: 999,
                     border: '2px solid var(--ink)',
                     background: '#fff',
                     overflow: 'hidden',
-                    boxShadow: isToday ? '0 0 0 3px rgba(141, 212, 255, 0.35)' : undefined,
+                    boxShadow: isSelected
+                      ? '0 0 0 3px rgba(255, 209, 102, 0.45)'
+                      : isToday
+                        ? '0 0 0 3px rgba(141, 212, 255, 0.35)'
+                        : undefined,
                   }}
                 >
                   <div
@@ -318,12 +371,19 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
                       background: isToday ? 'linear-gradient(90deg, #7fc9ff, #b6f2d8)' : 'linear-gradient(90deg, #cfeeff, #dff8ee)',
                     }}
                   />
-                </div>
+                </button>
                 <div style={{ fontSize: 11, opacity: 0.7 }}>{shortDow(new Date(`${d.ymd}T12:00:00`))}</div>
               </div>
             );
           })}
         </div>
+
+        {selectedWorkoutDay ? (
+          <div style={{ marginTop: 10, fontSize: 12 }}>
+            <b>{shortDow(new Date(`${selectedWorkoutDay.ymd}T12:00:00`))}</b> ({selectedWorkoutDay.ymd}) —{' '}
+            <b>{selectedWorkoutDay.sessionsDone}/2</b> session{selectedWorkoutDay.sessionsDone === 1 ? '' : 's'}
+          </div>
+        ) : null}
 
         <div style={{ marginTop: 10, fontSize: 12, opacity: 0.75, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           {workoutWeek.prevActiveDays > 0 ? (
@@ -371,8 +431,13 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
             return (
               <div key={d.ymd} style={{ display: 'grid', gap: 6, justifyItems: 'center' }}>
                 <button
+                  id={`review-${d.ymd}`}
                   type="button"
                   onClick={() => setSelectedReviewYmd((cur) => (cur === d.ymd ? null : d.ymd))}
+                  onKeyDown={(e) => {
+                    if (!selectedReviewYmd) return;
+                    handleWeekKeyNav(e, reviewWeek.days, d.ymd, setSelectedReviewYmd, 'review');
+                  }}
                   aria-pressed={isSelected}
                   aria-label={`${d.label}: ${d.sessions} session${d.sessions === 1 ? '' : 's'}, ${d.xp} XP, ${accLabel}. ${isSelected ? 'Selected.' : 'Tap to select.'}`}
                   title={`${d.ymd}: ${d.sessions} sessions, ${d.xp} XP`}
