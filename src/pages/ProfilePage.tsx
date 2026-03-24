@@ -8,6 +8,7 @@ import { computeXpWeekSummary } from '../lib/xpWeekSummary';
 import { DeltaChip } from '../components/DeltaChip';
 import { WORKOUT_CHANGED_EVENT, getWorkoutStreak, localDayKey } from '../lib/workout';
 import { computeWorkoutWeekSummary } from '../lib/workoutWeekSummary';
+import { weekKeyNavNextIndex } from '../lib/weekKeyNav';
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -100,12 +101,8 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
     const idx = days.findIndex((d) => d.ymd === curYmd);
     if (idx < 0) return;
 
-    let nextIdx: number | null = null;
-    if (e.key === 'ArrowLeft') nextIdx = Math.max(0, idx - 1);
-    if (e.key === 'ArrowRight') nextIdx = Math.min(days.length - 1, idx + 1);
-    if (e.key === 'Home') nextIdx = 0;
-    if (e.key === 'End') nextIdx = days.length - 1;
-    if (nextIdx == null || nextIdx === idx) return;
+    const nextIdx = weekKeyNavNextIndex({ key: e.key, idx, len: days.length });
+    if (nextIdx == null) return;
 
     e.preventDefault();
     const nextYmd = days[nextIdx].ymd;
