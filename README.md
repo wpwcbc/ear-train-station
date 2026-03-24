@@ -168,6 +168,7 @@ Rule of thumb: avoid hardcoding `60–71` or other magic MIDI ranges inside stat
 - When the session completes, we show a simple **end-screen recap** (results + XP + top misses) with a one-tap **targeted drill** CTA — Duolingo-ish “what next” without adding new settings surface.
 - On completion, Review/Warm‑up/Drill writes a lightweight session log to `localStorage` under `ets_review_session_history_v1` (capped, best-effort). The Profile page uses it for a tiny **Review this week** dashboard (sessions/XP/accuracy) + small “vs previous 7 days” delta chips.
 - Practice workout completion is stored per day/session in `localStorage` (keys like `kuku:practiceWorkout:YYYY-MM-DD:1`). Profile surfaces a tiny **Workout this week** card (active days + streak + delta vs previous 7 days).
+- Profile week charts are **keyboard friendly**: after selecting a day, use **←/→** (Home/End) to move the selection (focus follows).
 - Review → **Manage mistakes** shows examples with due/streak meta; you can **Snooze 1h** (defer) or Remove (with Undo) to keep the queue healthy.
 
 ## Mobile / iOS notes

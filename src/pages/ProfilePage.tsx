@@ -287,9 +287,14 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
         </div>
 
         {selectedDay ? (
-          <div style={{ marginTop: 10, fontSize: 12 }}>
-            <b>{selectedDay.label}</b> ({selectedDay.ymd}) — <b>{selectedDay.xp} XP</b>
-          </div>
+          <>
+            <div style={{ marginTop: 10, fontSize: 12 }}>
+              <b>{selectedDay.label}</b> ({selectedDay.ymd}) — <b>{selectedDay.xp} XP</b>
+            </div>
+            <div style={{ marginTop: 6, fontSize: 12, opacity: 0.65 }}>
+              Keyboard: use <b>←/→</b> (Home/End) to move day selection.
+            </div>
+          </>
         ) : null}
 
         <div style={{ marginTop: 10, fontSize: 12, opacity: 0.75, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -379,10 +384,15 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
         </div>
 
         {selectedWorkoutDay ? (
-          <div style={{ marginTop: 10, fontSize: 12 }}>
-            <b>{shortDow(new Date(`${selectedWorkoutDay.ymd}T12:00:00`))}</b> ({selectedWorkoutDay.ymd}) —{' '}
-            <b>{selectedWorkoutDay.sessionsDone}/2</b> session{selectedWorkoutDay.sessionsDone === 1 ? '' : 's'}
-          </div>
+          <>
+            <div style={{ marginTop: 10, fontSize: 12 }}>
+              <b>{shortDow(new Date(`${selectedWorkoutDay.ymd}T12:00:00`))}</b> ({selectedWorkoutDay.ymd}) —{' '}
+              <b>{selectedWorkoutDay.sessionsDone}/2</b> session{selectedWorkoutDay.sessionsDone === 1 ? '' : 's'}
+            </div>
+            <div style={{ marginTop: 6, fontSize: 12, opacity: 0.65 }}>
+              Keyboard: use <b>←/→</b> (Home/End) to move day selection.
+            </div>
+          </>
         ) : null}
 
         <div style={{ marginTop: 10, fontSize: 12, opacity: 0.75, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -486,19 +496,24 @@ export function ProfilePage({ progress }: { progress: Progress; setProgress: (p:
         </div>
 
         {selectedReviewDay ? (
-          <div style={{ marginTop: 10, fontSize: 12 }}>
-            <b>{selectedReviewDay.label}</b> ({selectedReviewDay.ymd}) — <b>{selectedReviewDay.sessions}</b> session{selectedReviewDay.sessions === 1 ? '' : 's'}
-            {selectedReviewDay.attempts > 0 ? (
-              <>
-                {' '}
-                • {selectedReviewDay.right}/{selectedReviewDay.attempts} right ({Math.round((selectedReviewDay.acc || 0) * 100)}%)
-              </>
-            ) : (
-              <> • no attempts</>
-            )}
-            {' '}
-            • <b>{selectedReviewDay.xp} XP</b>
-          </div>
+          <>
+            <div style={{ marginTop: 10, fontSize: 12 }}>
+              <b>{selectedReviewDay.label}</b> ({selectedReviewDay.ymd}) — <b>{selectedReviewDay.sessions}</b> session{selectedReviewDay.sessions === 1 ? '' : 's'}
+              {selectedReviewDay.attempts > 0 ? (
+                <>
+                  {' '}
+                  • {selectedReviewDay.right}/{selectedReviewDay.attempts} right ({Math.round((selectedReviewDay.acc || 0) * 100)}%)
+                </>
+              ) : (
+                <> • no attempts</>
+              )}
+              {' '}
+              • <b>{selectedReviewDay.xp} XP</b>
+            </div>
+            <div style={{ marginTop: 6, fontSize: 12, opacity: 0.65 }}>
+              Keyboard: use <b>←/→</b> (Home/End) to move day selection.
+            </div>
+          </>
         ) : null}
 
         <div style={{ marginTop: 10, fontSize: 12, opacity: 0.75, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
