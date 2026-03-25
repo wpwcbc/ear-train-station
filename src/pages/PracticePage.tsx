@@ -20,6 +20,7 @@ import { getABVariant } from '../lib/ab';
 import { loadReviewSessionHistory } from '../lib/reviewSessionHistory';
 import { computeReviewHistoryStats } from '../lib/reviewHistoryStats';
 import { computePracticeNextUpFromStats } from '../lib/practiceNextUp';
+import { pickPracticeDailyWorkouts } from '../lib/practiceDailyWorkouts.ts';
 import { WIDE_REGISTER_RANGE_TEXT } from '../lib/registerPolicy';
 import { getWorkoutDayDone, getWorkoutDone, getWorkoutStreak, localDayKey, setWorkoutDone, subDays } from '../lib/workout';
 
@@ -239,102 +240,41 @@ export function PracticePage({ progress }: { progress: Progress }) {
         </div>
 
         {(() => {
-          const topDue = stationCounts[0] ?? null;
-          const topDueStation = topDue?.id ?? null;
-          const topDueStationTitle = topDue?.title ?? null;
-
-          // Deterministic-ish daily rotation:
-          // - Session #1 is always “Review”, but becomes Warm-up when nothing is due yet.
-          // - Session #2 alternates between a Drill and New material (if available)
-          const rotate = (Number(dayKey.replaceAll('-', '')) || 0) % 2;
+          const workouts = pickPracticeDailyWorkouts({
+            dayKey,
+            sched: { dueNow: sched.dueNow, total: sched.total },
+            stationCountsAll,
+            intervalStatsTop,
+            triadStatsTop,
+            continueLessonId: continueId,
+            reviewHistoryStats,
+            wideRegisterRangeText: WIDE_REGISTER_RANGE_TEXT,
+          });
 
           const hasDue = sched.dueNow > 0;
           const hasQueue = sched.total > 0;
 
-          const withWorkout = (to: string, session: 1 | 2) => {
-            if (!to.startsWith('/review')) return to;
-            return `${to}${to.includes('?') ? '&' : '?'}workout=${session}`;
-          };
+          const session1Title = hasDue
+            ? 'Clear items that are due now'
+            : hasQueue && sched.nextDueAt
+              ? `Nothing due yet — next due in ${msToHuman(sched.nextDueAt - now)}`
+              : hasQueue
+                ? 'A short warm‑up set from your queue (even if nothing is due yet)'
+                : dayKey;
 
-          const reviewBase = hasDue ? '/review' : hasQueue ? '/review?warmup=1&n=5' : '/review';
-          const reviewToBase = topDueStation && rotate === 0 ? `${reviewBase}${reviewBase.includes('?') ? '&' : '?'}station=${topDueStation}` : reviewBase;
-          const reviewTo = withWorkout(reviewToBase, 1);
-          const stationTag = topDueStationTitle || topDueStation;
-
-          const reviewLabel = hasDue
-            ? topDueStation && rotate === 0
-              ? `Review (${sched.dueNow} due · ${stationTag})`
-              : `Review (${sched.dueNow} due)`
-            : hasQueue
-              ? topDueStation && rotate === 0
-                ? `Warm‑up (${stationTag})`
-                : 'Warm‑up review'
-              : 'Review';
-          const reviewLabelB = hasDue
-            ? topDueStation && rotate === 0
-              ? `Review now (${stationTag})`
-              : 'Review now'
-            : hasQueue
-              ? topDueStation && rotate === 0
-                ? `Warm up (${stationTag})`
-                : 'Warm up'
-              : 'Review';
-
-          const hasNew = Boolean(continueId);
-          const newTo = continueId ? `/lesson/${continueId}` : '/learn';
-          const newLabel = continueId ? 'New material (continue)' : 'New material (pick a section)';
-          const newLabelB = continueId ? 'Learn something new (continue)' : 'Learn something new';
-
-          // If the user has a review queue, prioritize a drill.
-          // BUT: only if they actually have mistakes for that drill — otherwise it would be empty.
-          // Tiny heuristic: if triad mistakes dominate (by weight), pick a triad drill sometimes.
-          // (Still deterministic-ish via day rotation, so it won’t feel random.)
-          const intervalWeight = intervalStatsTop.reduce((acc, s) => acc + s.weight, 0);
-          const triadWeight = triadStatsTop.reduce((acc, s) => acc + s.weight, 0);
-
-          const preferTriadDrill = hasTriadMistakes && triadWeight > intervalWeight * 1.15;
-
-          const drillKind: 'interval' | 'triad' = preferTriadDrill ? 'triad' : 'interval';
-          const hasChosenMistakes = drillKind === 'triad' ? hasTriadMistakes : hasIntervalMistakes;
-
-          const drillTo = hasChosenMistakes ? (drillKind === 'triad' ? '/review?drill=1&kind=triad' : '/review?drill=1') : '/review?warmup=1&n=5';
-          const drillLabel = hasChosenMistakes ? (drillKind === 'triad' ? 'Triad misses drill' : 'Top misses drill') : 'Quick warm‑up';
-          const drillLabelB = hasChosenMistakes ? 'Quick drill' : 'Warm up';
-
-          const drillTitle = hasChosenMistakes
-            ? drillKind === 'triad'
-              ? `A fast triad-quality drill from your mistakes (wide register: ${WIDE_REGISTER_RANGE_TEXT}).`
-              : `A fast interval drill from your mistakes (wide register: ${WIDE_REGISTER_RANGE_TEXT}).`
-            : 'No mistakes yet for a drill — do a quick warm‑up from your queue instead.';
-
-          const pickSecond = () => {
-            if (!hasQueue) return { to: newTo, labelA: newLabel, labelB: newLabelB, title: 'Learn something new' };
-            if (rotate === 0) return { to: drillTo, labelA: drillLabel, labelB: drillLabelB, title: drillTitle };
-            // Rotate to “new material” even when you have a queue, so the app doesn’t nag forever.
-            if (hasNew) return { to: newTo, labelA: newLabel, labelB: newLabelB, title: 'Keep moving forward — you can always Review after.' };
-            return { to: drillTo, labelA: drillLabel, labelB: drillLabelB, title: drillTitle };
-          };
-
-          const second = pickSecond();
-          const secondTo = withWorkout(second.to, 2);
-          const secondExitTo = second.to.startsWith('/lesson/') ? '/practice?workoutDone=2' : '/practice';
+          const session2ExitTo = workouts.session2.to.startsWith('/lesson/') ? '/practice?workoutDone=2' : '/practice';
 
           return (
             <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-              <Link
-                className="linkBtn"
-                to={reviewTo}
-                state={{ exitTo: '/practice' }}
-                title={hasDue ? 'Clear items that are due now' : hasQueue && sched.nextDueAt ? `Nothing due yet — next due in ${msToHuman(sched.nextDueAt - now)}` : hasQueue ? 'A short warm‑up set from your queue (even if nothing is due yet)' : dayKey}
-              >
-                {workoutCopyVariant === 'A' ? reviewLabel : reviewLabelB}{workout1Done ? ' ✓' : ''}
+              <Link className="linkBtn" to={workouts.session1.to} state={{ exitTo: '/practice' }} title={session1Title}>
+                {(workoutCopyVariant === 'A' ? workouts.session1.labelA : workouts.session1.labelB) + (workout1Done ? ' ✓' : '')}
               </Link>
-              <CopyLinkButton to={reviewTo} label="Copy workout session 1 link" />
+              <CopyLinkButton to={workouts.session1.to} label="Copy workout session 1 link" />
 
-              <Link className="linkBtn" to={secondTo} state={{ exitTo: secondExitTo }} title={second.title}>
-                {workoutCopyVariant === 'A' ? second.labelA : second.labelB}{workout2Done ? ' ✓' : ''}
+              <Link className="linkBtn" to={workouts.session2.to} state={{ exitTo: session2ExitTo }} title={workouts.session2.title}>
+                {(workoutCopyVariant === 'A' ? workouts.session2.labelA : workouts.session2.labelB) + (workout2Done ? ' ✓' : '')}
               </Link>
-              <CopyLinkButton to={secondTo} label="Copy workout session 2 link" />
+              <CopyLinkButton to={workouts.session2.to} label="Copy workout session 2 link" />
             </div>
           );
         })()}
