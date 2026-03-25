@@ -14,6 +14,9 @@ export type PracticeWorkoutStationCount = {
 
 export type PracticeWorkoutMistakeRow = {
   weight: number;
+  // Optional fields available on mistake rollups.
+  semitones?: number;
+  quality?: string;
 };
 
 export type PracticeWorkoutPick = {
@@ -158,10 +161,22 @@ export function pickPracticeDailyWorkouts(opts: {
   const drillKind: 'interval' | 'triad' = preferTriadDrill ? 'triad' : 'interval';
   const hasChosenMistakes = drillKind === 'triad' ? hasTriadMistakes : hasIntervalMistakes;
 
+  const intervalSemitonesTop = opts.intervalStatsTop
+    .map((x) => x.semitones)
+    .filter((x): x is number => typeof x === 'number' && Number.isFinite(x));
+
+  const triadQualitiesTop = opts.triadStatsTop
+    .map((x) => x.quality)
+    .filter((x): x is string => typeof x === 'string' && x.length > 0);
+
   const drillToBase = hasChosenMistakes
     ? drillKind === 'triad'
-      ? '/review?drill=1&kind=triad'
-      : '/review?drill=1'
+      ? triadQualitiesTop.length
+        ? `/review?drill=1&kind=triad&qualities=${encodeURIComponent([...new Set(triadQualitiesTop)].join(','))}`
+        : '/review?drill=1&kind=triad'
+      : intervalSemitonesTop.length
+        ? `/review?drill=1&kind=interval&semitones=${encodeURIComponent([...new Set(intervalSemitonesTop)].join(','))}`
+        : '/review?drill=1'
     : '/review?warmup=1&n=5';
 
   const drillTo = withWorkout(drillToBase, 2);
