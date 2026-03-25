@@ -161,21 +161,41 @@ export function pickPracticeDailyWorkouts(opts: {
   const drillKind: 'interval' | 'triad' = preferTriadDrill ? 'triad' : 'interval';
   const hasChosenMistakes = drillKind === 'triad' ? hasTriadMistakes : hasIntervalMistakes;
 
-  const intervalSemitonesTop = opts.intervalStatsTop
-    .map((x) => x.semitones)
-    .filter((x): x is number => typeof x === 'number' && Number.isFinite(x));
+  const uniqueTop = <T,>(xs: T[], max: number) => {
+    const out: T[] = [];
+    const seen = new Set<T>();
+    for (const x of xs) {
+      if (seen.has(x)) continue;
+      seen.add(x);
+      out.push(x);
+      if (out.length >= max) break;
+    }
+    return out;
+  };
 
-  const triadQualitiesTop = opts.triadStatsTop
-    .map((x) => x.quality)
-    .filter((x): x is string => typeof x === 'string' && x.length > 0);
+  // Keep deep-links short and intentional: a handful of targets is more Duolingo-ish
+  // than blasting an entire long tail into the URL.
+  const intervalSemitonesTop = uniqueTop(
+    opts.intervalStatsTop
+      .map((x) => x.semitones)
+      .filter((x): x is number => typeof x === 'number' && Number.isFinite(x)),
+    4,
+  );
+
+  const triadQualitiesTop = uniqueTop(
+    opts.triadStatsTop
+      .map((x) => x.quality)
+      .filter((x): x is string => typeof x === 'string' && x.length > 0),
+    4,
+  );
 
   const drillToBase = hasChosenMistakes
     ? drillKind === 'triad'
       ? triadQualitiesTop.length
-        ? `/review?drill=1&kind=triad&qualities=${encodeURIComponent([...new Set(triadQualitiesTop)].join(','))}`
+        ? `/review?drill=1&kind=triad&qualities=${encodeURIComponent(triadQualitiesTop.join(','))}`
         : '/review?drill=1&kind=triad'
       : intervalSemitonesTop.length
-        ? `/review?drill=1&kind=interval&semitones=${encodeURIComponent([...new Set(intervalSemitonesTop)].join(','))}`
+        ? `/review?drill=1&kind=interval&semitones=${encodeURIComponent(intervalSemitonesTop.join(','))}`
         : '/review?drill=1'
     : '/review?warmup=1&n=5';
 

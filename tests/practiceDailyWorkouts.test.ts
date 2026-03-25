@@ -98,3 +98,28 @@ test('Practice daily workouts: session2 picks triad drill when triad mistakes do
   assert.ok(workouts.session2.to.includes('qualities='), 'should deep-link qualities');
   assert.ok(decodeURIComponent(workouts.session2.to).includes('qualities=min,dim'), 'should include top quality list');
 });
+
+test('Practice daily workouts: drill deep-links cap unique targets (keeps URL short)', () => {
+  const workouts = pickPracticeDailyWorkouts({
+    dayKey: '2026-03-26',
+    sched: { dueNow: 1, total: 10 },
+    stationCountsAll: [{ id: 'intervals', title: 'Intervals', due: 1, queued: 9 }],
+    intervalStatsTop: [
+      { weight: 50, semitones: 3 },
+      { weight: 40, semitones: 7 },
+      { weight: 30, semitones: 3 },
+      { weight: 20, semitones: 10 },
+      { weight: 10, semitones: 0 },
+      { weight: 5, semitones: 5 },
+    ],
+    triadStatsTop: [],
+    continueLessonId: null,
+    reviewHistoryStats: baseReviewHistoryStats() as any,
+    wideRegisterRangeText: '≥ G2',
+  });
+
+  const url = decodeURIComponent(workouts.session2.to);
+  // Should keep first 4 unique semitone targets, in order of appearance.
+  assert.ok(url.includes('semitones=3,7,10,0'), `unexpected deep-link: ${url}`);
+  assert.ok(!url.includes(',5'), 'should cap at 4 unique semitone targets');
+});
